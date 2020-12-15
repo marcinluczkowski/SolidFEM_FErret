@@ -57,7 +57,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Classes\Element.cs" />
-    <Compile Include="Classes\Face.cs" />
     <Compile Include="Classes\Node.cs" />
     <Compile Include="Classes\Solid_Mesh.cs" />
     <Compile Include="Components\CreateElement.cs" />
