@@ -55,8 +55,8 @@ namespace SolidFEM.Deconstructors
             }
 
 
-            var newNodes = Element.sortNodes(el);
-            el.nodes = newNodes;
+            //var newNodes = Element.sortNodes(el);
+            //el.nodes = newNodes;
 
             info.Add("change brep box into fel"); ;
             DA.SetDataList(0, info);

@@ -84,7 +84,7 @@ namespace SolidFEM.Classes
             }
             Point3d topCenter = new Point3d(sumX_bottom / unsortedNodes.Count, sumY_bottom / unsortedNodes.Count, sumZ_bottom / unsortedNodes.Count);
 
-
+            /*
             Brep b; 
             b.Faces
 
@@ -97,7 +97,7 @@ namespace SolidFEM.Classes
                 angles[i] = Math.Atan2(points[i].point.Y, points[i].point.X);
 
             Array.Sort(angles, points);
-
+            */
             return sortedNodes;
         }
     }
