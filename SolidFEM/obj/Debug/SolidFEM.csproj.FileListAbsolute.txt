@@ -1,0 +1,6 @@
+C:\Users\marcl\Source\Repos\SolidFEM\SolidFEM\bin\SolidFEM.dll
+C:\Users\marcl\Source\Repos\SolidFEM\SolidFEM\bin\SolidFEM.pdb
+C:\Users\marcl\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csprojAssemblyReference.cache
+C:\Users\marcl\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CoreCompileInputs.cache
+C:\Users\marcl\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.dll
+C:\Users\marcl\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.pdb
