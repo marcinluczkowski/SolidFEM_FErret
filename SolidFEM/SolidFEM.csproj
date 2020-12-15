@@ -18,7 +18,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\</OutputPath>
+    <OutputPath>..\..\..\..\..\..\Program Files\Rhino 6\Plug-ins\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
@@ -56,9 +56,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Classes\Class1.cs" />
-    <Compile Include="Components\MyComponent1.cs" />
-    <Compile Include="SolidFEMComponent.cs" />
+    <Compile Include="Classes\Element.cs" />
+    <Compile Include="Classes\Node.cs" />
+    <Compile Include="Classes\Solid_Mesh.cs" />
+    <Compile Include="Components\CreateElement.cs" />
+    <Compile Include="Deconstructors\DeconsructElement.cs" />
     <Compile Include="SolidFEMInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

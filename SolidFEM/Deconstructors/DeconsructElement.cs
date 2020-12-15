@@ -1,20 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using SolidFEM.Classes;
 
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace SolidFEM.Components
+namespace SolidFEM.Deconstructors
 {
-    public class MyComponent1 : GH_Component
+    public class DeconsructElement : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the MyComponent1 class.
         /// </summary>
-        public MyComponent1()
-          : base("MyComponent1", "Nickname",
-              "Description",
-              "Category", "Subcategory")
+        public DeconsructElement()
+          : base("DeconstructEl", "DeEl",
+              "Deconstruct basic element class",
+              "FEM", "Deconstructors")
         {
         }
 
@@ -23,7 +24,7 @@ namespace SolidFEM.Components
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            //
+            pManager.AddGenericParameter("Element", "el", "solid fem element", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -31,6 +32,8 @@ namespace SolidFEM.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddTextParameter("Informations", "", "", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Nodes", "ns", "solid fem nodes", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -39,6 +42,25 @@ namespace SolidFEM.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            Element el = new Element();
+            DA.GetData(0, ref el);
+            var info = new List<string>();
+
+            List<Point3d> nodes = new List<Point3d>();
+            int i = 0;
+            foreach (var n in el.nodes)
+            {
+                Point3d pt = n.point;
+                nodes.Add(pt);
+            }
+
+
+            var newNodes = Element.sortNodes(el);
+            el.nodes = newNodes;
+
+            info.Add("change brep box into fel"); ;
+            DA.SetDataList(0, info);
+            DA.SetDataList(1, nodes);
         }
 
         /// <summary>
@@ -59,7 +81,7 @@ namespace SolidFEM.Components
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("5438539b-fb3c-4dc1-81d0-bb59141146a9"); }
+            get { return new Guid("51fe47af-a45c-400b-8511-c947dcffc77b"); }
         }
     }
 }
