@@ -53,14 +53,19 @@ namespace SolidFEM.Deconstructors
                 Point3d pt = n.point;
                 nodes.Add(pt);
             }
+            el.SortVerticesByGrahamScan();
 
+            
 
-            //var newNodes = Element.sortNodes(el);
-            //el.nodes = newNodes;
+            List<int> ids = new List<int>();
+            foreach(Node n in el.nodes)
+            {
+                ids.Add(n.ID);
+            }
 
             info.Add("change brep box into fel"); ;
             DA.SetDataList(0, info);
-            DA.SetDataList(1, nodes);
+            DA.SetDataList(1, el.TopologyVertices);
         }
 
         /// <summary>
