@@ -7,18 +7,13 @@ using System.Threading.Tasks;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
+
 namespace SolidFEM.Classes
 {
-    class Node
+    public class Face
     {
+        public string Name;
         public int ID;
-        public string name;
-        public Point3d point;
-
-        public Node()
-        {
-            //empty constructor
-        }
-        
+        public List<Node> Nodes;
     }
 }
