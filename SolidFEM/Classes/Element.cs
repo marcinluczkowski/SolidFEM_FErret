@@ -85,19 +85,32 @@ namespace SolidFEM.Classes
             Point3d topCenter = new Point3d(sumX_bottom / unsortedNodes.Count, sumY_bottom / unsortedNodes.Count, sumZ_bottom / unsortedNodes.Count);
 
 
-            Brep b; 
-            b.Faces
 
-            Node[] lowerPoints = unsortedNodes.ToArray();
+            Node[] bottom = bottomNodes.ToArray();
 
-            double[] angles = new double[points.Length];
+            double[] angles = new double[bottom.Length];
 
-            for (int i = 0; i < points.Length; i++)
+            for (int i = 0; i < bottom.Length; i++)
 
-                angles[i] = Math.Atan2(points[i].point.Y, points[i].point.X);
+                angles[i] = Math.Atan2(bottom[i].point.Y, bottom[i].point.X);
 
-            Array.Sort(angles, points);
+            Array.Sort(angles, bottom); // Sorting the bottom nodes
 
+
+
+            Node[] top = bottomNodes.ToArray();
+
+            double[] anglesTop = new double[bottom.Length];
+
+            for (int i = 0; i < top.Length; i++)
+
+                angles[i] = Math.Atan2(top[i].point.Y, top[i].point.X);
+
+            Array.Sort(angles, top); // Sorting the top nodes. 
+
+            // Join the bottom and top nodes. 
+            sortedNodes.AddRange(bottom.ToList());
+            sortedNodes.AddRange(top.ToList());
             return sortedNodes;
         }
     }
