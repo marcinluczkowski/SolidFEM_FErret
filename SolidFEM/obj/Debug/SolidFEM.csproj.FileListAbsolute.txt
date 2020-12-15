@@ -4,3 +4,5 @@ C:\Users\marcl\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csprojAssemblyR
 C:\Users\marcl\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CoreCompileInputs.cache
 C:\Users\marcl\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.dll
 C:\Users\marcl\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.pdb
+C:\Program Files\Rhino 6\Plug-ins\SolidFEM.dll
+C:\Program Files\Rhino 6\Plug-ins\SolidFEM.pdb
