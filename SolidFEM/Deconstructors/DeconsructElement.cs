@@ -50,7 +50,7 @@ namespace SolidFEM.Deconstructors
             int i = 0;
             foreach (var n in el.nodes)
             {
-                Point3d pt = n.point;
+                Point3d pt = n.Point;
                 nodes.Add(pt);
             }
             el.SortVerticesByGrahamScan();
