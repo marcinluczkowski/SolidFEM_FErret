@@ -23,7 +23,7 @@ namespace SolidFEM.Classes
                 List<Point3d> vertices = new List<Point3d>();
                 foreach (Node n in nodes)
                 {
-                    vertices.Add(n.point);
+                    vertices.Add(n.Point);
                 }
                 return vertices;
             }
@@ -101,7 +101,7 @@ namespace SolidFEM.Classes
 
             for (int i = 0; i < this.nodes.Count; i++)
             {
-                this.nodes[i].point = sortedVertices[i];
+                this.nodes[i].Point = sortedVertices[i];
             }
             #endregion
 

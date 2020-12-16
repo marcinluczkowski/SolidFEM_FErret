@@ -77,6 +77,7 @@
     <Compile Include="Classes\Solid_Mesh.cs" />
     <Compile Include="Components\CreateElement.cs" />
     <Compile Include="Components\DisplayElement.cs" />
+    <Compile Include="Components\mesh_sweep_1.cs" />
     <Compile Include="Deconstructors\DeconsructElement.cs" />
     <Compile Include="SolidFEMInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -12,12 +12,18 @@ namespace SolidFEM.Classes
     class Node
     {
         public int ID;
-        public string name;
-        public Point3d point;
+        public string Name;
+        public Point3d Point;
 
         public Node()
         {
             //empty constructor
+        }
+        public Node(Point3d point, int id, string name)
+        {
+            ID = id;
+            Point = point;
+            Name = name; 
         }
         
     }

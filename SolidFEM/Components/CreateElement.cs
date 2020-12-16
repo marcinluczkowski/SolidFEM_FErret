@@ -53,8 +53,8 @@ namespace SolidFEM.Components
                 Point3d pt = v.Location;
                 Node n = new Node();
                 n.ID = i++;
-                n.name = "3D node";
-                n.point = pt;
+                n.Name = "3D node";
+                n.Point = pt;
                 nodes.Add(n);
             }
 
