@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using SolidFEM.Classes;
-
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
