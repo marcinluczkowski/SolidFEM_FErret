@@ -19,6 +19,21 @@ namespace SolidFEM.Classes
         public string name;
         public Mesh element_mesh;
         public List<Node> nodes;
+        public List<Point3d> TopologyVertices
+        {
+            get
+            {
+                List<Point3d> vertices = new List<Point3d>();
+                foreach (Node n in nodes)
+                {
+                    vertices.Add(n.Point);
+                }
+                return vertices;
+            }
+        }
+        
+
+
 
         public Matrix<double> localK; //local stiffness matrix
 
@@ -27,7 +42,15 @@ namespace SolidFEM.Classes
             //empty constructor
         }
 
-        public static List<Node> sortOrthogonalNodes(Element e)
+        public Element(List<Node> nodeList, int id)
+        {
+            ID = id;
+            nodes = nodeList;
+            name = "Element: " + ID.ToString();
+        }
+
+        //Sort the vertices of the 
+        public void SortVerticesByGrahamScan()
         {
             //sorting algorithm
             List<Node> sortedNodes = new List<Node>();
@@ -81,15 +104,19 @@ namespace SolidFEM.Classes
             double sumZ_top = 0;
             foreach (Node n in topNodes)
             {
-                sumX_bottom += n.point.X;
-                sumY += n.point.Y;
-                sumZ += n.point.Z;
+                this.nodes[i].Point = sortedVertices[i];
             }
-            Point3d topCenter = new Point3d(sumX_bottom / unsortedNodes.Count, sumY_bottom / unsortedNodes.Count, sumZ_bottom / unsortedNodes.Count);
+            #endregion
 
-            /*
-            Brep b; 
-            b.Faces
+        }
+
+              
+
+        private void GrahamScan(ref List<Point3d> pts, ref  List<Point3d> selPts)
+        {
+            if(pts.Count > 0)
+            {
+                var pt = pts[0];
 
             Node[] lowerPoints = unsortedNodes.ToArray();
 
