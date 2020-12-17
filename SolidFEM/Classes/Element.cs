@@ -4,6 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Double;
+
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
@@ -16,133 +19,89 @@ namespace SolidFEM.Classes
         public string name;
         public Mesh element_mesh;
         public List<Node> nodes;
-        public List<Point3d> TopologyVertices
-        {
-            get
-            {
-                List<Point3d> vertices = new List<Point3d>();
-                foreach (Node n in nodes)
-                {
-                    vertices.Add(n.Point);
-                }
-                return vertices;
-            }
-        }
+
+        public Matrix<double> localK; //local stiffness matrix
 
         public Element()
         {
             //empty constructor
         }
 
-        
-
-        //Sort the vertices of the 
-        public void SortVerticesByGrahamScan()
+        public static List<Node> sortOrthogonalNodes(Element e)
         {
-            List<Point3d> vertices = this.TopologyVertices; // Get all the topology vertices. 
+            //sorting algorithm
+            List<Node> sortedNodes = new List<Node>();
 
-            //Subtract top and bottom vertices
-            #region Split into top an bottom vertices
-            List<Point3d> sortedNodes = new List<Point3d>();
+            List<Node> unsortedNodes = e.nodes;
 
             // Calculate the center point
             double sumX = 0;
             double sumY = 0;
-            double sumZ = 0;
-            foreach (Point3d pt in vertices)
+            double sumZ = 0; 
+            foreach(Node n in unsortedNodes)
             {
-                sumX +=pt.X;
-                sumY += pt.Y;
-                sumZ += pt.Z;
+                sumX += n.point.X;
+                sumY += n.point.Y;
+                sumZ += n.point.Z;
             }
-            Point3d centerPt = new Point3d(sumX / vertices.Count, sumY / vertices.Count, sumZ / vertices.Count);
+            Point3d centerPt = new Point3d( sumX/ unsortedNodes.Count, sumY / unsortedNodes.Count, sumZ / unsortedNodes.Count) ;
 
             // If points are below centerPt,
-            var bottomNodes = new List<Point3d>();
-            var topNodes = new List<Point3d>();
+            var bottomNodes = new List<Node>();
+            var topNodes = new List<Node>();
 
             // Assign the nodes in top and bottom list
-            foreach (Point3d pt in vertices)
+            foreach(Node n in unsortedNodes)
             {
-                if (pt.Z > centerPt.Z)
+                if (n.point.Z > centerPt.Z)
                 {
-                    topNodes.Add(pt);
+                    topNodes.Add(n);
                 }
                 else
-                    bottomNodes.Add(pt);
-            }
-            #endregion
-
-
-            #region Sort top and bottom nodes
-            topNodes = topNodes.OrderBy(pt => pt.Y).ThenBy(pt => pt.X).ToList(); // Is it working if several points has the same y-value?
-            topNodes = topNodes.OrderBy(pt => Math.Atan2(pt.Y - topNodes[0].Y, pt.X - topNodes[0].X)).ToList();
-
-            List<Point3d> sortedTop = new List<Point3d>();
-            while (topNodes.Count > 0)
-            {
-                GrahamScan(ref topNodes, ref sortedTop);
-             }
-
-            bottomNodes = bottomNodes.OrderBy(pt => pt.Y).ThenBy(pt => pt.X).ToList(); 
-            bottomNodes = bottomNodes.OrderBy(pt => Math.Atan2(pt.Y - bottomNodes[0].Y  , pt.X - bottomNodes[0].X)).ToList();
-            List<Point3d> sortedBottom = new List<Point3d>();
-            while (bottomNodes.Count > 0)
-            {
-                GrahamScan(ref bottomNodes, ref sortedBottom);
+                    bottomNodes.Add(n);
             }
 
-            #endregion
+            //Sort bottom nodes
 
-            #region Modify element vertices with new list.
-            List<Point3d> sortedVertices = new List<Point3d>();
-            sortedVertices.AddRange(sortedBottom);
-            sortedVertices.AddRange(sortedTop);
-
-            for (int i = 0; i < this.nodes.Count; i++)
+            // Calculate the center point
+            double sumX_bottom = 0;
+            double sumY_bottom = 0;
+            double sumZ_bottom = 0;
+            foreach (Node n in bottomNodes)
             {
-                this.nodes[i].Point = sortedVertices[i];
+                sumX_bottom += n.point.X;
+                sumY += n.point.Y;
+                sumZ += n.point.Z;
             }
-            #endregion
+            Point3d bottomCenter = new Point3d(sumX_bottom / unsortedNodes.Count, sumY_bottom / unsortedNodes.Count, sumZ_bottom / unsortedNodes.Count);
 
-        }
-
-
-       
-
-        private void GrahamScan(ref List<Point3d> pts, ref  List<Point3d> selPts)
-        {
-            if(pts.Count > 0)
+            //Sort top nodes
+            double sumX_top = 0;
+            double sumY_top = 0;
+            double sumZ_top = 0;
+            foreach (Node n in topNodes)
             {
-                var pt = pts[0];
-
-                if(selPts.Count <= 1)
-                {
-                    selPts.Add(pt);
-                    pts.RemoveAt(0);
-                }
-
-                else
-                {
-                    var pt1 = selPts[selPts.Count - 1];
-                    var pt2 = selPts[selPts.Count - 2];
-
-                    Vector3d dir1= pt1 - pt2;
-                    Vector3d dir2 = pt - pt1;
-
-                    var crossProd = Vector3d.CrossProduct(dir1, dir2);
-
-                    if (crossProd.Z < 0) // Check if the turn is clockwise or counter-clockwise
-                    {
-                        selPts.RemoveAt(selPts.Count - 1); //
-                    }
-                    else
-                    {
-                        selPts.Add(pt);
-                        pts.RemoveAt(0); 
-                    }
-                }
+                sumX_bottom += n.point.X;
+                sumY += n.point.Y;
+                sumZ += n.point.Z;
             }
+            Point3d topCenter = new Point3d(sumX_bottom / unsortedNodes.Count, sumY_bottom / unsortedNodes.Count, sumZ_bottom / unsortedNodes.Count);
+
+            /*
+            Brep b; 
+            b.Faces
+
+            Node[] lowerPoints = unsortedNodes.ToArray();
+
+            double[] angles = new double[points.Length];
+
+            for (int i = 0; i < points.Length; i++)
+
+                angles[i] = Math.Atan2(points[i].point.Y, points[i].point.X);
+
+            Array.Sort(angles, points);
+            */
+            return sortedNodes;
         }
     }
 }
