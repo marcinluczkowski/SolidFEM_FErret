@@ -59,16 +59,15 @@ namespace SolidFEM.Components
                 nodes.Add(n);
             }
             */
-
-            nodes.Add(new Node(1, "3D node", b.Vertices[0].Location));
-            nodes.Add(new Node(2, "3D node", b.Vertices[1].Location));
-            nodes.Add(new Node(3, "3D node", b.Vertices[2].Location));
-            nodes.Add(new Node(4, "3D node", b.Vertices[3].Location));
-            nodes.Add(new Node(5, "3D node", b.Vertices[4].Location));
-            nodes.Add(new Node(6, "3D node", b.Vertices[5].Location));
-            nodes.Add(new Node(7, "3D node", b.Vertices[6].Location));
-            nodes.Add(new Node(8, "3D node", b.Vertices[7].Location));
-
+            
+            nodes.Add(new Node(b.Vertices[0].Location, 1, "3D Node"));
+            nodes.Add(new Node(b.Vertices[1].Location, 2, "3D Node"));
+            nodes.Add(new Node(b.Vertices[2].Location, 3, "3D Node"));
+            nodes.Add(new Node(b.Vertices[3].Location, 4, "3D Node"));
+            nodes.Add(new Node(b.Vertices[4].Location, 5, "3D Node"));
+            nodes.Add(new Node(b.Vertices[5].Location, 6, "3D Node"));
+            nodes.Add(new Node(b.Vertices[6].Location, 7, "3D Node"));
+            nodes.Add(new Node(b.Vertices[7].Location, 8, "3D Node"));
             Element el = new Element();
             el.ID = 0;
             el.name = "8node3D";
