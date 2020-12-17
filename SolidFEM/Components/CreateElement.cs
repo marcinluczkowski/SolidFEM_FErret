@@ -47,16 +47,27 @@ namespace SolidFEM.Components
             var info = new List<string>();
 
             List<Node> nodes = new List<Node>();
+            /*
             int i = 0;
             foreach (var v in b.Vertices)
             {
                 Point3d pt = v.Location;
                 Node n = new Node();
                 n.ID = i++;
-                n.name = "3D node";
-                n.point = pt;
+                n.Name = "3D node";
+                n.Point = pt;
                 nodes.Add(n);
             }
+            */
+
+            nodes.Add(new Node(1, "3D node", b.Vertices[0].Location));
+            nodes.Add(new Node(2, "3D node", b.Vertices[1].Location));
+            nodes.Add(new Node(3, "3D node", b.Vertices[2].Location));
+            nodes.Add(new Node(4, "3D node", b.Vertices[3].Location));
+            nodes.Add(new Node(5, "3D node", b.Vertices[4].Location));
+            nodes.Add(new Node(6, "3D node", b.Vertices[5].Location));
+            nodes.Add(new Node(7, "3D node", b.Vertices[6].Location));
+            nodes.Add(new Node(8, "3D node", b.Vertices[7].Location));
 
             Element el = new Element();
             el.ID = 0;

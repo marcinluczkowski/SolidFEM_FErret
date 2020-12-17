@@ -10,3 +10,4 @@ C:\Users\marcl\AppData\Roaming\Grasshopper\Libraries\Custom\SolidFEM\Accord.dll.
 C:\Users\marcl\AppData\Roaming\Grasshopper\Libraries\Custom\SolidFEM\SolidFEM.dll
 C:\Users\marcl\AppData\Roaming\Grasshopper\Libraries\Custom\SolidFEM\SolidFEM.pdb
 C:\Users\marcl\source\repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CopyComplete
+C:\Program Files\Rhino 6\Plug-ins\Accord.dll.config

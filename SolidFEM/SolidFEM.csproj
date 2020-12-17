@@ -20,7 +20,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\..\..\AppData\Roaming\Grasshopper\Libraries\Custom\SolidFEM\</OutputPath>
+    <OutputPath>..\..\..\..\..\..\Program Files\Rhino 6\Plug-ins\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
@@ -76,6 +76,7 @@
     <Compile Include="Classes\Node.cs" />
     <Compile Include="Classes\Solid_Mesh.cs" />
     <Compile Include="Components\CreateElement.cs" />
+    <Compile Include="Components\Solver1.cs" />
     <Compile Include="Deconstructors\DeconsructElement.cs" />
     <Compile Include="SolidFEMInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
