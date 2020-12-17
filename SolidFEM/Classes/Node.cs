@@ -12,8 +12,8 @@ namespace SolidFEM.Classes
     class Node
     {
         public int ID;
-        public string Name;
-        public Point3d Point;
+        public string name;
+        public Point3d point;
 
         public Node()
         {
@@ -29,10 +29,10 @@ namespace SolidFEM.Classes
 
         public Node(Point3d point, int id, string name)
         {
-            ID = id;
-            Point = point;
-            Name = name; 
+            ID = _id;
+            name = _name;
+            point = _point;
         }
-        
+
     }
 }
