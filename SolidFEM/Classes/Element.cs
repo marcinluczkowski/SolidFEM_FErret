@@ -28,13 +28,20 @@ namespace SolidFEM.Classes
                 return vertices;
             }
         }
+        
+
 
         public Element()
         {
             //empty constructor
         }
 
-        
+        public Element(List<Node> nodeList, int id)
+        {
+            ID = id;
+            nodes = nodeList;
+            name = "Element: " + ID.ToString();
+        }
 
         //Sort the vertices of the 
         public void SortVerticesByGrahamScan()
@@ -107,8 +114,7 @@ namespace SolidFEM.Classes
 
         }
 
-
-       
+              
 
         private void GrahamScan(ref List<Point3d> pts, ref  List<Point3d> selPts)
         {

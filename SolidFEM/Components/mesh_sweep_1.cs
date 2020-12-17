@@ -100,14 +100,19 @@ namespace SolidFEM.Components
                 mList.Add(tempMesh); // Add it to the list
             }
 
+
             ///DataTree of elements
             /// Create a dataTree structure of elements. The dataTree structure is choosen to keep the different layers
             /// created by the sweep method separated. 
             ///            
             Grasshopper.DataTree<Element> tree = new Grasshopper.DataTree<Element>(); // initiate an empty tree
-            List<Element> testOut = new List<Element>();
-            int elID = 0; 
-            for (int i = 0; i < mList.Count-1; i++) // Loop through the layers of meshes. 
+
+
+            #region Original method
+
+            /*
+            int elID = 0;
+            for (int i = 0; i < mList.Count - 1; i++) // Loop through the layers of meshes. 
             {
                 List<Element> eList = new List<Element>(); // Create empty list for the element of that tree
 
@@ -116,7 +121,7 @@ namespace SolidFEM.Components
                     //Create an element from each face of the mesh and the corresponding one above. 
                     Element e = new Element(); // Initiate element
                     e.ID = elID + 1; // Start count from 1
-                    e.name = "Hex8-el: " +  e.ID.ToString(); // Name of the element
+                    e.name = "Hex8-el: " + e.ID.ToString(); // Name of the element
 
                     List<Node> nodes = new List<Node>(); // Initiate list of element nodes
 
@@ -128,10 +133,10 @@ namespace SolidFEM.Components
                         Point3d c1 = mList[i].TopologyVertices[mList[i].Faces[j].C];
                         Point3d d1 = mList[i].TopologyVertices[mList[i].Faces[j].D];
 
-                        Point3d a2 = mList[i+1].TopologyVertices[mList[i + 1].Faces[j].A];
-                        Point3d b2 = mList[i+1].TopologyVertices[mList[i + 1].Faces[j].B];
-                        Point3d c2 = mList[i+1].TopologyVertices[mList[i + 1].Faces[j].C];
-                        Point3d d2 = mList[i+1].TopologyVertices[mList[i + 1].Faces[j].D];
+                        Point3d a2 = mList[i + 1].TopologyVertices[mList[i + 1].Faces[j].A];
+                        Point3d b2 = mList[i + 1].TopologyVertices[mList[i + 1].Faces[j].B];
+                        Point3d c2 = mList[i + 1].TopologyVertices[mList[i + 1].Faces[j].C];
+                        Point3d d2 = mList[i + 1].TopologyVertices[mList[i + 1].Faces[j].D];
 
                         Node nA1 = new Node(a1, 1, "Node: " + (1).ToString());
                         Node nB1 = new Node(b1, 2, "Node: " + (2).ToString());
@@ -143,17 +148,17 @@ namespace SolidFEM.Components
                         Node nC2 = new Node(c2, 7, "Node: " + (7).ToString());
                         Node nD2 = new Node(d2, 8, "Node: " + (8).ToString());
 
-                        List<Node> elementNodes = new List<Node>() { nA1, nB1, nC1, nD1, nA2, nB2, nC2, nD2};
+                        List<Node> elementNodes = new List<Node>() { nA1, nB1, nC1, nD1, nA2, nB2, nC2, nD2 };
 
-                        e.nodes = elementNodes;  
-                        
+                        e.nodes = elementNodes;
+
 
                     }
                     else if (mList[i].Faces[i].IsTriangle)
                     {
                         Point3d a1 = mList[i].TopologyVertices[mList[i].Faces[j].A];
                         Point3d b1 = mList[i].TopologyVertices[mList[i].Faces[j].B];
-                        Point3d c1 = mList[i].TopologyVertices[mList[i].Faces[j].C];                        
+                        Point3d c1 = mList[i].TopologyVertices[mList[i].Faces[j].C];
 
                         Point3d a2 = mList[i].TopologyVertices[mList[i + 1].Faces[j].A];
                         Point3d b2 = mList[i].TopologyVertices[mList[i + 1].Faces[j].B];
@@ -167,7 +172,7 @@ namespace SolidFEM.Components
                         Node nB2 = new Node(b2, 6, "Node: " + (6).ToString());
                         Node nC2 = new Node(c2, 7, "Node: " + (7).ToString());
 
-                        List<Node> elementNodes = new List<Node>() { nA1, nB1, nC1, nA2, nB2, nC2};
+                        List<Node> elementNodes = new List<Node>() { nA1, nB1, nC1, nA2, nB2, nC2 };
 
                         e.nodes = elementNodes;
                     }
@@ -183,10 +188,72 @@ namespace SolidFEM.Components
 
 
             }
+            */
+            #endregion
 
+            #region New method
+
+            //Create the nodes
+            int mCount = mList.Count; // Numbes of meshes            
+            int meshVertices = baseMesh.Vertices.Count;
+            List<Node> nodes = new List<Node>(); // Create empty list for nodes
+
+            int count = 0;
+            for (int i = 0; i < mCount; i++) // Run through all the meshes to create nodes. 
+            { 
+                //Create nodes from vertices. 
+                Mesh m1 = mList[i];
+
+
+                Point3d[] vertices = m1.Vertices.ToPoint3dArray();
+                
+                int vLength = vertices.GetLength(0); ;
+                // Add all the nodes.
+                for (int j = 0; j < vLength; j++)
+                {
+                    nodes.Add(new Node(vertices[j], count + 1) );
+                    count++;
+                }
+                // 
+
+                
+            }
+
+            // Create all elements
+            int elID = 0;
+            for (int i = 0; i < mCount - 1; i++) //Run through the list of meshes
+            {
+                List<Element> eList = new List<Element>();
+                //Run through the faces of each mesh
+                for (int j = 0; j < mList[i].Faces.Count; j++)
+                {
+                    //Create an element based on j-th face an the one directly above it.
+                    List<Node> elementNodes = new List<Node>();
+                    //Add BottomNodes
+                    elementNodes.Add(nodes[mList[i].Faces[j].A + (i * meshVertices)]);
+                    elementNodes.Add(nodes[mList[i].Faces[j].B + (i * meshVertices)]);
+                    elementNodes.Add(nodes[mList[i].Faces[j].C + (i * meshVertices)]);
+                    elementNodes.Add(nodes[mList[i].Faces[j].D + (i * meshVertices)]);
+                    //Add top nodes
+                    elementNodes.Add(nodes[mList[i+1].Faces[j].A + ((i+1) * meshVertices)]);
+                    elementNodes.Add(nodes[mList[i+1].Faces[j].B + ((i + 1) * meshVertices)]);
+                    elementNodes.Add(nodes[mList[i+1].Faces[j].C + ((i + 1) * meshVertices)]);
+                    elementNodes.Add(nodes[mList[i+1].Faces[j].D + ((i + 1) * meshVertices)]);
+
+                    Element e = new Element(elementNodes, 1 + elID + (i*mList[i].Faces.Count));
+                    elID++;
+                    e.SortVerticesByGrahamScan();
+                    eList.Add(e);
+                    
+
+                }
+                tree.AddRange(eList, new Grasshopper.Kernel.Data.GH_Path(i));
+            }
 
             #endregion
-            DA.SetDataTree(0, tree); // 0 Should be tree in final version. 
+
+            #endregion
+            DA.SetDataTree(0, tree); // 0 
             
         }
 
