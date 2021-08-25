@@ -19,3 +19,11 @@ C:\Users\sverremh\AppData\Roaming\Grasshopper\Libraries\Custom\SolidFEM\Accord.d
 C:\Users\sverremh\AppData\Roaming\Grasshopper\Libraries\Custom\SolidFEM\SolidFEM.dll
 C:\Users\sverremh\AppData\Roaming\Grasshopper\Libraries\Custom\SolidFEM\SolidFEM.pdb
 C:\Users\sverremh\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CopyComplete
+C:\Users\marcinl\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csprojAssemblyReference.cache
+C:\Users\marcinl\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CoreCompileInputs.cache
+C:\Users\marcinl\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.dll
+C:\Users\marcinl\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.pdb
+C:\Users\marcinl\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CopyComplete
+C:\Program Files\Rhino 7\Plug-ins\Accord.dll.config
+C:\Program Files\Rhino 7\Plug-ins\SolidFEM.dll
+C:\Program Files\Rhino 7\Plug-ins\SolidFEM.pdb

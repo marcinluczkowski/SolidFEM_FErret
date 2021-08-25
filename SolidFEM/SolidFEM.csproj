@@ -20,7 +20,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\..\..\..\..\Program Files\Rhino 6\Plug-ins\</OutputPath>
+    <OutputPath>..\..\..\..\..\..\Program Files\Rhino 7\Plug-ins\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
@@ -43,8 +43,8 @@
     <Reference Include="Accord.Math.Core, Version=3.8.0.0, Culture=neutral, PublicKeyToken=fa1a88e29555ccf7, processorArchitecture=MSIL">
       <HintPath>..\packages\Accord.Math.3.8.0\lib\net45\Accord.Math.Core.dll</HintPath>
     </Reference>
-    <Reference Include="MathNet.Numerics, Version=4.12.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MathNet.Numerics.4.12.0\lib\net40\MathNet.Numerics.dll</HintPath>
+    <Reference Include="MathNet.Numerics, Version=4.15.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MathNet.Numerics.4.15.0\lib\net40\MathNet.Numerics.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -73,18 +73,42 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Classes\Element.cs" />
+    <Compile Include="Classes\FEM.cs" />
+    <Compile Include="Classes\Geometry.cs" />
+    <Compile Include="Classes\Material.cs" />
     <Compile Include="Classes\Node.cs" />
+    <Compile Include="Classes\qConstans.cs" />
+    <Compile Include="Classes\qEdge.cs" />
+    <Compile Include="Classes\qElement.cs" />
+    <Compile Include="Classes\qNode.cs" />
+    <Compile Include="Classes\Quality.cs" />
+    <Compile Include="Classes\SmartMesh.cs" />
     <Compile Include="Classes\Solid_Mesh.cs" />
     <Compile Include="Components\CreateElement.cs" />
     <Compile Include="Components\PreviewElement.cs" />
     <Compile Include="Components\Solver1.cs" />
     <Compile Include="Components\sweep_method_1.cs" />
+    <Compile Include="Deconstructors\DeconstructSmartMesh.cs" />
+    <Compile Include="Deconstructors\DeconstructElement1.cs" />
+    <Compile Include="Deconstructors\DeconstructGeometry.cs" />
+    <Compile Include="Deconstructors\DeconstructQuality.cs" />
+    <Compile Include="Deconstructors\DeconstructQNode.cs" />
+    <Compile Include="Deconstructors\DeconstructQElement.cs" />
+    <Compile Include="Deconstructors\DeconstructQEdge.cs" />
+    <Compile Include="Deconstructors\DeconstructNode.cs" />
     <Compile Include="Deconstructors\DeconsructElement.cs" />
+    <Compile Include="FiniteElemntMethod\FEMBoundary.cs" />
+    <Compile Include="FiniteElemntMethod\FEMLoad.cs" />
+    <Compile Include="FiniteElemntMethod\FEMSolver.cs" />
+    <Compile Include="FiniteElemntMethod\FEMMaterial.cs" />
     <Compile Include="SolidFEMInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Tools\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

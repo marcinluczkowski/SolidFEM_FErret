@@ -4,6 +4,17 @@
         <name>MathNet.Numerics</name>
     </assembly>
     <members>
+        <member name="T:MathNet.Numerics.AppSwitches">
+            <summary>
+            AppContext based switches to disable functionality, controllable through also in the
+            host application through AppContext or by configuration with AppContextSwitchOverride.
+            https://docs.microsoft.com/en-us/dotnet/framework/configure-apps/file-schema/runtime/appcontextswitchoverrides-element
+            </summary>
+            <remarks>
+            Since AppContext is not supported on .NET Framework 4.0, a local implementation is used there instead,
+            which cannot be controlled though configuration or through AppContext.
+            </remarks>
+        </member>
         <member name="T:MathNet.Numerics.ArrayExtensions">
             <summary>
             Useful extension methods for Arrays.
@@ -14565,7 +14576,7 @@
         </member>
         <member name="M:MathNet.Numerics.Interpolate.CubicSplineRobust(System.Collections.Generic.IEnumerable{System.Double},System.Collections.Generic.IEnumerable{System.Double})">
             <summary>
-            Create an piecewise cubic Akima spline interpolation based on arbitrary points.
+            Create a piecewise cubic Akima spline interpolation based on arbitrary points.
             Akima splines are robust to outliers.
             </summary>
             <param name="points">The sample points t.</param>
@@ -14578,6 +14589,24 @@
             <remarks>
             if your data is already sorted in arrays, consider to use
             MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkimaSorted
+            instead, which is more efficient.
+            </remarks>
+        </member>
+        <member name="M:MathNet.Numerics.Interpolate.CubicSplineMonotone(System.Collections.Generic.IEnumerable{System.Double},System.Collections.Generic.IEnumerable{System.Double})">
+            <summary>
+            Create a piecewise cubic monotone spline interpolation based on arbitrary points.
+            This is a shape-preserving spline with continuous first derivative.
+            </summary>
+            <param name="points">The sample points t.</param>
+            <param name="values">The sample point values x(t).</param>
+            <returns>
+            An interpolation scheme optimized for the given sample points and values,
+            which can then be used to compute interpolations and extrapolations
+            on arbitrary points.
+            </returns>
+            <remarks>
+            if your data is already sorted in arrays, consider to use
+            MathNet.Numerics.Interpolation.CubicSpline.InterpolatePchipSorted
             instead, which is more efficient.
             </remarks>
         </member>
@@ -14871,6 +14900,25 @@
             <summary>
             Create an Akima cubic spline interpolation from an unsorted set of (x,y) value pairs.
             Akima splines are robust to outliers.
+            </summary>
+        </member>
+        <member name="M:MathNet.Numerics.Interpolation.CubicSpline.InterpolatePchipSorted(System.Double[],System.Double[])">
+            <summary>
+            Create a piecewise cubic Hermite interpolating polynomial from an unsorted set of (x,y) value pairs.
+            Monotone-preserving interpolation with continuous first derivative.
+            </summary>
+        </member>
+        <member name="M:MathNet.Numerics.Interpolation.CubicSpline.InterpolatePchipInplace(System.Double[],System.Double[])">
+            <summary>
+            Create a piecewise cubic Hermite interpolating polynomial from an unsorted set of (x,y) value pairs.
+            Monotone-preserving interpolation with continuous first derivative.
+            WARNING: Works in-place and can thus causes the data array to be reordered.
+            </summary>
+        </member>
+        <member name="M:MathNet.Numerics.Interpolation.CubicSpline.InterpolatePchip(System.Collections.Generic.IEnumerable{System.Double},System.Collections.Generic.IEnumerable{System.Double})">
+            <summary>
+            Create a piecewise cubic Hermite interpolating polynomial from an unsorted set of (x,y) value pairs.
+            Monotone-preserving interpolation with continuous first derivative.
             </summary>
         </member>
         <member name="M:MathNet.Numerics.Interpolation.CubicSpline.InterpolateBoundariesSorted(System.Double[],System.Double[],MathNet.Numerics.Interpolation.SplineBoundaryCondition,System.Double,MathNet.Numerics.Interpolation.SplineBoundaryCondition,System.Double)">
@@ -15518,7 +15566,6 @@
             <summary>
             Create a new square dense matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the order is less than one.</exception>
         </member>
@@ -15526,7 +15573,6 @@
             <summary>
             Create a new dense matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the row or column count is less than one.</exception>
         </member>
@@ -16009,7 +16055,6 @@
             <summary>
             Create a new dense vector with the given length.
             All cells of the vector will be initialized to zero.
-            Zero-length vectors are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If length is less than one.</exception>
         </member>
@@ -16384,7 +16429,6 @@
             <summary>
             Create a new square diagonal matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the order is less than one.</exception>
         </member>
@@ -16392,7 +16436,6 @@
             <summary>
             Create a new diagonal matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the row or column count is less than one.</exception>
         </member>
@@ -16400,7 +16443,6 @@
             <summary>
             Create a new diagonal matrix with the given number of rows and columns.
             All diagonal cells of the matrix will be initialized to the provided value, all non-diagonal ones to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the row or column count is less than one.</exception>
         </member>
@@ -18646,7 +18688,6 @@
             <summary>
             Create a new square sparse matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the order is less than one.</exception>
         </member>
@@ -18654,7 +18695,6 @@
             <summary>
             Create a new sparse matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the row or column count is less than one.</exception>
         </member>
@@ -19147,7 +19187,6 @@
             <summary>
             Create a new sparse vector with the given length.
             All cells of the vector will be initialized to zero.
-            Zero-length vectors are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If length is less than one.</exception>
         </member>
@@ -19771,7 +19810,6 @@
             <summary>
             Create a new square dense matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the order is less than one.</exception>
         </member>
@@ -19779,7 +19817,6 @@
             <summary>
             Create a new dense matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the row or column count is less than one.</exception>
         </member>
@@ -20262,7 +20299,6 @@
             <summary>
             Create a new dense vector with the given length.
             All cells of the vector will be initialized to zero.
-            Zero-length vectors are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If length is less than one.</exception>
         </member>
@@ -20638,7 +20674,6 @@
             <summary>
             Create a new square diagonal matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the order is less than one.</exception>
         </member>
@@ -20646,7 +20681,6 @@
             <summary>
             Create a new diagonal matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the row or column count is less than one.</exception>
         </member>
@@ -20654,7 +20688,6 @@
             <summary>
             Create a new diagonal matrix with the given number of rows and columns.
             All diagonal cells of the matrix will be initialized to the provided value, all non-diagonal ones to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the row or column count is less than one.</exception>
         </member>
@@ -22896,7 +22929,6 @@
             <summary>
             Create a new square sparse matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the order is less than one.</exception>
         </member>
@@ -22904,7 +22936,6 @@
             <summary>
             Create a new sparse matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the row or column count is less than one.</exception>
         </member>
@@ -23397,7 +23428,6 @@
             <summary>
             Create a new sparse vector with the given length.
             All cells of the vector will be initialized to zero.
-            Zero-length vectors are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If length is less than one.</exception>
         </member>
@@ -24021,7 +24051,6 @@
             <summary>
             Create a new square dense matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the order is less than one.</exception>
         </member>
@@ -24029,7 +24058,6 @@
             <summary>
             Create a new dense matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the row or column count is less than one.</exception>
         </member>
@@ -24512,7 +24540,6 @@
             <summary>
             Create a new dense vector with the given length.
             All cells of the vector will be initialized to zero.
-            Zero-length vectors are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If length is less than one.</exception>
         </member>
@@ -24863,7 +24890,6 @@
             <summary>
             Create a new square diagonal matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the order is less than one.</exception>
         </member>
@@ -24871,7 +24897,6 @@
             <summary>
             Create a new diagonal matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the row or column count is less than one.</exception>
         </member>
@@ -24879,7 +24904,6 @@
             <summary>
             Create a new diagonal matrix with the given number of rows and columns.
             All diagonal cells of the matrix will be initialized to the provided value, all non-diagonal ones to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the row or column count is less than one.</exception>
         </member>
@@ -27124,7 +27148,6 @@
             <summary>
             Create a new square sparse matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the order is less than one.</exception>
         </member>
@@ -27132,7 +27155,6 @@
             <summary>
             Create a new sparse matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the row or column count is less than one.</exception>
         </member>
@@ -27614,7 +27636,6 @@
             <summary>
             Create a new sparse vector with the given length.
             All cells of the vector will be initialized to zero.
-            Zero-length vectors are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If length is less than one.</exception>
         </member>
@@ -28222,7 +28243,6 @@
             <summary>
             Create a new square dense matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the order is less than one.</exception>
         </member>
@@ -28230,7 +28250,6 @@
             <summary>
             Create a new dense matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the row or column count is less than one.</exception>
         </member>
@@ -28713,7 +28732,6 @@
             <summary>
             Create a new dense vector with the given length.
             All cells of the vector will be initialized to zero.
-            Zero-length vectors are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If length is less than one.</exception>
         </member>
@@ -29064,7 +29082,6 @@
             <summary>
             Create a new square diagonal matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the order is less than one.</exception>
         </member>
@@ -29072,7 +29089,6 @@
             <summary>
             Create a new diagonal matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the row or column count is less than one.</exception>
         </member>
@@ -29080,7 +29096,6 @@
             <summary>
             Create a new diagonal matrix with the given number of rows and columns.
             All diagonal cells of the matrix will be initialized to the provided value, all non-diagonal ones to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the row or column count is less than one.</exception>
         </member>
@@ -31324,7 +31339,6 @@
             <summary>
             Create a new square sparse matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the order is less than one.</exception>
         </member>
@@ -31332,7 +31346,6 @@
             <summary>
             Create a new sparse matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If the row or column count is less than one.</exception>
         </member>
@@ -31814,7 +31827,6 @@
             <summary>
             Create a new sparse vector with the given length.
             All cells of the vector will be initialized to zero.
-            Zero-length vectors are not supported.
             </summary>
             <exception cref="T:System.ArgumentException">If length is less than one.</exception>
         </member>
@@ -32478,7 +32490,6 @@
             <summary>
             Create a new dense matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
         </member>
         <member name="M:MathNet.Numerics.LinearAlgebra.MatrixBuilder`1.Dense(System.Int32,System.Int32,`0[])">
@@ -32693,6 +32704,7 @@
             Intended for advanced scenarios where you're working directly with
             storage for performance or interop reasons.
             </summary>
+            <param name="storage">The SparseCompressedRowMatrixStorage</param>
         </member>
         <member name="M:MathNet.Numerics.LinearAlgebra.MatrixBuilder`1.Sparse(System.Int32,System.Int32)">
             <summary>
@@ -32900,6 +32912,51 @@
             corner of their cell with the remaining fields left zero.
             </summary>
         </member>
+        <member name="M:MathNet.Numerics.LinearAlgebra.MatrixBuilder`1.SparseFromCoordinateFormat(System.Int32,System.Int32,System.Int32,System.Int32[],System.Int32[],`0[])">
+            <summary>
+            Create a new sparse matrix from a coordinate format.
+            This new matrix will be independent from the given arrays.
+            A new memory block will be allocated for storing the matrix.
+            </summary>
+            <param name="rows">The number of rows.</param>
+            <param name="columns">The number of columns.</param>
+            <param name="valueCount">The number of stored values including explicit zeros.</param>
+            <param name="rowIndices">The row index array of the coordinate format.</param>
+            <param name="columnIndices">The column index array of the coordinate format.</param>
+            <param name="values">The data array of the coordinate format.</param>
+            <returns>The sparse matrix from the coordinate format.</returns>
+            <remarks>Duplicate entries will be summed together and explicit zeros will be not intentionally removed.</remarks>
+        </member>
+        <member name="M:MathNet.Numerics.LinearAlgebra.MatrixBuilder`1.SparseFromCompressedSparseRowFormat(System.Int32,System.Int32,System.Int32,System.Int32[],System.Int32[],`0[])">
+            <summary>
+            Create a new sparse matrix from a compressed sparse row format.
+            This new matrix will be independent from the given arrays.
+            A new memory block will be allocated for storing the matrix.
+            </summary>
+            <param name="rows">The number of rows.</param>
+            <param name="columns">The number of columns.</param>
+            <param name="valueCount">The number of stored values including explicit zeros.</param>
+            <param name="rowPointers">The row pointer array of the compressed sparse row format.</param>
+            <param name="columnIndices">The column index array of the compressed sparse row format.</param>
+            <param name="values">The data array of the compressed sparse row format.</param>
+            <returns>The sparse matrix from the compressed sparse row format.</returns>
+            <remarks>Duplicate entries will be summed together and explicit zeros will be not intentionally removed.</remarks>
+        </member>
+        <member name="M:MathNet.Numerics.LinearAlgebra.MatrixBuilder`1.SparseFromCompressedSparseColumnFormat(System.Int32,System.Int32,System.Int32,System.Int32[],System.Int32[],`0[])">
+            <summary>
+            Create a new sparse matrix from a compressed sparse column format.
+            This new matrix will be independent from the given arrays.
+            A new memory block will be allocated for storing the matrix.
+            </summary>
+            <param name="rows">The number of rows.</param>
+            <param name="columns">The number of columns.</param>
+            <param name="valueCount">The number of stored values including explicit zeros.</param>
+            <param name="rowIndices">The row index array of the compressed sparse column format.</param>
+            <param name="columnPointers">The column pointer array of the compressed sparse column format.</param>
+            <param name="values">The data array of the compressed sparse column format.</param>
+            <returns>The sparse matrix from the compressed sparse column format.</returns>
+            <remarks>Duplicate entries will be summed together and explicit zeros will be not intentionally removed.</remarks>
+        </member>
         <member name="M:MathNet.Numerics.LinearAlgebra.MatrixBuilder`1.Diagonal(MathNet.Numerics.LinearAlgebra.Storage.DiagonalMatrixStorage{`0})">
             <summary>
             Create a new diagonal matrix straight from an initialized matrix storage instance.
@@ -32912,7 +32969,6 @@
             <summary>
             Create a new diagonal matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
         </member>
         <member name="M:MathNet.Numerics.LinearAlgebra.MatrixBuilder`1.Diagonal(System.Int32,System.Int32,`0[])">
@@ -33232,7 +33288,6 @@
             <summary>
             Create a new dense matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
         </member>
         <member name="M:MathNet.Numerics.LinearAlgebra.CreateMatrix.Dense``1(System.Int32,System.Int32,``0[])">
@@ -33646,6 +33701,51 @@
             corner of their cell with the remaining fields left zero.
             </summary>
         </member>
+        <member name="M:MathNet.Numerics.LinearAlgebra.CreateMatrix.SparseFromCoordinateFormat``1(System.Int32,System.Int32,System.Int32,System.Int32[],System.Int32[],``0[])">
+            <summary>
+            Create a new sparse matrix from a coordinate format.
+            This new matrix will be independent from the given arrays.
+            A new memory block will be allocated for storing the matrix.
+            </summary>
+            <param name="rows">The number of rows.</param>
+            <param name="columns">The number of columns.</param>
+            <param name="valueCount">The number of stored values including explicit zeros.</param>
+            <param name="rowIndices">The row index array of the coordinate format.</param>
+            <param name="columnIndices">The column index array of the coordinate format.</param>
+            <param name="values">The data array of the coordinate format.</param>
+            <returns>The sparse matrix from the coordinate format.</returns>
+            <remarks>Duplicate entries will be summed together and explicit zeros will be not intentionally removed.</remarks>
+        </member>
+        <member name="M:MathNet.Numerics.LinearAlgebra.CreateMatrix.SparseFromCompressedSparseRowFormat``1(System.Int32,System.Int32,System.Int32,System.Int32[],System.Int32[],``0[])">
+            <summary>
+            Create a new sparse matrix from a compressed sparse row format.
+            This new matrix will be independent from the given arrays.
+            A new memory block will be allocated for storing the matrix.
+            </summary>
+            <param name="rows">The number of rows.</param>
+            <param name="columns">The number of columns.</param>
+            <param name="valueCount">The number of stored values including explicit zeros.</param>
+            <param name="rowPointers">The row pointer array of the compressed sparse row format.</param>
+            <param name="columnIndices">The column index array of the compressed sparse row format.</param>
+            <param name="values">The data array of the compressed sparse row format.</param>
+            <returns>The sparse matrix from the compressed sparse row format.</returns>
+            <remarks>Duplicate entries will be summed together and explicit zeros will be not intentionally removed.</remarks>
+        </member>
+        <member name="M:MathNet.Numerics.LinearAlgebra.CreateMatrix.SparseFromCompressedSparseColumnFormat``1(System.Int32,System.Int32,System.Int32,System.Int32[],System.Int32[],``0[])">
+            <summary>
+            Create a new sparse matrix from a compressed sparse column format.
+            This new matrix will be independent from the given arrays.
+            A new memory block will be allocated for storing the matrix.
+            </summary>
+            <param name="rows">The number of rows.</param>
+            <param name="columns">The number of columns.</param>
+            <param name="valueCount">The number of stored values including explicit zeros.</param>
+            <param name="rowIndices">The row index array of the compressed sparse column format.</param>
+            <param name="columnPointers">The column pointer array of the compressed sparse column format.</param>
+            <param name="values">The data array of the compressed sparse column format.</param>
+            <returns>The sparse matrix from the compressed sparse column format.</returns>
+            <remarks>Duplicate entries will be summed together and explicit zeros will be not intentionally removed.</remarks>
+        </member>
         <member name="M:MathNet.Numerics.LinearAlgebra.CreateMatrix.Diagonal``1(MathNet.Numerics.LinearAlgebra.Storage.DiagonalMatrixStorage{``0})">
             <summary>
             Create a new diagonal matrix straight from an initialized matrix storage instance.
@@ -33658,7 +33758,6 @@
             <summary>
             Create a new diagonal matrix with the given number of rows and columns.
             All cells of the matrix will be initialized to zero.
-            Zero-length matrices are not supported.
             </summary>
         </member>
         <member name="M:MathNet.Numerics.LinearAlgebra.CreateMatrix.Diagonal``1(System.Int32,System.Int32,``0[])">
@@ -36126,6 +36225,15 @@
             <remarks>For non-square matrices, the elements of <paramref name="source"/> are copied to
             this[i,i].</remarks>
         </member>
+        <member name="M:MathNet.Numerics.LinearAlgebra.Matrix`1.Resize(System.Int32,System.Int32)">
+            <summary>
+            Creates a new matrix with the desired size and copies this matrix to it.
+            Values which no longer exist in the new matrix are ignored, new values are set to zero.
+            </summary>
+            <param name="rowCount">The number of rows of the new matrix.</param>
+            <param name="columnCount">The number of columns of the new matrix.</param>
+            <returns>A new matrix with the desired rows and columns.</returns>
+        </member>
         <member name="M:MathNet.Numerics.LinearAlgebra.Matrix`1.Transpose">
             <summary>
             Returns the transpose of this matrix.
@@ -38104,6 +38212,16 @@
             </summary>
             <returns>The amount grown.</returns>
         </member>
+        <member name="M:MathNet.Numerics.LinearAlgebra.Storage.SparseCompressedRowMatrixStorage`1.NormalizeDuplicates">
+            <summary>
+            Eliminate duplicate entries by adding them together.
+            </summary>
+        </member>
+        <member name="M:MathNet.Numerics.LinearAlgebra.Storage.SparseCompressedRowMatrixStorage`1.PopulateExplicitZerosOnDiagonal">
+            <summary>
+            Fill zeros explicitly on the diagonal entries as required by the Intel MKL direct sparse solver.
+            </summary>
+        </member>
         <member name="M:MathNet.Numerics.LinearAlgebra.Storage.SparseCompressedRowMatrixStorage`1.GetHashCode">
             <summary>
             Returns a hash code for this instance.
@@ -38111,6 +38229,52 @@
             <returns>
             A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.
             </returns>
+        </member>
+        <member name="M:MathNet.Numerics.LinearAlgebra.Storage.SparseCompressedRowMatrixStorage`1.OfCompressedSparseRowFormat(System.Int32,System.Int32,System.Int32,System.Int32[],System.Int32[],`0[])">
+            <summary>
+            Create a new sparse storage from a compressed sparse row (CSR) format.
+            This new storage will be independent from the given arrays.
+            A new memory block will be allocated for storing the matrix.
+            </summary>
+            <param name="rows">The number of rows.</param>
+            <param name="columns">The number of columns.</param>
+            <param name="valueCount">The number of stored values including explicit zeros.</param>
+            <param name="rowPointers">The row pointer array of the compressed sparse row format.</param>
+            <param name="columnIndices">The column index array of the compressed sparse row format.</param>
+            <param name="values">The data array of the compressed sparse row format.</param>
+            <returns>The sparse storage from the compressed sparse row format.</returns>
+            <remarks>Duplicate entries will be summed together and explicit zeros will be not intentionally removed.</remarks>
+        </member>
+        <member name="M:MathNet.Numerics.LinearAlgebra.Storage.SparseCompressedRowMatrixStorage`1.OfCompressedSparseColumnFormat(System.Int32,System.Int32,System.Int32,System.Int32[],System.Int32[],`0[])">
+            <summary>
+            Create a new sparse matrix storage from a compressed sparse column (CSC) format.
+            This new storage will be independent from the given arrays.
+            A new memory block will be allocated.
+            </summary>
+            <param name="rows">The number of rows.</param>
+            <param name="columns">The number of columns.</param>
+            <param name="valueCount">The number of stored values including explicit zeros.</param>
+            <param name="rowIndices">The row index array of the compressed sparse column format.</param>
+            <param name="columnPointers">The column pointer array of the compressed sparse column format.</param>
+            <param name="values">The data array of the compressed sparse column format.</param>
+            <returns>The sparse storage from the compressed sparse column format.</returns>
+            <remarks>Duplicate entries will be summed together and explicit zeros will be not intentionally removed.</remarks>
+        </member>
+        <member name="M:MathNet.Numerics.LinearAlgebra.Storage.SparseCompressedRowMatrixStorage`1.OfCoordinateFormat(System.Int32,System.Int32,System.Int32,System.Int32[],System.Int32[],`0[])">
+            <summary>
+            Create a new sparse storage from a coordinate (COO) format.
+            This new storage will be independent from the given arrays.
+            A new memory block will be allocated for storing the matrix.
+            </summary>
+            <param name="rows">The number of rows.</param>
+            <param name="columns">The number of columns.</param>
+            <param name="valueCount">The number of stored values including explicit zeros.</param>
+            <param name="rowIndices">The row index array of the coordinate format.</param>
+            <param name="columnIndices">The column index array of the coordinate format.</param>
+            <param name="values">The data array of the coordinate format.</param>
+            <returns>The sparse storage from the coordinate format.</returns>
+            <remarks>Duplicate entries will be summed together and
+            explicit zeros will be not intentionally removed.</remarks>
         </member>
         <member name="F:MathNet.Numerics.LinearAlgebra.Storage.SparseVectorStorage`1.Indices">
             <summary>
@@ -40984,6 +41148,9 @@
             </summary>
             <param name="z">The location where to evaluate the polynomial at.</param>
             <param name="coefficients">The coefficients of the polynomial, coefficient for power k at index k.</param>
+            <exception cref="T:System.ArgumentNullException">
+            <paramref name="coefficients"/> is a null reference.
+            </exception>
         </member>
         <member name="M:MathNet.Numerics.Polynomial.Evaluate(System.Numerics.Complex,System.Double[])">
             <summary>
@@ -40993,6 +41160,9 @@
             </summary>
             <param name="z">The location where to evaluate the polynomial at.</param>
             <param name="coefficients">The coefficients of the polynomial, coefficient for power k at index k.</param>
+            <exception cref="T:System.ArgumentNullException">
+            <paramref name="coefficients"/> is a null reference.
+            </exception>
         </member>
         <member name="M:MathNet.Numerics.Polynomial.Evaluate(System.Numerics.Complex,System.Numerics.Complex[])">
             <summary>
@@ -41002,6 +41172,9 @@
             </summary>
             <param name="z">The location where to evaluate the polynomial at.</param>
             <param name="coefficients">The coefficients of the polynomial, coefficient for power k at index k.</param>
+            <exception cref="T:System.ArgumentNullException">
+            <paramref name="coefficients"/> is a null reference.
+            </exception>
         </member>
         <member name="M:MathNet.Numerics.Polynomial.Evaluate(System.Double)">
             <summary>
@@ -41083,6 +41256,9 @@
             <param name="a">Left polynomial</param>
             <param name="b">Right polynomial</param>
             <returns>Resulting Polynomial</returns>
+            <exception cref="T:System.ArgumentNullException">
+            <paramref name="a"/> or <paramref name="b"/> is a null reference.
+            </exception>
         </member>
         <member name="M:MathNet.Numerics.Polynomial.Multiply(MathNet.Numerics.Polynomial,System.Double)">
             <summary>
@@ -41876,6 +42052,131 @@
             This is also known as unit roundoff error. According to the definition of Prof. Higham.
             </summary>
             <returns>Machine epsilon</returns>
+        </member>
+        <member name="M:MathNet.Numerics.Precision.RoundToMultiple(System.Double,System.Double)">
+            <summary>
+            Round to a multiple of the provided positive basis.
+            </summary>
+            <param name="number">Number to be rounded.</param>
+            <param name="basis">The basis to whose multiples to round to. Must be positive.</param>
+        </member>
+        <member name="M:MathNet.Numerics.Precision.RoundToMultiple(System.Single,System.Single)">
+            <summary>
+            Round to a multiple of the provided positive basis.
+            </summary>
+            <param name="number">Number to be rounded.</param>
+            <param name="basis">The basis to whose multiples to round to. Must be positive.</param>
+        </member>
+        <member name="M:MathNet.Numerics.Precision.RoundToMultiple(System.Decimal,System.Decimal)">
+            <summary>
+            Round to a multiple of the provided positive basis.
+            </summary>
+            <param name="number">Number to be rounded.</param>
+            <param name="basis">The basis to whose multiples to round to. Must be positive.</param>
+        </member>
+        <member name="M:MathNet.Numerics.Precision.RoundToPower(System.Double,System.Double)">
+            <summary>
+            Round to a multiple of the provided positive basis.
+            </summary>
+            <param name="number">Number to be rounded.</param>
+            <param name="basis">The basis to whose powers to round to. Must be positive.</param>
+        </member>
+        <member name="M:MathNet.Numerics.Precision.RoundToPower(System.Single,System.Single)">
+            <summary>
+            Round to a multiple of the provided positive basis.
+            </summary>
+            <param name="number">Number to be rounded.</param>
+            <param name="basis">The basis to whose powers to round to. Must be positive.</param>
+        </member>
+        <member name="M:MathNet.Numerics.Precision.Round(System.Double,System.Int32)">
+            <summary>
+            Round to the number closest to 10^(-decimals). Negative decimals to round within the integer part.
+            </summary>
+            <param name="number">Number to be rounded</param>
+            <param name="digits">If positive the number of decimals to round to. If negative the number of digits within the integer part to round, e.g. -3 will wound to the closes 1000.</param>
+            <example>To round 123456789 to hundreds Round(123456789, -2) = 123456800 </example>
+            <returns>Rounded number</returns>
+        </member>
+        <member name="M:MathNet.Numerics.Precision.Round(System.Single,System.Int32)">
+            <summary>
+            Round to the number closest to 10^(-decimals). Negative decimals to round within the integer part.
+            </summary>
+            <param name="number">Number to be rounded</param>
+            <param name="digits">If positive the number of decimals to round to. If negative the number of digits within the integer part to round, e.g. -3 will wound to the closes 1000.</param>
+            <example>To round 123456789 to hundreds Round(123456789, -2) = 123456800 </example>
+            <returns>Rounded number</returns>
+        </member>
+        <member name="M:MathNet.Numerics.Precision.Round(System.Decimal,System.Int32)">
+            <summary>
+            Round to the number closest to 10^(-decimals). Negative decimals to round within the integer part.
+            </summary>
+            <param name="number">Number to be rounded</param>
+            <param name="digits">If positive the number of decimals to round to. If negative the number of digits within the integer part to round, e.g. -3 will wound to the closes 1000.</param>
+            <example>To round 123456789 to hundreds Round(123456789, -2) = 123456800 </example>
+            <returns>Rounded number</returns>
+        </member>
+        <member name="M:MathNet.Numerics.Precision.Round(System.Int32,System.Int32)">
+            <summary>
+            Round to the number closest to 10^(-decimals). Negative decimals to round within the integer part.
+            </summary>
+            <param name="number">Number to be rounded</param>
+            <param name="digits">If positive the number of decimals to round to. If negative the number of digits within the integer part to round, e.g. -3 will wound to the closes 1000.</param>
+            <example>To round 123456789 to hundreds Round(123456789, -2) = 123456800 </example>
+            <returns>Rounded number</returns>
+        </member>
+        <member name="M:MathNet.Numerics.Precision.Round(System.UInt32,System.Int32)">
+            <summary>
+            Round to the number closest to 10^(-decimals). Negative decimals to round within the integer part.
+            </summary>
+            <param name="number">Number to be rounded</param>
+            <param name="digits">If positive the number of decimals to round to. If negative the number of digits within the integer part to round, e.g. -3 will wound to the closes 1000.</param>
+            <example>To round 123456789 to hundreds Round(123456789, -2) = 123456800 </example>
+            <returns>Rounded number</returns>
+        </member>
+        <member name="M:MathNet.Numerics.Precision.Round(System.Int64,System.Int32)">
+            <summary>
+            Round to the number closest to 10^(-decimals). Negative decimals to round within the integer part.
+            </summary>
+            <param name="number">Number to be rounded</param>
+            <param name="digits">If positive the number of decimals to round to. If negative the number of digits within the integer part to round, e.g. -3 will wound to the closes 1000.</param>
+            <example>To round 123456789 to hundreds Round(123456789, -2) = 123456800 </example>
+            <returns>Rounded number</returns>
+        </member>
+        <member name="M:MathNet.Numerics.Precision.Round(System.UInt64,System.Int32)">
+            <summary>
+            Round to the number closest to 10^(-decimals). Negative decimals to round within the integer part.
+            </summary>
+            <param name="number">Number to be rounded</param>
+            <param name="digits">If positive the number of decimals to round to. If negative the number of digits within the integer part to round, e.g. -3 will wound to the closes 1000.</param>
+            <example>To round 123456789 to hundreds Round(123456789, -2) = 123456800 </example>
+            <returns>Rounded number</returns>
+        </member>
+        <member name="M:MathNet.Numerics.Precision.Round(System.Int16,System.Int32)">
+            <summary>
+            Round to the number closest to 10^(-decimals). Negative decimals to round within the integer part.
+            </summary>
+            <param name="number">Number to be rounded</param>
+            <param name="digits">If positive the number of decimals to round to. If negative the number of digits within the integer part to round, e.g. -3 will wound to the closes 1000.</param>
+            <example>To round 123456789 to hundreds Round(123456789, -2) = 123456800 </example>
+            <returns>Rounded number</returns>
+        </member>
+        <member name="M:MathNet.Numerics.Precision.Round(System.UInt16,System.Int32)">
+            <summary>
+            Round to the number closest to 10^(-decimals). Negative decimals to round within the integer part.
+            </summary>
+            <param name="number">Number to be rounded</param>
+            <param name="digits">If positive the number of decimals to round to. If negative the number of digits within the integer part to round, e.g. -3 will wound to the closes 1000.</param>
+            <example>To round 123456789 to hundreds Round(123456789, -2) = 123456800 </example>
+            <returns>Rounded number</returns>
+        </member>
+        <member name="M:MathNet.Numerics.Precision.Round(System.Numerics.BigInteger,System.Int32)">
+            <summary>
+            Round to the number closest to 10^(-decimals). Negative decimals to round within the integer part.
+            </summary>
+            <param name="number">Number to be rounded</param>
+            <param name="digits">If positive the number of decimals to round to. If negative the number of digits within the integer part to round, e.g. -3 will wound to the closes 1000.</param>
+            <example>To round 123456789 to hundreds Round(123456789, -2) = 123456800 </example>
+            <returns>Rounded number</returns>
         </member>
         <member name="M:MathNet.Numerics.Precision.AlmostEqualNorm(System.Double,System.Double,System.Double,System.Double)">
             <summary>
@@ -49737,6 +50038,225 @@
         <member name="F:MathNet.Numerics.Providers.LinearAlgebra.OpenBlas.NativeError.MemoryAllocation">
             <summary>
             Unable to allocate memory.
+            </summary>
+        </member>
+        <member name="T:MathNet.Numerics.Providers.SparseSolver.DssMatrixStructure">
+            <summary>
+            Structure option.
+            </summary>
+        </member>
+        <member name="T:MathNet.Numerics.Providers.SparseSolver.DssMatrixType">
+            <summary>
+            Factorization option.
+            </summary>
+        </member>
+        <member name="T:MathNet.Numerics.Providers.SparseSolver.DssSystemType">
+            <summary>
+            Solver step's substitution.
+            </summary>
+        </member>
+        <member name="F:MathNet.Numerics.Providers.SparseSolver.DssSystemType.DontTranspose">
+            <summary>
+            Solve a system, Ax = b.
+            </summary>
+        </member>
+        <member name="F:MathNet.Numerics.Providers.SparseSolver.DssSystemType.Transpose">
+            <summary>
+            Solve a transposed system, A'x = b
+            </summary>
+        </member>
+        <member name="F:MathNet.Numerics.Providers.SparseSolver.DssSystemType.ConjugateTranspose">
+            <summary>
+            Solve a conjugate transposed system, A†x = b
+            </summary>
+        </member>
+        <member name="T:MathNet.Numerics.Providers.SparseSolver.DssStatus">
+            <summary>
+            Status values
+            </summary>
+        </member>
+        <member name="F:MathNet.Numerics.Providers.SparseSolver.DssStatus.MKL_DSS_SUCCESS">
+            <summary>
+            The operation was successful.
+            </summary>
+        </member>
+        <member name="M:MathNet.Numerics.Providers.SparseSolver.ISparseSolverProvider.IsAvailable">
+            <summary>
+            Try to find out whether the provider is available, at least in principle.
+            Verification may still fail if available, but it will certainly fail if unavailable.
+            </summary>
+        </member>
+        <member name="M:MathNet.Numerics.Providers.SparseSolver.ISparseSolverProvider.InitializeVerify">
+            <summary>
+            Initialize and verify that the provided is indeed available. If not, fall back to alternatives like the managed provider
+            </summary>
+        </member>
+        <member name="M:MathNet.Numerics.Providers.SparseSolver.ISparseSolverProvider.FreeResources">
+            <summary>
+            Frees memory buffers, caches and handles allocated in or to the provider.
+            Does not unload the provider itself, it is still usable afterwards.
+            </summary>
+        </member>
+        <member name="T:MathNet.Numerics.Providers.SparseSolver.Managed.ManagedSparseSolverProvider">
+            <summary>
+            The managed sparse solver provider
+            </summary>
+        </member>
+        <member name="M:MathNet.Numerics.Providers.SparseSolver.Managed.ManagedSparseSolverProvider.IsAvailable">
+            <summary>
+            Try to find out whether the provider is available, at least in principle.
+            Verification may still fail if available, but it will certainly fail if unavailable.
+            </summary>
+        </member>
+        <member name="M:MathNet.Numerics.Providers.SparseSolver.Managed.ManagedSparseSolverProvider.InitializeVerify">
+            <summary>
+            Initialize and verify that the provided is indeed available. If not, fall back to alternatives like the managed provider
+            </summary>
+        </member>
+        <member name="M:MathNet.Numerics.Providers.SparseSolver.Managed.ManagedSparseSolverProvider.FreeResources">
+            <summary>
+            Frees memory buffers, caches and handles allocated in or to the provider.
+            Does not unload the provider itself, it is still usable afterwards.
+            </summary>
+        </member>
+        <member name="T:MathNet.Numerics.Providers.SparseSolver.Mkl.MklSparseSolverProvider">
+            <summary>
+            Intel's Math Kernel Library (MKL) direct sparse solver provider.
+            </summary>
+            <summary>
+            Intel's Math Kernel Library (MKL) direct sparse solver provider.
+            </summary>
+            <summary>
+            Intel's Math Kernel Library (MKL) sparse solver provider.
+            </summary>
+            <summary>
+            Intel's Math Kernel Library (MKL) direct sparse solver provider.
+            </summary>
+            <summary>
+            Intel's Math Kernel Library (MKL) direct sparse solver provider.
+            </summary>
+        </member>
+        <member name="M:MathNet.Numerics.Providers.SparseSolver.Mkl.MklSparseSolverProvider.Solve(MathNet.Numerics.Providers.SparseSolver.DssMatrixStructure,MathNet.Numerics.Providers.SparseSolver.DssMatrixType,MathNet.Numerics.Providers.SparseSolver.DssSystemType,System.Int32,System.Int32,System.Int32,System.Int32[],System.Int32[],System.Numerics.Complex[],System.Int32,System.Numerics.Complex[],System.Numerics.Complex[])">
+            <summary>
+            Solves sparse linear systems of equations, <b>AX = B</b>.
+            </summary>
+            <param name="matrixStructure">The symmetricity of the matrix. For a symmetric matrix, only upper ot lower triangular matrix is used.</param>
+            <param name="matrixType">The definiteness of the matrix.</param>
+            <param name="systemType">The type of the systems.</param>
+            <param name="rowCount">The number of rows of matrix.</param>
+            <param name="columnCount">The number of columns of matrix.</param>
+            <param name="nonZerosCount">The number of non zero elements of matrix.</param>
+            <param name="rowPointers">The array containing the row indices of the existing rows.</param>
+            <param name="columnIndices">The array containing the column indices of the non-zero values</param>
+            <param name="values">The array that contains the non-zero elements of matrix. No diagonal element can be ommitted. </param>
+            <param name="nRhs">The number of columns of the right hand side matrix.</param>
+            <param name="rhs">The right hand side matrix</param>
+            <param name="solution">The left hand side matrix</param>
+            <returns>The status of the solver.</returns>
+        </member>
+        <member name="M:MathNet.Numerics.Providers.SparseSolver.Mkl.MklSparseSolverProvider.Solve(MathNet.Numerics.Providers.SparseSolver.DssMatrixStructure,MathNet.Numerics.Providers.SparseSolver.DssMatrixType,MathNet.Numerics.Providers.SparseSolver.DssSystemType,System.Int32,System.Int32,System.Int32,System.Int32[],System.Int32[],MathNet.Numerics.Complex32[],System.Int32,MathNet.Numerics.Complex32[],MathNet.Numerics.Complex32[])">
+            <summary>
+            Solves sparse linear systems of equations, <b>AX = B</b>.
+            </summary>
+            <param name="matrixStructure">The symmetricity of the matrix. For a symmetric matrix, only upper ot lower triangular matrix is used.</param>
+            <param name="matrixType">The definiteness of the matrix.</param>
+            <param name="systemType">The type of the systems.</param>
+            <param name="rowCount">The number of rows of matrix.</param>
+            <param name="columnCount">The number of columns of matrix.</param>
+            <param name="nonZerosCount">The number of non zero elements of matrix.</param>
+            <param name="rowPointers">The array containing the row indices of the existing rows.</param>
+            <param name="columnIndices">The array containing the column indices of the non-zero values</param>
+            <param name="values">The array that contains the non-zero elements of matrix. No diagonal element can be ommitted. </param>
+            <param name="nRhs">The number of columns of the right hand side matrix.</param>
+            <param name="rhs">The right hand side matrix</param>
+            <param name="solution">The left hand side matrix</param>
+            <returns>The status of the solver.</returns>
+        </member>
+        <member name="M:MathNet.Numerics.Providers.SparseSolver.Mkl.MklSparseSolverProvider.#ctor(System.String)">
+            <param name="hintPath">Hint path where to look for the native binaries</param>
+        </member>
+        <member name="M:MathNet.Numerics.Providers.SparseSolver.Mkl.MklSparseSolverProvider.IsAvailable">
+            <summary>
+            Try to find out whether the provider is available, at least in principle.
+            Verification may still fail if available, but it will certainly fail if unavailable.
+            </summary>
+        </member>
+        <member name="M:MathNet.Numerics.Providers.SparseSolver.Mkl.MklSparseSolverProvider.InitializeVerify">
+            <summary>
+            Initialize and verify that the provided is indeed available.
+            If calling this method fails, consider to fall back to alternatives like the managed provider.
+            </summary>
+        </member>
+        <member name="M:MathNet.Numerics.Providers.SparseSolver.Mkl.MklSparseSolverProvider.FreeResources">
+            <summary>
+            Frees memory buffers, caches and handles allocated in or to the provider.
+            Does not unload the provider itself, it is still usable afterwards.
+            </summary>
+        </member>
+        <member name="M:MathNet.Numerics.Providers.SparseSolver.Mkl.MklSparseSolverProvider.Solve(MathNet.Numerics.Providers.SparseSolver.DssMatrixStructure,MathNet.Numerics.Providers.SparseSolver.DssMatrixType,MathNet.Numerics.Providers.SparseSolver.DssSystemType,System.Int32,System.Int32,System.Int32,System.Int32[],System.Int32[],System.Double[],System.Int32,System.Double[],System.Double[])">
+            <summary>
+            Solves sparse linear systems of equations, <b>AX = B</b>.
+            </summary>
+            <param name="matrixStructure">The symmetricity of the matrix. For a symmetric matrix, only upper ot lower triangular matrix is used.</param>
+            <param name="matrixType">The definiteness of the matrix.</param>
+            <param name="systemType">The type of the systems.</param>
+            <param name="rowCount">The number of rows of matrix.</param>
+            <param name="columnCount">The number of columns of matrix.</param>
+            <param name="nonZerosCount">The number of non zero elements of matrix.</param>
+            <param name="rowPointers">The array containing the row indices of the existing rows.</param>
+            <param name="columnIndices">The array containing the column indices of the non-zero values</param>
+            <param name="values">The array that contains the non-zero elements of matrix. No diagonal element can be ommitted. </param>
+            <param name="nRhs">The number of columns of the right hand side matrix.</param>
+            <param name="rhs">The right hand side matrix</param>
+            <param name="solution">The left hand side matrix</param>
+            <returns>The status of the solver.</returns>
+        </member>
+        <member name="M:MathNet.Numerics.Providers.SparseSolver.Mkl.MklSparseSolverProvider.Solve(MathNet.Numerics.Providers.SparseSolver.DssMatrixStructure,MathNet.Numerics.Providers.SparseSolver.DssMatrixType,MathNet.Numerics.Providers.SparseSolver.DssSystemType,System.Int32,System.Int32,System.Int32,System.Int32[],System.Int32[],System.Single[],System.Int32,System.Single[],System.Single[])">
+            <summary>
+            Solves sparse linear systems of equations, <b>AX = B</b>.
+            </summary>
+            <param name="matrixStructure">The symmetricity of the matrix. For a symmetric matrix, only upper ot lower triangular matrix is used.</param>
+            <param name="matrixType">The definiteness of the matrix.</param>
+            <param name="systemType">The type of the systems.</param>
+            <param name="rowCount">The number of rows of matrix.</param>
+            <param name="columnCount">The number of columns of matrix.</param>
+            <param name="nonZerosCount">The number of non zero elements of matrix.</param>
+            <param name="rowPointers">The array containing the row indices of the existing rows.</param>
+            <param name="columnIndices">The array containing the column indices of the non-zero values</param>
+            <param name="values">The array that contains the non-zero elements of matrix. No diagonal element can be ommitted. </param>
+            <param name="nRhs">The number of columns of the right hand side matrix.</param>
+            <param name="rhs">The right hand side matrix</param>
+            <param name="solution">The left hand side matrix</param>
+            <returns>The status of the solver.</returns>
+        </member>
+        <member name="P:MathNet.Numerics.Providers.SparseSolver.SparseSolverControl.Provider">
+            <summary>
+            Gets or sets the sparse solver provider. Consider to use UseNativeMKL or UseManaged instead.
+            </summary>
+            <value>The linear algebra provider.</value>
+        </member>
+        <member name="P:MathNet.Numerics.Providers.SparseSolver.SparseSolverControl.HintPath">
+            <summary>
+            Optional path to try to load native provider binaries from.
+            If not set, Numerics will fall back to the environment variable
+            `MathNetNumericsSSProviderPath` or the default probing paths.
+            </summary>
+        </member>
+        <member name="M:MathNet.Numerics.Providers.SparseSolver.SparseSolverControl.TryUseNative">
+            <summary>
+            Try to use a native provider, if available.
+            </summary>
+        </member>
+        <member name="M:MathNet.Numerics.Providers.SparseSolver.SparseSolverControl.UseBest">
+            <summary>
+            Use the best provider available.
+            </summary>
+        </member>
+        <member name="M:MathNet.Numerics.Providers.SparseSolver.SparseSolverControl.UseDefault">
+            <summary>
+            Use a specific provider if configured, e.g. using the
+            "MathNetNumericsDSSProvider" environment variable,
+            or fall back to the best provider.
             </summary>
         </member>
         <member name="T:MathNet.Numerics.Random.CryptoRandomSource">
