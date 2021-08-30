@@ -3,7 +3,7 @@ using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
 
-    namespace SolidFEM.Classes
+namespace SolidFEM.Classes
     {
         class SmartMesh
         {
