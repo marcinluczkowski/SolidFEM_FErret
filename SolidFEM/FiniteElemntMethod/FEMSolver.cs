@@ -2,7 +2,7 @@
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
-using MeshPoints.Classes;
+using SolidFEM.Classes;
 using MathNet.Numerics.LinearAlgebra.Double;
 using System.Drawing;
 
@@ -14,7 +14,7 @@ using CSparse.Double.Factorization;
 using CSparse.Storage;
 
 
-namespace MeshPoints.FiniteElementMethod
+namespace SolidFEM.FiniteElementMethod
 {
     public class FEMSolver : GH_Component
     {
@@ -559,7 +559,7 @@ namespace MeshPoints.FiniteElementMethod
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return Properties.Resources.Icon_FEM;
+                return null;//  return Properties.Resources.Icon_FEM;
             }
         }
 

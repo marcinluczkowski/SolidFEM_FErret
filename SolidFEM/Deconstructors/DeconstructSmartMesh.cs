@@ -4,16 +4,16 @@ using System;
 using System.Collections.Generic;
 using SolidFEM.Classes;
 
-namespace MeshPoints.DeconstructClasses
+namespace SolidFEM.DeconstructClasses
 {
-    public class DeconstructQNode : GH_Component
+    public class DeconstructSmartMesh : GH_Component
     {
         /// <summary>
-        /// Initializes a new instance of the DeconstructQNode class.
+        /// Initializes a new instance of the DeconstructMesh3d class.
         /// </summary>
-        public DeconstructQNode()
-          : base("Deconstruct qNode", "qNode",
-              "Deconstructing qNode Class.",
+        public DeconstructSmartMesh()
+          : base("Deconstruct SmartMesh", "SmartMesh",
+              "Deconstructing the SmartMesh Class.",
               "SmartMesh", "Deconstruct")
         {
         }
@@ -23,7 +23,7 @@ namespace MeshPoints.DeconstructClasses
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("qNode", "qN", "qNode Class.", GH_ParamAccess.item);
+            pManager.AddGenericParameter("SmartMesh", "SM", "SmartMesh Class.", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -31,8 +31,11 @@ namespace MeshPoints.DeconstructClasses
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Point", "pt", "Coordinate of node.", GH_ParamAccess.item);
-            pManager.AddGenericParameter("IsBoundaryNode", "Boundary", "If true, node is boundary node.", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Elements", "e", "List of elements.", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Nodes", "n", "List of nodes.", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Geometry", "geo", "Geometry information.", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Mesh", "mesh", "Mesh.", GH_ParamAccess.item);
+
         }
 
         /// <summary>
@@ -41,10 +44,15 @@ namespace MeshPoints.DeconstructClasses
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            qNode node = new qNode();
-            DA.GetData(0, ref node);
-            DA.SetData(0, node.Coordinate);
-            DA.SetData(1, node.BoundaryNode);
+            // Input
+            SmartMesh mesh = new SmartMesh();
+            DA.GetData(0, ref mesh);
+
+            // Output
+            DA.SetDataList(0, mesh.Elements);
+            DA.SetDataList(1, mesh.Nodes);
+            DA.SetData(2, mesh.Geometry);
+            DA.SetData(3, mesh.Mesh);
         }
 
         /// <summary>
@@ -56,7 +64,7 @@ namespace MeshPoints.DeconstructClasses
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return Properties.Resources.Icon_DecQNode;
+                return null; // return Properties.Resources.Icon_DecSmartMesh;
             }
         }
 
@@ -65,7 +73,7 @@ namespace MeshPoints.DeconstructClasses
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("ca709769-2507-4b33-880c-faf88fc0d3ce"); }
+            get { return new Guid("97c30c27-48c9-41ac-b09d-d02f80e806f6"); }
         }
     }
 }
