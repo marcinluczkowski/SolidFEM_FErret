@@ -2,9 +2,9 @@
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
-using MeshPoints.Classes;
+using SolidFEM.Classes;
 
-namespace MeshPoints.DeconstructClasses
+namespace SolidFEM.DeconstructClasses
 {
     public class DeconstructQEdge : GH_Component
     {
@@ -68,7 +68,7 @@ namespace MeshPoints.DeconstructClasses
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return Properties.Resources.Icon_DecQEdge;
+                return null;// return Properties.Resources.Icon_DecQEdge;
             }
         }
 

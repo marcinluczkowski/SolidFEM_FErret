@@ -3,14 +3,7 @@ using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
 
-namespace SolidFEM.Classes
-{
-    using Grasshopper.Kernel;
-    using Rhino.Geometry;
-    using System;
-    using System.Collections.Generic;
-
-    namespace MeshPoints.Classes
+    namespace SolidFEM.Classes
     {
         class SmartMesh
         {
@@ -249,4 +242,4 @@ namespace SolidFEM.Classes
         }
     }
 
-}
+

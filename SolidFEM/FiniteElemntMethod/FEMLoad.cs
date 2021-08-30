@@ -3,10 +3,10 @@ using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
 using MathNet.Numerics.LinearAlgebra;
-using MeshPoints.Classes;
+using SolidFEM.Classes;
 
 
-namespace MeshPoints.FiniteElementMethod
+namespace SolidFEM.FiniteElementMethod
 {
     public class FEMLoad : GH_Component
     {
@@ -245,7 +245,7 @@ namespace MeshPoints.FiniteElementMethod
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return Properties.Resources.Icon_Load;
+                return null;// return Properties.Resources.Icon_Load;
             }
         }
 
