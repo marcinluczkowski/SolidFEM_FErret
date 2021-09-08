@@ -28,7 +28,7 @@ namespace SolidFEM.Classes
 
             if (_edgeList.Count == 4) { IsQuad = true; }
             else { IsQuad = false; }
-            if (!this.IsQuad)
+            if (! IsQuad)
             {
                 FixEdgeOrder();
             }
@@ -65,7 +65,7 @@ namespace SolidFEM.Classes
 
         public void CalculateAngles()
         {
-            List<qEdge> _edgeList = this.EdgeList;
+            List<qEdge> _edgeList =  EdgeList;
             List<double> angList = new List<double>();
 
             List<qEdge> edgeListCopy = new List<qEdge>(_edgeList);
@@ -91,18 +91,18 @@ namespace SolidFEM.Classes
                 angList.Add(Vector3d.VectorAngle(vectors4.Item1, vectors4.Item2, Vector3d.CrossProduct(vectors4.Item1, vectors4.Item2)));
             }
 
-            this.AngleList = angList;
+             AngleList = angList;
         }
 
         public void GetContourOfElement()
         {
             List<Line> contour = new List<Line>();
-            foreach (qEdge edge in this.EdgeList)
+            foreach (qEdge edge in  EdgeList)
             {
                 Line contourLine = new Line(edge.StartNode.Coordinate, edge.EndNode.Coordinate);
                 contour.Add(contourLine);
             }
-            this.Contour = contour;
+             Contour = contour;
         }
         public Point3d GetElementCenter()
         {
@@ -111,7 +111,7 @@ namespace SolidFEM.Classes
             double sy = 0;
             double sz = 0;
 
-            List<qEdge> edgeList = this.EdgeList;
+            List<qEdge> edgeList =  EdgeList;
             foreach (qEdge edge in edgeList)
             {
                 Point3d startPoint = edge.StartNode.Coordinate;
@@ -132,9 +132,9 @@ namespace SolidFEM.Classes
         {
             // summary: get nodes of an element
             List<qNode> nodeList = new List<qNode>();
-            if (!this.IsQuad)
+            if (! IsQuad)
             {
-                List<qEdge> triEdges = this.EdgeList;
+                List<qEdge> triEdges =  EdgeList;
                 qEdge baseEdge = triEdges[0];
                 qEdge rightEdge = triEdges[1];
                 qEdge leftEdge = triEdges[2];
@@ -175,7 +175,7 @@ namespace SolidFEM.Classes
                 nodeList = new List<qNode> { node1, node2, node3 }; // n1: bottom left, n2: bottom right, n3: top 
 
                 /* todo: slett
-                foreach (qEdge edge in this.EdgeList)
+                foreach (qEdge edge in  EdgeList)
                 {
                     if (!nodeList.Contains(edge.StartNode))
                     {
@@ -188,9 +188,9 @@ namespace SolidFEM.Classes
                     }
                 }*/
             }
-            else if (this.IsQuad)
+            else if ( IsQuad)
             {
-                List<qEdge> quadEdges = this.EdgeList;
+                List<qEdge> quadEdges =  EdgeList;
 
                 qEdge baseEdge = quadEdges[0];
                 qEdge rightEdge = quadEdges[1];
@@ -252,24 +252,24 @@ namespace SolidFEM.Classes
         {
             // summary: fix edge order of triangle elements
 
-            qEdge edge = this.EdgeList[0]; // assume this to be the E_front
+            qEdge edge =  EdgeList[0]; // assume this to be the E_front
             qEdge edgeConnectedToStartNode = new qEdge();
             qEdge edgeConnectedToEndNode = new qEdge();
             qEdge edgeNotConnected = new qEdge();
 
-            for (int i = 1; i < this.EdgeList.Count; i++)
+            for (int i = 1; i < EdgeList.Count; i++)
             {
-                if (edge.StartNode == this.EdgeList[i].StartNode | edge.StartNode == this.EdgeList[i].EndNode)
+                if (edge.StartNode == EdgeList[i].StartNode | edge.StartNode == EdgeList[i].EndNode)
                 {
-                    edgeConnectedToStartNode = this.EdgeList[i];
+                    edgeConnectedToStartNode = EdgeList[i];
                 }
-                else if (edge.EndNode == this.EdgeList[i].StartNode | edge.EndNode == this.EdgeList[i].EndNode)
+                else if (edge.EndNode == EdgeList[i].StartNode | edge.EndNode == EdgeList[i].EndNode)
                 {
-                    edgeConnectedToEndNode = this.EdgeList[i];
+                    edgeConnectedToEndNode = EdgeList[i];
                 }
                 else
                 {
-                    edgeNotConnected = this.EdgeList[i];
+                    edgeNotConnected = EdgeList[i];
                 }
             }
             Point3d midPointEdg = 0.5 * (edge.StartNode.Coordinate + edge.EndNode.Coordinate); // mid point of edge
@@ -282,24 +282,24 @@ namespace SolidFEM.Classes
 
             if (endAngle < startAngle)
             {
-                if (!this.IsQuad)
+                if (! IsQuad)
                 {
-                    this.EdgeList = new List<qEdge>() { edge, edgeConnectedToEndNode, edgeConnectedToStartNode };
+                     EdgeList = new List<qEdge>() { edge, edgeConnectedToEndNode, edgeConnectedToStartNode };
                 }
                 else
                 {
-                    this.EdgeList = new List<qEdge>() { edge, edgeConnectedToEndNode, edgeConnectedToStartNode, edgeNotConnected };
+                     EdgeList = new List<qEdge>() { edge, edgeConnectedToEndNode, edgeConnectedToStartNode, edgeNotConnected };
                 }
             }
             else
             {
-                if (!this.IsQuad)
+                if (! IsQuad)
                 {
-                    this.EdgeList = new List<qEdge>() { edge, edgeConnectedToStartNode, edgeConnectedToEndNode };
+                     EdgeList = new List<qEdge>() { edge, edgeConnectedToStartNode, edgeConnectedToEndNode };
                 }
                 else
                 {
-                    this.EdgeList = new List<qEdge>() { edge, edgeConnectedToStartNode, edgeConnectedToEndNode, edgeNotConnected };
+                     EdgeList = new List<qEdge>() { edge, edgeConnectedToStartNode, edgeConnectedToEndNode, edgeNotConnected };
                 }
             }
 
@@ -310,20 +310,20 @@ namespace SolidFEM.Classes
             qEdge leftSide = sideEdges.Item1;
             qEdge rightSide = sideEdges.Item2;
 
-            if (!this.IsQuad)
+            if (! IsQuad)
             {
-                this.EdgeList = new List<qEdge>() { edge, rightSide, leftSide };
+                 EdgeList = new List<qEdge>() { edge, rightSide, leftSide };
             }
             else
             {
-                this.EdgeList = new List<qEdge>() { edge, rightSide, leftSide, edgeNotConnected };
+                 EdgeList = new List<qEdge>() { edge, rightSide, leftSide, edgeNotConnected };
             }*/
 
         }
 
         public bool IsChevron()
         {
-            if (this.AngleList.Max() > (double)200 / (double)180 * Math.PI) { return true; }
+            if ( AngleList.Max() > (double)200 / (double)180 * Math.PI) { return true; }
             else { return false; }
         }
         public bool IsInverted()
@@ -331,11 +331,11 @@ namespace SolidFEM.Classes
             // summary: check if a triangle or quad element is inverted
             bool isInverted = false;
 
-            if (!this.IsQuad)
+            if (! IsQuad)
             {
-                Point3d A = this.EdgeList[0].GetSharedNode(this.EdgeList[1]).Coordinate;
-                Point3d B = this.EdgeList[1].GetSharedNode(this.EdgeList[2]).Coordinate;
-                Point3d C = this.EdgeList[2].GetSharedNode(this.EdgeList[0]).Coordinate;
+                Point3d A =  EdgeList[0].GetSharedNode( EdgeList[1]).Coordinate;
+                Point3d B =  EdgeList[1].GetSharedNode( EdgeList[2]).Coordinate;
+                Point3d C =  EdgeList[2].GetSharedNode( EdgeList[0]).Coordinate;
 
                 // check area
                 double area = 0.5 * (A.X * (B.Y - C.Y) + B.X * (C.Y - A.Y) + C.X * (A.Y - B.Y));
@@ -343,7 +343,7 @@ namespace SolidFEM.Classes
             }
             else // todo: fix inverted elements for quads.
             {
-                List<qNode> elementNodes = this.GetNodesOfElement();
+                List<qNode> elementNodes =  GetNodesOfElement();
                 NurbsCurve line1 = new Line(elementNodes[0].Coordinate, elementNodes[3].Coordinate).ToNurbsCurve();
                 NurbsCurve line2 = new Line(elementNodes[1].Coordinate, elementNodes[2].Coordinate).ToNurbsCurve();
                 var placesWithIntersection = Intersection.CurveCurve(line1, line2, 0.0001, 0.0001);
@@ -356,7 +356,7 @@ namespace SolidFEM.Classes
                     isInverted = true;
                 }
                 /*
-                var nodes = this.GetNodesOfElement();
+                var nodes =  GetNodesOfElement();
                 Point3d A1 = nodes[0].Coordinate;
                 Point3d B1 = nodes[1].Coordinate;
                 Point3d C1 = nodes[3].Coordinate;

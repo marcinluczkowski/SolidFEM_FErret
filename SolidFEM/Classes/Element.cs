@@ -13,37 +13,32 @@ using Rhino.Geometry;
 namespace SolidFEM.Classes
 {
 
-    class Element
+    public class Element
     {
         public int ID;
         public string name;
-        public Mesh element_mesh;
-        public List<Node> nodes;
         public List<Node> Nodes { get; set; }
         public List<int> Connectivity { get; set; }
         public string Type { get; set; }
         public Quality MeshQuality { get; set; }
         public int Id { get; set; }
-        public Mesh Mesh { get; set; }
-
+        public Mesh ElementMesh { get; set; }       
         public List<Point3d> TopologyVertices
         {
             get
             {
                 List<Point3d> vertices = new List<Point3d>();
-                foreach (Node n in nodes)
+                foreach (Node n in Nodes)
                 {
-                    vertices.Add(n.point);
+                    vertices.Add(n.Coordinate);
                 }
                 return vertices;
             }
-        }
-        
-
-
-
+        }      
         public Matrix<double> localK; //local stiffness matrix
 
+
+        // -- constructors ---
         public Element()
         {
             //empty constructor
@@ -52,7 +47,7 @@ namespace SolidFEM.Classes
         public Element(List<Node> nodeList, int id)
         {
             ID = id;
-            nodes = nodeList;
+            Nodes = nodeList;
             name = "Element: " + ID.ToString();
         }
         public Element(int _id, List<Node> _nodes, List<int> _connectivity)
@@ -64,12 +59,14 @@ namespace SolidFEM.Classes
             GetElementMesh();
         }
         //Sort the vertices of the 
-        //Sort the vertices of the 
+        
+        // -- methods ---
+
         public void SortVerticesByGrahamScan()
         {
-            List<Point3d> vertices = this.TopologyVertices; // Get all the topology vertices. 
+            List<Point3d> vertices = TopologyVertices; // Get all the topology vertices. 
             //Subtract top and bottom vertices
-            #region Split into top an bottom vertices
+            #region Split into top and bottom vertices
             List<Point3d> sortedNodes = new List<Point3d>();
             // Calculate the center point
             double sumX = 0;
@@ -85,7 +82,7 @@ namespace SolidFEM.Classes
             // If points are below centerPt,
             var bottomNodes = new List<Point3d>();
             var topNodes = new List<Point3d>();
-            // Assign the nodes in top and bottom list
+            // Assign the Nodes in top and bottom list
             foreach (Point3d pt in vertices)
             {
                 if (pt.Z > centerPt.Z)
@@ -117,10 +114,10 @@ namespace SolidFEM.Classes
             sortedVertices.AddRange(sortedBottom);
             sortedVertices.AddRange(sortedTop);
 
-            for (int i = 0; i < this.nodes.Count; i++)
+            for (int i = 0; i < Nodes.Count; i++)
             {
-                this.nodes[i].point = sortedVertices[i];
-                this.nodes[i].point = sortedVertices[i];
+                Nodes[i].Coordinate = sortedVertices[i];
+                Nodes[i].Coordinate = sortedVertices[i];
             }
             #endregion
 
@@ -128,7 +125,7 @@ namespace SolidFEM.Classes
         public void GetElementType()
         {
             string type = "null";
-            switch (this.Nodes.Count)
+            switch (Nodes.Count)
             {
                 case 3:
                     type = "Triangle";
@@ -143,15 +140,15 @@ namespace SolidFEM.Classes
                     type = "Hex";
                     break;
             }
-            this.Type = type;
+            Type = type;
         }
 
         public List<List<Node>> GetFaces()
         {
             List<List<Node>> Faces = new List<List<Node>>();
-            List<Node> nodes = this.Nodes;
+            List<Node> nodes = Nodes;
 
-            if (this.Type == "Quad" | this.Nodes.Count == 3) // surface
+            if (Type == "Quad" | Nodes.Count == 3) // surface
             {
                 Faces.Add(nodes);
             }
@@ -179,15 +176,15 @@ namespace SolidFEM.Classes
         public void GetElementMesh()
         {
             Mesh mesh = new Mesh();
-            foreach (Node node in this.Nodes)
+            foreach (Node node in Nodes)
             {
                 mesh.Vertices.Add(node.Coordinate);
             }
-            if (this.Type == "Quad")
+            if (Type == "Quad")
             {
                 mesh.Faces.AddFace(0, 1, 2, 3);
             }
-            else if (this.Type == "Hex")
+            else if (Type == "Hex")
             {
                 mesh.Faces.AddFace(0, 1, 5, 4);
                 mesh.Faces.AddFace(1, 2, 6, 5);
@@ -196,11 +193,11 @@ namespace SolidFEM.Classes
                 mesh.Faces.AddFace(0, 1, 2, 3);
                 mesh.Faces.AddFace(4, 5, 6, 7);
             }
-            else if (this.Type == "Triangle")
+            else if (Type == "Triangle")
             {
                 mesh.Faces.AddFace(0, 1, 2);
             }
-            else if (this.Type == "Tet")
+            else if (Type == "Tet")
             {
                 mesh.Faces.AddFace(0, 1, 2);
                 mesh.Faces.AddFace(3, 4, 5);
@@ -212,10 +209,8 @@ namespace SolidFEM.Classes
             mesh.Compact(); //to ensure that it calculate
             mesh.FaceNormals.ComputeFaceNormals();
             mesh.UnifyNormals();
-            this.Mesh = mesh;
+            ElementMesh = mesh;
         }
-
-
 
         private void GrahamScan(ref List<Point3d> pts, ref List<Point3d> selPts)
         {

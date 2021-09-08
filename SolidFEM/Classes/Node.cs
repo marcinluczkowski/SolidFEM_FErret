@@ -9,11 +9,10 @@ using Rhino.Geometry;
 
 namespace SolidFEM.Classes
 {
-    class Node
+    public class Node
     {
         public int ID;
         public string name;
-        public Point3d point;
         public int GlobalId { get; set; }
         public Point3d Coordinate { get; set; }
         public bool BC_U { get; set; }
@@ -21,23 +20,25 @@ namespace SolidFEM.Classes
         public bool BC_W { get; set; }
         public string Type { get; set; }
 
+        
+
         public Node()
         {
             //empty constructor
         }
 
-        public Node(Point3d _point, int _id)
+        public Node(Point3d _coordinate, int _id)
         {
             ID = _id;
-            point = _point;
+            Coordinate = _coordinate;
             name = "Node: " + ID.ToString();
         }
 
-        public Node(Point3d _point, int _id, string _name)
+        public Node(Point3d _coordinate, int _id, string _name)
         {
             ID = _id;
             name = _name;
-            point = _point;
+            Coordinate = _coordinate;
         }
         
 

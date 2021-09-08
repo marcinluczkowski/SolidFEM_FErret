@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using SolidFEM.Classes;
 using MathNet.Numerics.LinearAlgebra.Double;
 using System.Drawing;
+using System.Linq;
 
 // Csparse
 using LA = MathNet.Numerics.LinearAlgebra;
@@ -62,12 +63,14 @@ namespace SolidFEM.FiniteElementMethod
 
             SmartMesh smartMesh = new SmartMesh();
             List<double> loads = new List<double>();
-            List<List<int>> boundaryConditions = new List<List<int>>();
+            //List<List<int>> boundaryConditions = new List<List<int>>();
+            List<Support> supports = new List<Support>();
             Material material = new Material();
 
             DA.GetData(0, ref smartMesh);
             DA.GetDataList(1, loads);
-            DA.GetDataList(2, boundaryConditions);
+            //DA.GetDataList(2, boundaryConditions);
+            DA.GetDataList(2, supports);
             DA.GetData(3, ref material);
 
 
@@ -93,7 +96,8 @@ namespace SolidFEM.FiniteElementMethod
             }
 
             // 5. Fix BoundaryConditions
-            boundaryConditions = FixBoundaryConditions(boundaryConditions, smartMesh.Nodes.Count);
+            //boundaryConditions = FixBoundaryConditions(boundaryConditions, smartMesh.Nodes.Count);
+            List<List<int>> boundaryConditions = FixBoundaryConditionsSverre(supports, smartMesh);
 
             // 6. Calculate displacement 
             LA.Matrix<double> u = CalculateDisplacement(K_global, R, boundaryConditions);
@@ -160,6 +164,40 @@ namespace SolidFEM.FiniteElementMethod
                 }
                 totalBC.Add(dofList);
             }
+            return totalBC;
+        }
+        private List<List<int>> FixBoundaryConditionsSverre(List<Support> sups, SmartMesh sMesh)
+        {
+            List<List<int>> totalBC = new List<List<int>>(); // just using the names from the above function
+
+            // iterate through each support in the mesh
+            foreach (Node node in sMesh.Nodes)
+            {
+                List<int> bc = new List<int>() { 0, 0, 0 };
+                var sup = sups.FirstOrDefault(n => n.Position.DistanceToSquared(node.Coordinate) < 0.001);
+                if (!(sup is null))
+                {
+                    // if there is a support on this node
+                    if (sup.Tx == true) { bc[0] = 1; }
+                    if (sup.Ty == true){bc[1] = 1;}
+                    if (sup.Tz == true) { bc[2] = 1; }
+
+                }
+                totalBC.Add(bc);
+            }
+            foreach (Support support in sups)
+            {
+                List<Node> meshNodes = sMesh.Nodes;
+                var supNode = meshNodes.FirstOrDefault(n => n.Coordinate.DistanceToSquared(support.Position) < 0.001); // find a node (if present) where
+                if(!(supNode is null))
+                {
+                    // if there is a node close enough: 
+
+                }
+
+            }
+
+
             return totalBC;
         }
 
@@ -245,7 +283,7 @@ namespace SolidFEM.FiniteElementMethod
                 }
 
                 B_local.Add(B_i);
-                K_local = K_local + B_i.Transpose().Multiply(C).Multiply(B_i).Multiply(jacobianMatrix.Determinant());
+                K_local += B_i.Transpose().Multiply(C).Multiply(B_i).Multiply(jacobianMatrix.Determinant());
             }
 
             return Tuple.Create(K_local, B_local);
@@ -545,7 +583,7 @@ namespace SolidFEM.FiniteElementMethod
                 else if (mises[i] < minValue + 12 * range) color = Color.OrangeRed;
                 else color = Color.Red;
 
-                mesh.Mesh.VertexColors.Add(color);
+                //mesh.Mesh.VertexColors.Add(color);
             }
         }
         #endregion

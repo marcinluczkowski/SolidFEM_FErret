@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace SolidFEM.Classes
 {
-    class Geometry
+    public class Geometry
     {
         public Brep Brep { get; set; }
         public List<BrepFace> Faces { get; set; }
@@ -18,7 +18,7 @@ namespace SolidFEM.Classes
         {
             // empty constructor
         }
-        public Geometry(Brep _brep, List<BrepFace> _faces, List<BrepEdge> _edges, List<BrepVertex> _vertices) // surface and sweep
+        public Geometry(Brep _brep, List<BrepFace> _faces, List<BrepEdge> _edges, List<BrepVertex> _vertices)  
         {
             Brep = _brep;
             Faces = _faces;

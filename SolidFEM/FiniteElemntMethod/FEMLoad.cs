@@ -134,7 +134,7 @@ namespace SolidFEM.FiniteElementMethod
                                             double area2 = Math.Abs(0.5 * Vector3d.CrossProduct(n1 - n3, n2 - n3).Length);
 
                                             // check area
-                                            Vector3d normal = element.Mesh.FaceNormals[k];
+                                            Vector3d normal = element.ElementMesh.FaceNormals[k];
                                             if (Vector3d.VectorAngle(n1 - n0, n3 - n0, normal) >= Math.PI)
                                             {
                                                 area1 = Math.Abs(0.5 * Vector3d.CrossProduct(n1 - n0, n2 - n0).Length);
