@@ -71,7 +71,7 @@ namespace SolidFEM.Components
             Element el = new Element();
             el.ID = 0;
             el.name = "8node3D";
-            el.nodes = nodes;
+            el.Nodes = nodes;
             el.SortVerticesByGrahamScan();
 
 

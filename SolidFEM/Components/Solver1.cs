@@ -49,9 +49,9 @@ namespace SolidFEM.Components
 
             List<Point3d> nodes = new List<Point3d>();
             
-            foreach (var n in el.nodes)
+            foreach (var n in el.Nodes)
             {
-                Point3d pt = n.point;
+                Point3d pt = n.Coordinate;
                 nodes.Add(pt);
             }
 
@@ -62,14 +62,14 @@ namespace SolidFEM.Components
                 {-v,-v,-v,-v,v,v,v,v}});
             info.Add("j1 = " + j1);
 
-            Point3d p1 = el.nodes[0].point;
-            Point3d p2 = el.nodes[1].point;
-            Point3d p3 = el.nodes[2].point;
-            Point3d p4 = el.nodes[3].point;
-            Point3d p5 = el.nodes[4].point;
-            Point3d p6 = el.nodes[5].point;
-            Point3d p7 = el.nodes[6].point;
-            Point3d p8 = el.nodes[7].point;
+            Point3d p1 = el.Nodes[0].Coordinate;
+            Point3d p2 = el.Nodes[1].Coordinate;
+            Point3d p3 = el.Nodes[2].Coordinate;
+            Point3d p4 = el.Nodes[3].Coordinate;
+            Point3d p5 = el.Nodes[4].Coordinate;
+            Point3d p6 = el.Nodes[5].Coordinate;
+            Point3d p7 = el.Nodes[6].Coordinate;
+            Point3d p8 = el.Nodes[7].Coordinate;
 
             Matrix<double> j2 = DenseMatrix.OfArray(new double[,] {
                 {p1.X, p1.Y, p1.Z},

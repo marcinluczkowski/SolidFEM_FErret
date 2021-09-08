@@ -2,28 +2,88 @@
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SolidFEM.Classes
-    {
-        class SmartMesh
-        {
-            public List<Element> Elements { get; set; } //list of elements
-            public List<Node> Nodes { get; set; } //list of nodes
-            public Mesh Mesh { get; set; } //mesh
-            public int nu { get; set; } //number of nodes in x-dir
-            public int nv { get; set; } //number of nodes in y-dir
-            public int nw { get; set; } //number of nodes in z-dir
-            public string Type { get; set; } // to do: inplementer
-            public Geometry Geometry { get; set; }
-            public List<List<List<Point3d>>> GridInformation { get; set; }
+{
+    public class SmartMesh
+    {        
+        public List<Element> Elements { get; set; } = new List<Element>(); //list of elements
+        public List<Node> Nodes { get; set; } = new List<Node>() ;//list of nodes
+        public Mesh Mesh { get; set; } //mesh
+        public int nu { get; set; } //number of nodes in x-dir
+        public int nv { get; set; } //number of nodes in y-dir
+        public int nw { get; set; } //number of nodes in z-dir
+        public string Type { get; set; } // to do: inplementer
+        public Geometry Geometry { get; set; }
+        public List<List<List<Point3d>>> GridInformation { get; set; }
 
-            // Constructors
-            public SmartMesh()
+        public static int nodeCount;
+        public static int elementCount;
+        public static int supportCount;
+
+        // Constructors
+        public SmartMesh()
+        {
+            //Empty constructor
+        }
+
+        public SmartMesh(List<Brep> breps)
+        {
+            ///<summary>
+            /// Create a solid SmartMesh from a set of breps
+            /// This is a constructor intended for testing the solvers
+            /// functionality. The input Breps should be connected without gaps
+            /// </summary>
+            List<Element> els = new List<Element>();
+            List<Node> nodes = new List<Node>();
+            Type = "Solid";
+            nodeCount = 0;
+            elementCount = 0;
+            foreach (Brep brep in breps)
             {
-                //Empty constructor
+                List<Node> elNodes = new List<Node>();                
+                // create the nodes for the new element
+                Point3d[] elementNodes = brep.DuplicateVertices();
+                for (int i = 0; i < elementNodes.Length; i++)
+                {
+                    Point3d pt = elementNodes[i]; // position
+                    Node n = new Node(pt, i);
+                    
+                    //var duplicates = Nodes.Where(m_n => m_n.GlobalId == n.GlobalId).ToList();
+                    var duplicates = Nodes.Where(m_n => m_n.Coordinate.DistanceToSquared(n.Coordinate)< 0.01).ToList();
+                    if (duplicates.Count == 0)
+                    {
+                        // there is no duplicate. Add the node to the list of mesh nodes
+                        n.GlobalId = (nodeCount++);
+                        Nodes.Add(n);
+                    }
+                    else
+                    {
+                        n.GlobalId = duplicates[0].GlobalId;
+                    }
+                    elNodes.Add(n);
+                }
+
+                // create element
+                Element el = new Element(elNodes, (elementCount++));
+                el.SortVerticesByGrahamScan();
+                el.ElementMesh = Mesh;
+                Elements.Add(el);
+
+                // create connectivity
+                List<int> el_connectivity = new List<int>();
+                foreach (var node in el.Nodes)
+                {
+                    el_connectivity.Add(node.GlobalId);
+                }
+                el.Connectivity = el_connectivity;
+
+
             }
 
-            public SmartMesh(int _nu, int _nv, List<Node> _nodes, List<Element> _elements, Mesh _mesh) // for surface mesh
+            }    
+        public SmartMesh(int _nu, int _nv, List<Node> _nodes, List<Element> _elements, Mesh _mesh) // for surface mesh
             {
                 nu = _nu;
                 nv = _nv;
@@ -33,7 +93,7 @@ namespace SolidFEM.Classes
                 Mesh = _mesh;
                 Type = "Surface";
             }
-            public SmartMesh(int _nu, int _nv, int _nw, List<Node> _nodes, List<Element> _elements, Mesh _mesh) // for solid mesh
+        public SmartMesh(int _nu, int _nv, int _nw, List<Node> _nodes, List<Element> _elements, Mesh _mesh) // for solid mesh
             {
                 nu = _nu;
                 nv = _nv;
@@ -43,16 +103,15 @@ namespace SolidFEM.Classes
                 Mesh = _mesh;
                 Type = "Solid";
             }
-            public SmartMesh(List<Node> _nodes, List<Element> _elements, String _type) // for unstructured surface mesh
+        public SmartMesh(List<Node> _nodes, List<Element> _elements, String _type) // for unstructured surface mesh
             {
                 Nodes = _nodes;
                 Elements = _elements;
                 Type = _type;
                 CreateMesh();
             }
-
-            // Methods
-            public void CreateNodes(List<Point3d> meshPoints, int u, int v, int w)
+        // Methods
+        public void CreateNodes(List<Point3d> meshPoints, int u, int v, int w)
             {
                 List<Node> nodes = new List<Node>();
                 int id = 0;
@@ -86,9 +145,9 @@ namespace SolidFEM.Classes
                         nodes.Add(node);
                     }
                 }
-                this.Nodes = nodes;
+                Nodes = nodes;
             }
-            public void CreateQuadElements()
+        public void CreateQuadElements()
             {
                 // Create quad elements of a structured SmartMesh given nodes are assigned
                 List<Node> nodes = this.Nodes;
@@ -126,7 +185,7 @@ namespace SolidFEM.Classes
                 }
                 this.Elements = elements;
             }
-            public void CreateHexElements()
+        public void CreateHexElements()
             {
                 // Create hex elements of a structured SmartMesh given nodes are assigned
 
@@ -174,9 +233,9 @@ namespace SolidFEM.Classes
                         else { sequence = 0; counter++; }
                     }
                 }
-                this.Elements = elements;
+                Elements = elements;
             }
-            public void CreateMesh()
+        public void CreateMesh()
             {
                 Mesh mesh = new Mesh();
 
@@ -237,9 +296,22 @@ namespace SolidFEM.Classes
                 mesh.Normals.ComputeNormals();
                 mesh.Compact();
                 mesh.FaceNormals.ComputeFaceNormals();
-                this.Mesh = mesh;
+                Mesh = mesh;
             }
+        
+        public Element CreateElementFromBrep(Brep brep)
+        {
+            var el = new Element();
+            //Create Rhino.Geometry.Mesh
+
+            //
+
+            return el;
+
         }
+
+
     }
+}
 
 

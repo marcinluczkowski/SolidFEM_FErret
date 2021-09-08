@@ -7,7 +7,7 @@ using MathNet.Numerics.LinearAlgebra;
 
 namespace SolidFEM.Classes
 {
-    class Material
+    public class Material
     {
         public double YoungModulus { get; set; }
         public double PossionRatio { get; set; }

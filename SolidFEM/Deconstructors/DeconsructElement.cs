@@ -47,9 +47,9 @@ namespace SolidFEM.Deconstructors
 
             List<Point3d> nodes = new List<Point3d>();
             int i = 0;
-            foreach (var n in el.nodes)
+            foreach (var n in el.Nodes)
             {
-                Point3d pt = n.point;
+                Point3d pt = n.Coordinate;
                 nodes.Add(pt);
             }
             el.SortVerticesByGrahamScan();
@@ -57,7 +57,7 @@ namespace SolidFEM.Deconstructors
             
 
             List<int> ids = new List<int>();
-            foreach(Node n in el.nodes)
+            foreach(Node n in el.Nodes)
             {
                 ids.Add(n.ID);
             }

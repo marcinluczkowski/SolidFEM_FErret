@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SolidFEM.Classes
 {
-    class Quality
+    public class Quality
     {
         //Properties
         public double AspectRatio { get; set; }
