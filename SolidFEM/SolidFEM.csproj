@@ -111,6 +111,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -143,5 +144,7 @@ Erase "$(TargetPath)"</PostBuildEvent>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Accord.3.8.0\build\Accord.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Accord.3.8.0\build\Accord.targets'))" />
+    <Error Condition="!Exists('..\packages\RhinoCommon.7.10.21256.17001\build\RhinoCommon.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\RhinoCommon.7.10.21256.17001\build\RhinoCommon.targets'))" />
   </Target>
+  <Import Project="..\packages\RhinoCommon.7.10.21256.17001\build\RhinoCommon.targets" Condition="Exists('..\packages\RhinoCommon.7.10.21256.17001\build\RhinoCommon.targets')" />
 </Project>
