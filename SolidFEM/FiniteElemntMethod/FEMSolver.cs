@@ -51,6 +51,8 @@ namespace SolidFEM.FiniteElementMethod
             pManager.AddGenericParameter("u3", "u3", "Displacement of nodes in z-direction.", GH_ParamAccess.list);
             pManager.AddGenericParameter("Element Stress", "element mises", "List of Von Mises stress in element.", GH_ParamAccess.list);
             pManager.AddGenericParameter("Node Stress", "node mises", "List of von Mises stress in node.", GH_ParamAccess.list);
+
+            pManager.AddTextParameter("Diagonstics", "text", "List of information on the components performance", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -60,6 +62,10 @@ namespace SolidFEM.FiniteElementMethod
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // Input
+            
+            // stopwatch
+            var watch = new System.Diagnostics.Stopwatch();
+            var infoList = new List<string>(); // list to input information
 
             SmartMesh smartMesh = new SmartMesh();
             List<double> loads = new List<double>();
@@ -86,30 +92,66 @@ namespace SolidFEM.FiniteElementMethod
 
 
             // 2. Get global stiffness matrix
-            LA.Matrix<double> K_global = CalculateGlobalStiffnessMatrix(elements, numNodes, material);
+            watch.Start();
+            //LA.Matrix<double> K_global = CalculateGlobalStiffnessMatrix(elements, numNodes, material);
+            CSD.DenseMatrix K_globalC = GlobalStiffnessCSparse(elements, numNodes, material);
+            
+            
+            //var K_sparse = new CSD.SparseMatrix()
+            watch.Stop();
+            infoList.Add($"Time used calculating global stiffness matrix: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
             // 3. Get load vector
+            watch.Start();
+
+            // Using CSparse
+            CSD.DenseMatrix R_CSparse = new CSD.DenseMatrix(numNodes * 3, 1);
+
             LA.Matrix<double> R = LA.Double.DenseMatrix.Build.Dense(numNodes * 3, 1);
             for (int i = 0; i < loads.Count; i++)
             {
                 R[i, 0] = loads[i];
+                R_CSparse[i,0] = loads[i];
             }
+            watch.Stop();
+            infoList.Add($"Time used to establish global load vector: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
             // 5. Fix BoundaryConditions
             //boundaryConditions = FixBoundaryConditions(boundaryConditions, smartMesh.Nodes.Count);
+            watch.Start();
             List<List<int>> boundaryConditions = FixBoundaryConditionsSverre(supports, smartMesh);
+            infoList.Add($"Time used on boundary conditions: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
             // 6. Calculate displacement 
-            LA.Matrix<double> u = CalculateDisplacement(K_global, R, boundaryConditions);
+            watch.Start();
+            CSD.DenseMatrix u_CSparse = CalculateDisplacementCSparse(K_globalC, R_CSparse, boundaryConditions, ref infoList);
+            infoList.Add($"Time used on displacement calculations with CSparce: {watch.ElapsedMilliseconds} ms"); watch.Reset();
+
+            
+
+            watch.Start();
+            //LA.Matrix<double> u = CalculateDisplacement(K_global, R, boundaryConditions, ref infoList);
+            infoList.Add($"Time used on regular displacement calculations: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
             // 7. Calculate stress
-            var stress = CalculateGlobalStress(elements, u, material);
+
+            // convert CSparse to double and MathNet
+            double[] u_val = u_CSparse.Values;
+            var uCS2MN = new LA.Double.DenseMatrix(u_val.Length, 1, u_val);
+
+            watch.Start();
+            var stress = CalculateGlobalStress(elements, uCS2MN, material); // make this compatible with the CSparse matrix as well.
+            infoList.Add($"Time used on stress calculations: {watch.ElapsedMilliseconds} ms"); watch.Reset();
+
             LA.Matrix<double> globalStress = stress.Item1;
             LA.Vector<double> mises = stress.Item2;
             LA.Vector<double> misesElement = stress.Item3;
+            watch.Start();
             ColorMeshAfterStress(smartMesh, mises, material);
+            infoList.Add($"Time used on mesh colouring: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
             // 8. Prepare output
+            watch.Start();
             List<double> u1 = new List<double>();
             List<double> u2 = new List<double>();
             List<double> u3 = new List<double>();
@@ -123,9 +165,9 @@ namespace SolidFEM.FiniteElementMethod
 
             for (int i = 0; i < smartMesh.Nodes.Count; i++)
             {
-                u1.Add(u[i * 3, 0]);
-                u2.Add(u[i * 3 + 1, 0]);
-                u3.Add(u[i * 3 + 2, 0]);
+                u1.Add(uCS2MN[i * 3, 0]);
+                u2.Add(uCS2MN[i * 3 + 1, 0]);
+                u3.Add(uCS2MN[i * 3 + 2, 0]);
 
                 nodalMises.Add(mises[i]);
             }
@@ -135,13 +177,15 @@ namespace SolidFEM.FiniteElementMethod
             {
                 nodalStress.Add(globalStress.Column(i).ToArray());
             }
-
+            infoList.Add($"Time used on output preparation: {watch.ElapsedMilliseconds} ms"); watch.Reset();
             // Output
             DA.SetDataList(0, u1);
             DA.SetDataList(1, u2);
             DA.SetDataList(2, u3);
             DA.SetDataList(3, elementMises);
             DA.SetDataList(4, nodalMises);
+            // temporary information
+            DA.SetDataList(5, infoList);
         }
 
         #region Methods
@@ -293,13 +337,18 @@ namespace SolidFEM.FiniteElementMethod
         /// Construct global stiffness matrix by assembling element stiffness matrices.
         /// </summary>
         /// <returns> Global stiffness matrix. </returns>
-        private LA.Matrix<double> CalculateGlobalStiffnessMatrix(List<Element> elements, int numNode, Material material)
+        
+        
+        private CSD.DenseMatrix GlobalStiffnessCSparse(List<Element> elements, int numNode, Material material)
         {
-            // create stiffness matrix
-            LA.Matrix<double> K_global = LA.Matrix<double>.Build.Dense(numNode * 3, numNode * 3);
+            // Initiate empty matrix
+            CSD.DenseMatrix m = new CSD.DenseMatrix(numNode * 3, numNode * 3);
+
             foreach (Element element in elements)
             {
-                List<int> con = element.Connectivity;
+                List<int> con = element.Connectivity; // get the connectivity of each element
+
+                // iterate over the connectivity indices
                 LA.Matrix<double> K_local = CalculateElementMatrices(element, material).Item1;
 
                 // loop nodes of elements
@@ -312,7 +361,40 @@ namespace SolidFEM.FiniteElementMethod
                         {
                             for (int dofCol = 0; dofCol < 3; dofCol++)
                             {
-                                K_global[3 * con[i] + dofRow, 3 * con[j] + dofCol] = K_global[3 * con[i] + dofRow, 3 * con[j] + dofCol] + K_local[3 * i + dofRow, 3 * j + dofCol];
+                                m[3 * con[i] + dofRow, 3 * con[j] + dofCol] += +K_local[3 * i + dofRow, 3 * j + dofCol];
+                            }
+                        }
+                    }
+                }
+            }
+
+            return m;
+        }
+
+        private LA.Matrix<double> CalculateGlobalStiffnessMatrix(List<Element> elements, int numNode, Material material)
+        {            
+
+            // create stiffness matrix
+            LA.Matrix<double> K_global = LA.Matrix<double>.Build.Dense(numNode * 3, numNode * 3);
+            foreach (Element element in elements)
+            {
+                
+                List<int> con = element.Connectivity;
+
+                
+                LA.Matrix<double> K_local = CalculateElementMatrices(element, material).Item1;
+
+                // loop nodes of elements
+                for (int i = 0; i < con.Count; i++)
+                {
+                    for (int j = 0; j < con.Count; j++)
+                    {
+                        // loop relevant local stiffness contribution
+                        for (int dofRow = 0; dofRow < 3; dofRow++)
+                        {
+                            for (int dofCol = 0; dofCol < 3; dofCol++)
+                            {
+                                K_global[3 * con[i] + dofRow, 3 * con[j] + dofCol] += + K_local[3 * i + dofRow, 3 * j + dofCol];
                             }
                         }
                     }
@@ -326,11 +408,72 @@ namespace SolidFEM.FiniteElementMethod
         /// Include boundary conditions, reduce matrices and solve for displacement. 
         /// </summary>
         /// <returns> List of nodal displacement. </returns>
-        private LA.Matrix<double> CalculateDisplacement(LA.Matrix<double> K_global, LA.Matrix<double> R, List<List<int>> applyBCToDOF)
+        private CSD.DenseMatrix CalculateDisplacementCSparse(CSD.DenseMatrix K_gl, CSD.DenseMatrix R_gl, List<List<int>> applyBCToDOF, ref List<string> info)
         {
-            // summary: include boundary condistions and calculate global displacement
+            var timer = new System.Diagnostics.Stopwatch();
 
             // Make list of boundary condistions
+            info.Add("--- Displacement calculations ---");
+            timer.Start();
+            List<int> BCList = new List<int>();
+            for (int i = 0; i < applyBCToDOF.Count; i++)
+            {
+                for (int j = 0; j < applyBCToDOF[0].Count; j++)
+                {
+                    BCList.Add(applyBCToDOF[i][j]); // list of 0 and 1 values for boundary condition for dof; true = 1, false = 0
+                }
+            }
+
+            // Apply boundary conditions to movement
+            for (int i = 0; i < BCList.Count; i++)
+            {
+                for (int j = 0; j < BCList.Count; j++)
+                {
+                    if (BCList[i] == 1)
+                    {
+                        if (i != j)
+                        {
+                            K_gl[i, j] = 0;
+                        }
+                        else
+                        {
+                            K_gl[i, j] = 1;
+                            R_gl[i, 0] = 0;
+                        }
+                    }
+                }
+            }
+
+
+            double[] CMA = K_gl.Values;
+            CompressedColumnStorage<double> CCS = CSD.SparseMatrix.OfColumnMajor(K_gl.RowCount, K_gl.ColumnCount, CMA);          
+
+
+            SparseLU CS_K_global = SparseLU.Create(CCS, ColumnOrdering.MinimumDegreeAtPlusA, 0.0);
+            //double[] CS_u = CSD.Vector.Create(K_global_red.RowCount * 1, 0.0);
+            double[] CS_u = CSD.Vector.Create(K_gl.RowCount * 1, 0.0);
+            //double[] CS_R = R_red.Column(0).ToArray();
+            double[] CS_R = R_gl.Column(0).ToArray();
+
+            CS_K_global.Solve(CS_R, CS_u);
+            
+
+            var u = new CSD.DenseMatrix(CS_u.Length, 1, CS_u);
+            
+            //LA.Matrix<double> u = LA.Double.DenseMatrix.OfColumnArrays(CS_u);
+
+            return u;
+
+
+        }
+        private LA.Matrix<double> CalculateDisplacement( LA.Matrix<double> K_gl, LA.Matrix<double> R_gl, List<List<int>> applyBCToDOF, ref List<string> info)
+        {
+            // summary: include boundary condistions and calculate global displacement
+            var timer = new System.Diagnostics.Stopwatch();
+
+            // Make list of boundary condistions
+            info.Add("--- Displacement calculations ---");
+            timer.Start();
             List<int> BCList = new List<int>();
             for (int i = 0; i < applyBCToDOF.Count; i++)
             {
@@ -349,43 +492,72 @@ namespace SolidFEM.FiniteElementMethod
                     {
                         if (i != j)
                         {
-                            K_global[i, j] = 0;
+                            K_gl[i, j] = 0;
                         }
                         else
                         {
-                            K_global[i, j] = 1;
-                            R[i, 0] = 0;
+                            K_gl[i, j] = 1;
+                            R_gl[i, 0] = 0;
                         }
                     }
                 }
             }
 
-            // Reduce K_global and R
-            var reducedData = ReduceKandR(K_global, R, BCList);
-            LA.Matrix<double> K_global_red = reducedData.Item1;
-            LA.Matrix<double> R_red = reducedData.Item2;
+            timer.Stop();
+            info.Add($"Time elapsed during boundary conditions: {timer.ElapsedMilliseconds} ms"); timer.Reset();
 
+            // Reduce K_global and R
+            timer.Start();
+
+            // -- EDIT SVERRE ---
+            //int numRows = K_gl.RowCount;
+            //ReduceMatrices(BCList, numRows, ref K_gl,ref R_gl);
+
+            //var reducedData = ReduceKandR(K_gl, R_gl, BCList);
+            
+            //LA.Matrix<double> K_global_red = reducedData.Item1;
+            //LA.Matrix<double> R_red = reducedData.Item2;
+            timer.Stop();
+            info.Add($"Time elapse for reducing K and R: {timer.ElapsedMilliseconds} ms"); timer.Reset();
+            
             // Time recorder
             var sw0 = new System.Diagnostics.Stopwatch();
-
+            timer.Start();
             // Mathnet.Numerics to CSparse
-            var CMA = K_global_red.Storage.ToColumnMajorArray();
-            CompressedColumnStorage<double> CCS = CSD.SparseMatrix.OfColumnMajor(K_global_red.RowCount, K_global_red.ColumnCount, CMA);
+            //var CMA = K_global_red.Storage.ToColumnMajorArray();
+            var CMA = K_gl.Storage.ToColumnMajorArray();
+            //CompressedColumnStorage<double> CCS = CSD.SparseMatrix.OfColumnMajor(K_global_red.RowCount, K_global_red.ColumnCount, CMA);
+            CompressedColumnStorage<double> CCS = CSD.SparseMatrix.OfColumnMajor(K_gl.RowCount, K_gl.ColumnCount, CMA);
+            timer.Stop();
+            info.Add($"Convert MathNet to CSparse: {timer.ElapsedMilliseconds} ms"); timer.Reset();
 
+            
             SparseLU CS_K_global = SparseLU.Create(CCS, ColumnOrdering.MinimumDegreeAtPlusA, 0.0);
-            double[] CS_u = CSD.Vector.Create(K_global_red.RowCount * 1, 0.0);
-            double[] CS_R = R_red.Column(0).ToArray();
-            ;
+            //double[] CS_u = CSD.Vector.Create(K_global_red.RowCount * 1, 0.0);
+            double[] CS_u = CSD.Vector.Create(K_gl.RowCount * 1, 0.0);
+            //double[] CS_R = R_red.Column(0).ToArray();
+            double[] CS_R = R_gl.Column(0).ToArray();
+            
+            timer.Start();
             sw0.Start();
             CS_K_global.Solve(CS_R, CS_u);
             sw0.Stop();
-            Rhino.RhinoApp.WriteLine($"### {K_global_red.RowCount} x {K_global_red.ColumnCount} Matrix. CSparse Elapsed [msec] = {sw0.Elapsed.TotalMilliseconds}");
+            timer.Stop();
+            info.Add($"Solve the system for displacements: {timer.ElapsedMilliseconds} ms"); timer.Reset();
+            //Rhino.RhinoApp.WriteLine($"### {K_global_red.RowCount} x {K_global_red.ColumnCount} Matrix. CSparse Elapsed [msec] = {sw0.Elapsed.TotalMilliseconds}");
+            Rhino.RhinoApp.WriteLine($"### {K_gl.RowCount} x {K_gl.ColumnCount} Matrix. CSparse Elapsed [msec] = {sw0.ElapsedMilliseconds} "); sw0.Reset();
 
             // CSparse to Mathnet.Numerics
+            timer.Start();
             LA.Matrix<double> u = LA.Double.DenseMatrix.OfColumnArrays(CS_u);
-
+            timer.Stop();
+            info.Add($"Convert back to MathNet: {timer.ElapsedMilliseconds} ms"); timer.Reset();
+            info.Add("--- End displacement calculations ---");
+            
+            
             // Get total displacement
-
+            // comment this out when skipping the row and column reduction of stiffness matrix
+            /*
             LA.Vector<double> insertVec = DenseVector.Build.Dense(1);
 
             for (int i = 0; i < BCList.Count; i++)
@@ -395,7 +567,7 @@ namespace SolidFEM.FiniteElementMethod
                     u = u.InsertRow(i, insertVec);
                 }
             }
-
+            */
             return u;
         }
 
@@ -403,7 +575,7 @@ namespace SolidFEM.FiniteElementMethod
         /// Reduce stiffness matrix and load vector for fixed boundary conditions.
         /// </summary>
         /// <returns> Reduced stiffness matrix and load vector. </returns>
-        private Tuple<LA.Matrix<double>, LA.Matrix<double>> ReduceKandR(LA.Matrix<double> K_global, LA.Matrix<double> R, List<int> BC)
+        private Tuple<LA.Matrix<double>, LA.Matrix<double>> ReduceKandR(LA.Matrix<double> K_global,LA.Matrix<double> R, List<int> BC)
         {
             int removeIndex = 0;
             for (int i = 0; i < K_global.RowCount; i++)
@@ -418,6 +590,23 @@ namespace SolidFEM.FiniteElementMethod
                 removeIndex++;
             }
             return Tuple.Create(K_global, R);
+        }
+        private void ReduceMatrices(List<int> BC, int rowCount, ref LA.Matrix<double> K, ref LA.Matrix<double> R)
+        {
+            int subtract = 0;
+            for (int i = 0; i < BC.Count; i++)
+            {
+                if (BC[i] == 1)
+                {
+                    K = K.RemoveColumn(i - subtract);
+                    K = K.RemoveRow(i - subtract);
+                    
+                    R = R.RemoveRow(i - subtract);
+                    subtract--;
+                }
+            }
+
+
         }
 
         /// <summary>
@@ -483,6 +672,33 @@ namespace SolidFEM.FiniteElementMethod
         /// Assemble element stress and get global stress and mises stress,
         /// </summary>
         /// <returns> Nodal global stress, node mises stress and element mises stress. </returns>
+        /// 
+
+        private void ElementStrainStressCSparse(Element element, CSD.DenseMatrix u, Material material)
+        {
+
+        }
+        /*
+        private void GlobalStressesCSparse(List<Element> elements, CSD.DenseMatrix u, Material material, out CSD.DenseMatrix GlobalStress, out CSD.DenseMatrix Mises, out CSD.DenseMatrix GlobalMises)
+        {
+            int numNodes = u.RowCount;
+            int stressRowDim = 6;
+
+            CSD.DenseMatrix stress = new CSD.DenseMatrix(stressRowDim, numNodes);
+            CSD.DenseMatrix counter = new CSD.DenseMatrix(stressRowDim, numNodes);
+
+            List<CSD.DenseMatrix> elementStressList = new List<CSD.DenseMatrix>();
+
+            // iterate through elements
+            foreach (Element el in elements)
+            {
+
+            }
+
+
+
+        }
+        */
         private Tuple<LA.Matrix<double>, LA.Vector<double>, LA.Vector<double>> CalculateGlobalStress(List<Element> elements, LA.Matrix<double> u, Material material)
         {
             int numNodes = u.RowCount / 3;
