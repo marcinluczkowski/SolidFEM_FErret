@@ -17,16 +17,16 @@ using CSparse.Storage;
 
 namespace SolidFEM.FiniteElementMethod
 {
-    public class FEMSolver : GH_Component
+    public class NEW_FEMSolver : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the FEMsolver class.
         /// </summary>
-        public FEMSolver()
-          : base("FEM Solver", "Solver",
-              "Solver for FEM problems meshed with solid elements." +
+        public NEW_FEMSolver()
+          : base("NEW FEM Solver", "Solver",
+              "Solver for FEM problems with Rhino Mesh" +
                 "Uses 3 translation DOFS pr node, linear shape functions, two Gauss Points and full integration.",
-              "SmartMesh", "FEM")
+              "SmartMesh", "FEM-Mesh")
         {
         }
 
@@ -35,10 +35,10 @@ namespace SolidFEM.FiniteElementMethod
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("SmartMesh", "SM", "SmartMesh.", GH_ParamAccess.item);
-            pManager.AddGenericParameter("Loads", "load", "Load vector from FEM Load.", GH_ParamAccess.list);
-            pManager.AddGenericParameter("Boundary Conditions", "BC", "Boundary conditions from FEM Boundary Condtion.", GH_ParamAccess.list);
-            pManager.AddGenericParameter("Material", "material", "Material from FEM Material.", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Mesh", "m", "Normal mesh as a list of elements.", GH_ParamAccess.list); // 0
+            pManager.AddGenericParameter("Loads", "load", "Load vector from FEM Load.", GH_ParamAccess.list); // 1
+            pManager.AddGenericParameter("Boundary Conditions", "BC", "Boundary conditions from FEM Boundary Condtion.", GH_ParamAccess.list); // 2
+            pManager.AddGenericParameter("Material", "material", "Material from FEM Material.", GH_ParamAccess.item); // 3
         }
 
         /// <summary>
@@ -53,6 +53,7 @@ namespace SolidFEM.FiniteElementMethod
             pManager.AddGenericParameter("Node Stress", "node mises", "List of von Mises stress in node.", GH_ParamAccess.list);
 
             pManager.AddTextParameter("Diagonstics", "text", "List of information on the components performance", GH_ParamAccess.list);
+            
         }
 
         /// <summary>
@@ -67,13 +68,14 @@ namespace SolidFEM.FiniteElementMethod
             var watch = new System.Diagnostics.Stopwatch();
             var infoList = new List<string>(); // list to input information
 
+            List<Mesh> meshList = new List<Mesh>();
             SmartMesh smartMesh = new SmartMesh();
             List<double> loads = new List<double>();
             //List<List<int>> boundaryConditions = new List<List<int>>();
             List<Support> supports = new List<Support>();
             Material material = new Material();
 
-            DA.GetData(0, ref smartMesh);
+            DA.GetDataList(0, meshList);
             DA.GetDataList(1, loads);
             //DA.GetDataList(2, boundaryConditions);
             DA.GetDataList(2, supports);
@@ -81,23 +83,26 @@ namespace SolidFEM.FiniteElementMethod
 
 
             // 0. Initial step
-            if (!DA.GetData(0, ref smartMesh)) { AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Invalid SmartMesh input."); return; }
+            
             List<Node> nodes = smartMesh.Nodes;
-            List<Element> elements = smartMesh.Elements;
-            int numNodes = nodes.Count;
+            //List<Element> elements = smartMesh.Elements;
+            
 
 
-            // 1. Check if mesh is Surface or Solid
-            if (smartMesh.Type != "Solid") { AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "SmartMesh must be a solid SmartMesh. "); return; }
 
+            // 1. Get global stiffness matrix
 
-            // 2. Get global stiffness matrix
+            List<Element> elements;
+            List<Point3d> nodePos = FEM_Utility.GetMeshNodes(meshList);
+            int numNodes = nodePos.Count;
+            FEM_Utility.ElementsFromMeshList(meshList, nodePos ,out elements);
+
             watch.Start();
             //LA.Matrix<double> K_global = CalculateGlobalStiffnessMatrix(elements, numNodes, material);
             CSD.DenseMatrix K_globalC = GlobalStiffnessCSparse(elements, numNodes, material);
             var sumStiffness = K_globalC.Values;
-            infoList.Add($"The sum of all elements in the stiffness matrix from SmartMesh:  {sumStiffness.Sum()}");
-
+            infoList.Add($"The sum of all elements in the stiffness matrix from mesh elements:  {sumStiffness.Sum()}");
+            
             //var K_sparse = new CSD.SparseMatrix()
             watch.Stop();
             infoList.Add($"Time used calculating global stiffness matrix: {watch.ElapsedMilliseconds} ms"); watch.Reset();
@@ -120,7 +125,7 @@ namespace SolidFEM.FiniteElementMethod
             // 5. Fix BoundaryConditions
             //boundaryConditions = FixBoundaryConditions(boundaryConditions, smartMesh.Nodes.Count);
             watch.Start();
-            List<List<int>> boundaryConditions = FixBoundaryConditionsSverre(supports, smartMesh);
+            List<List<int>> boundaryConditions = FixBoundaryConditionsSverre(supports, nodePos);
             infoList.Add($"Time used on boundary conditions: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
             // 6. Calculate displacement 
@@ -159,12 +164,12 @@ namespace SolidFEM.FiniteElementMethod
             List<double> nodalMises = new List<double>();
             List<double> elementMises = new List<double>();
 
-            for (int i = 0; i < smartMesh.Elements.Count; i++)
+            for (int i = 0; i < elements.Count; i++)
             {
                 elementMises.Add(misesElement[i]);
             }
 
-            for (int i = 0; i < smartMesh.Nodes.Count; i++)
+            for (int i = 0; i < numNodes; i++)
             {
                 u1.Add(uCS2MN[i * 3, 0]);
                 u2.Add(uCS2MN[i * 3 + 1, 0]);
@@ -211,15 +216,15 @@ namespace SolidFEM.FiniteElementMethod
             }
             return totalBC;
         }
-        private List<List<int>> FixBoundaryConditionsSverre(List<Support> sups, SmartMesh sMesh)
+        private List<List<int>> FixBoundaryConditionsSverre(List<Support> sups, List<Point3d> nodesPos)
         {
             List<List<int>> totalBC = new List<List<int>>(); // just using the names from the above function
 
             // iterate through each support in the mesh
-            foreach (Node node in sMesh.Nodes)
+            foreach (Point3d nodePos in nodesPos)
             {
                 List<int> bc = new List<int>() { 0, 0, 0 };
-                var sup = sups.FirstOrDefault(n => n.Position.DistanceToSquared(node.Coordinate) < 0.001);
+                var sup = sups.FirstOrDefault(n => n.Position.DistanceToSquared(nodePos) < 0.001);
                 if (!(sup is null))
                 {
                     // if there is a support on this node
@@ -230,6 +235,7 @@ namespace SolidFEM.FiniteElementMethod
                 }
                 totalBC.Add(bc);
             }
+            /*
             foreach (Support support in sups)
             {
                 List<Node> meshNodes = sMesh.Nodes;
@@ -240,7 +246,7 @@ namespace SolidFEM.FiniteElementMethod
 
                 }
 
-            }
+            }*/
 
 
             return totalBC;
@@ -752,7 +758,7 @@ namespace SolidFEM.FiniteElementMethod
             }
 
             // Element mises
-            LA.Vector<double> elementMises = DenseVector.Build.Dense(numNodes);
+            LA.Vector<double> elementMises = DenseVector.Build.Dense(elements.Count);
             for (int i = 0; i < elementStressList.Count; i++)
             {
                 for (int j = 0; j < 8; j++)
@@ -764,7 +770,7 @@ namespace SolidFEM.FiniteElementMethod
                     double Sxy = nodeStress[3];
                     double Sxz = nodeStress[4];
                     double Syz = nodeStress[5];
-                    elementMises[i] = elementMises[i] + Math.Sqrt(0.5 * (Math.Pow(Sxx - Syy, 2) + Math.Pow(Syy - Szz, 2) + Math.Pow(Szz - Sxx, 2)) + 3 * (Math.Pow(Sxy, 2) + Math.Pow(Sxz, 2) + Math.Pow(Syz, 2)));
+                    elementMises[i] += Math.Sqrt(0.5 * (Math.Pow(Sxx - Syy, 2) + Math.Pow(Syy - Szz, 2) + Math.Pow(Szz - Sxx, 2)) + 3 * (Math.Pow(Sxy, 2) + Math.Pow(Sxz, 2) + Math.Pow(Syz, 2)));
                 }
                 elementMises[i] = elementMises[i] / (double)8; // get average of nodal mises
             }
@@ -823,7 +829,7 @@ namespace SolidFEM.FiniteElementMethod
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("a82cb774-ef88-487c-bbe2-a283b76cc7bc"); }
+            get { return new Guid("b1911217-5eeb-4722-8226-ff72e3b8fbb0"); }
         }
     }
 }
