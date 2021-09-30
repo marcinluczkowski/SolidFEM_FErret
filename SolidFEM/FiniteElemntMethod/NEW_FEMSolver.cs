@@ -264,8 +264,6 @@ namespace SolidFEM.FiniteElementMethod
             LA.Matrix<double> C = material.GetMaterialConstant();
 
             // shapefunction
-            FEM _FEM = new FEM();
-
             // create local stiffness matrix
             int numElementNodes = element.Nodes.Count;
             LA.Matrix<double> K_local = LA.Matrix<double>.Build.Dense(3 * numElementNodes, 3 * numElementNodes);
@@ -283,7 +281,7 @@ namespace SolidFEM.FiniteElementMethod
             }
 
             //Numerical integration
-            LA.Matrix<double> gaussNodes = _FEM.GetNaturalCoordinate((double)Math.Sqrt((double)1 / (double)3), 3);
+            LA.Matrix<double> gaussNodes = FEM.GetNaturalCoordinate((double)Math.Sqrt((double)1 / (double)3), 3);
 
             for (int n = 0; n < gaussNodes.RowCount; n++)  // loop gauss nodes
             {
@@ -293,7 +291,7 @@ namespace SolidFEM.FiniteElementMethod
                 var t = gaussNodes.Row(n)[2];
 
                 // Partial derivatives of the shape functions
-                LA.Matrix<double> shapeFunctionsDerivatedNatural = _FEM.DerivateWithNatrualCoordinates(r, s, t, 3);
+                LA.Matrix<double> shapeFunctionsDerivatedNatural = FEM.DerivateWithNatrualCoordinates(r, s, t, 3);
 
                 // Calculate Jacobian matrix
                 LA.Matrix<double> jacobianMatrix = shapeFunctionsDerivatedNatural.Multiply(globalCoordinates);
@@ -301,8 +299,8 @@ namespace SolidFEM.FiniteElementMethod
                 // Calculate B - LA.Matrix
                 LA.Matrix<double> shapeFuncDerivatedCartesian = jacobianMatrix.Inverse().Multiply(shapeFunctionsDerivatedNatural);
 
-                double checkDet = jacobianMatrix.Determinant();
-                if (checkDet < 0) { AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Negativ jac det"); }
+                double jacobianDeterminant = jacobianMatrix.Determinant();
+                if (jacobianDeterminant < 0) { AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Negativ jac det"); }
                 int dimRowB = 6;
 
 
@@ -334,7 +332,7 @@ namespace SolidFEM.FiniteElementMethod
                 }
 
                 B_local.Add(B_i);
-                K_local += B_i.Transpose().Multiply(C).Multiply(B_i).Multiply(jacobianMatrix.Determinant());
+                K_local += B_i.Transpose().Multiply(C).Multiply(B_i).Multiply(jacobianDeterminant);
             }
 
             return Tuple.Create(K_local, B_local);
@@ -624,7 +622,7 @@ namespace SolidFEM.FiniteElementMethod
         {
             LA.Matrix<double> C = material.GetMaterialConstant();
 
-            FEM _FEM = new FEM();
+            
             List<LA.Matrix<double>> B_local = CalculateElementMatrices(element, material).Item2;
             LA.Matrix<double> elementGaussStrain = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
             LA.Matrix<double> elementGaussStress = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
@@ -654,7 +652,7 @@ namespace SolidFEM.FiniteElementMethod
             }
 
             // get node strain and stress by extrapolation
-            LA.Matrix<double> extrapolationNodes = _FEM.GetNaturalCoordinate(Math.Sqrt(3), 3);
+            LA.Matrix<double> extrapolationNodes = FEM.GetNaturalCoordinate(Math.Sqrt(3), 3);
 
             for (int n = 0; n < B_local.Count; n++)
             {
@@ -663,7 +661,7 @@ namespace SolidFEM.FiniteElementMethod
                 var s = extrapolationNodes.Row(n)[1];
                 double t = extrapolationNodes.Row(n)[2];
 
-                LA.Vector<double> shapefunctionValuesInNode = _FEM.GetShapeFunctions(r, s, t, 3);
+                LA.Vector<double> shapefunctionValuesInNode = FEM.GetShapeFunctions(r, s, t, 3);
                 LA.Vector<double> nodeStrain = elementGaussStrain.Multiply(shapefunctionValuesInNode);
                 LA.Vector<double> nodeStress = elementGaussStress.Multiply(shapefunctionValuesInNode);
                 for (int i = 0; i < B_local[0].RowCount; i++)
