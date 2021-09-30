@@ -9,9 +9,9 @@ using MathNet.Numerics.LinearAlgebra.Double;
 
 namespace SolidFEM.Classes
 {
-    class FEM
+    public static class FEM
     {
-            public Vector<double> GetShapeFunctions(double r, double s, double t, int nodeDOFS)
+            public static Vector<double> GetShapeFunctions(double r, double s, double t, int nodeDOFS)
             {
                 // Shapefunctions on matrix form
                 if (nodeDOFS == 2)
@@ -44,7 +44,7 @@ namespace SolidFEM.Classes
                 }
 
             }
-            public Matrix<double> DerivateWithNatrualCoordinates(double r, double s, double t, int nodeDOFS)
+            public static Matrix<double> DerivateWithNatrualCoordinates(double r, double s, double t, int nodeDOFS)
             {
                 if (nodeDOFS == 2)
                 {
@@ -70,7 +70,7 @@ namespace SolidFEM.Classes
                 }
 
             }
-            public Matrix<double> GetNaturalCoordinate(double scaleFactor, int nodeDOFS)
+            public static Matrix<double> GetNaturalCoordinate(double scaleFactor, int nodeDOFS)
             {
                 double gp = scaleFactor;
 

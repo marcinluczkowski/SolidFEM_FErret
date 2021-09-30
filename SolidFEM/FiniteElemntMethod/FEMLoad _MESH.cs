@@ -122,9 +122,9 @@ namespace SolidFEM.FiniteElementMethod
                     double zLoad = loadVectors[i].Z;
 
                     // Construct residual force list
-                    residualForces[nodeIndex * 3] = residualForces[nodeIndex * 3] + xLoad;
-                    residualForces[nodeIndex * 3 + 1] = residualForces[nodeIndex * 3 + 1] + yLoad;
-                    residualForces[nodeIndex * 3 + 2] = residualForces[nodeIndex * 3 + 2] + zLoad;
+                    residualForces[nodeIndex * 3] += xLoad;
+                    residualForces[nodeIndex * 3 + 1] += yLoad;
+                    residualForces[nodeIndex * 3 + 2] += zLoad;
                     pointsWithLoad.Add(nodePts[nodeIndex]);
                 }
             }
