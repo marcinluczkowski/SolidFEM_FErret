@@ -110,15 +110,20 @@ namespace SolidFEM.FiniteElementMethod
             // 3. Get load vector
             watch.Start();
 
-            // Using CSparse
-            CSD.DenseMatrix R_CSparse = new CSD.DenseMatrix(numNodes * 3, 1);
-
-            LA.Matrix<double> R = LA.Double.DenseMatrix.Build.Dense(numNodes * 3, 1);
+            // self weight
+            var selfWeight = FEM_Utility.GetBodyForceVector(material, elements, numNodes);
+            CSD.DenseMatrix R_self = new CSD.DenseMatrix(numNodes * 3, 1, selfWeight.ToArray());
+            CSD.DenseMatrix R_external = new CSD.DenseMatrix(numNodes * 3, 1);
+            
+            //LA.Matrix<double> R = LA.Double.DenseMatrix.Build.Dense(numNodes * 3, 1);
             for (int i = 0; i < loads.Count; i++)
             {
-                R[i, 0] = loads[i];
-                R_CSparse[i,0] = loads[i];
+                //R[i, 0] = loads[i];
+                R_external[i,0] = loads[i];
             }
+
+            CSD.DenseMatrix R = (CSD.DenseMatrix)R_self.Add(R_external);
+
             watch.Stop();
             infoList.Add($"Time used to establish global load vector: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
@@ -130,7 +135,7 @@ namespace SolidFEM.FiniteElementMethod
 
             // 6. Calculate displacement 
             watch.Start();
-            CSD.DenseMatrix u_CSparse = CalculateDisplacementCSparse(K_globalC, R_CSparse, boundaryConditions, ref infoList);
+            CSD.DenseMatrix u_CSparse = CalculateDisplacementCSparse(K_globalC, R, boundaryConditions, ref infoList);
             infoList.Add($"Time used on displacement calculations with CSparce: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
             
@@ -184,6 +189,7 @@ namespace SolidFEM.FiniteElementMethod
                 nodalStress.Add(globalStress.Column(i).ToArray());
             }
             infoList.Add($"Time used on output preparation: {watch.ElapsedMilliseconds} ms"); watch.Reset();
+
             // Output
             DA.SetDataList(0, u1);
             DA.SetDataList(1, u2);

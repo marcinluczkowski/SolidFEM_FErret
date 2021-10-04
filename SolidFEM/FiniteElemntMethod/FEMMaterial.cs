@@ -26,6 +26,7 @@ namespace SolidFEM.FiniteElementMethod
             pManager.AddNumberParameter("Young modulus", "E", "Young modulus [MPa]. Default value: 210000 MPa.", GH_ParamAccess.item, 210000);
             pManager.AddNumberParameter("Possion Ratio", "nu", "Possion Ratio [-]. Default value: 0.3.", GH_ParamAccess.item, 0.3);
             pManager.AddNumberParameter("Yielding stress", "fy", "Yield stress [MPa]. Default value: 355 MPa.", GH_ParamAccess.item, 355);
+            pManager.AddNumberParameter("Material weight", "rho", "The weight of the material [kg/m^3]", GH_ParamAccess.item, 7850);
 
         }
 
@@ -44,16 +45,19 @@ namespace SolidFEM.FiniteElementMethod
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // Input
-            double Emodul = 210000;
-            double nu = 0.3;
-            double fy = 355;
+            double Emodul = 0.0;
+            double nu = 0.0;
+            double fy = 0.0;
+            double weight = 0.0;
             DA.GetData(0, ref Emodul);
             DA.GetData(1, ref nu);
             DA.GetData(2, ref fy);
+            DA.GetData(3, ref weight);
 
 
             // Code
             Material material = new Material(Emodul, nu, fy);
+            material.Weight = weight;
 
             // Output
             DA.SetData(0, material);

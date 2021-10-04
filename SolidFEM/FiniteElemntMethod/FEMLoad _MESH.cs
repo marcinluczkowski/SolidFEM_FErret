@@ -97,7 +97,7 @@ namespace SolidFEM.FiniteElementMethod
                     // ensure that longest list principle applies
                     if (posLength > loadLength)
                     {
-                        int diff = loadLength - posLength;
+                        int diff = posLength - loadLength;
                         var last = loadVectors[loadLength - 1];
                         for (int i = 0; i < diff; i++)
                         {
