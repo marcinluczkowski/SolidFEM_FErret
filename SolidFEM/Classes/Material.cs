@@ -12,7 +12,7 @@ namespace SolidFEM.Classes
         public double YoungModulus { get; set; }
         public double PossionRatio { get; set; }
         public double YieldingStress { get; set; }
-
+        public double Weight { get; set; }
         // Constructor
         public Material()
         {

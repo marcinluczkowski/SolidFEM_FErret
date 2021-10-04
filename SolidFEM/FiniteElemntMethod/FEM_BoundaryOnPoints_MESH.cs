@@ -24,7 +24,7 @@ namespace SolidFEM.FiniteElementMethod
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Mesh", "mesh", "The mesh to apply boundary conditions on", GH_ParamAccess.list); // 0
-            pManager.AddPointParameter("LoadPoints", "pt", "Position to place boundary points", GH_ParamAccess.list); // 1
+            pManager.AddPointParameter("SupportPoints", "pt", "Position to place boundary points", GH_ParamAccess.list); // 1
             pManager.AddBooleanParameter("Tx", "", "", GH_ParamAccess.item, true); // 2
             pManager.AddBooleanParameter("Ty", "", "", GH_ParamAccess.item, true); // 3
             pManager.AddBooleanParameter("Ty", "", "", GH_ParamAccess.item, true); // 4
