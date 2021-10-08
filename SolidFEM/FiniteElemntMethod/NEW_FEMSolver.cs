@@ -53,6 +53,7 @@ namespace SolidFEM.FiniteElementMethod
             pManager.AddGenericParameter("Node Stress", "node mises", "List of von Mises stress in node.", GH_ParamAccess.list);
 
             pManager.AddTextParameter("Diagonstics", "text", "List of information on the components performance", GH_ParamAccess.list);
+            pManager.AddGenericParameter("FE_Mesh", "femesh", "The FE_Mesh containing results from the analysis.", GH_ParamAccess.item) ;
             
         }
 
@@ -84,7 +85,7 @@ namespace SolidFEM.FiniteElementMethod
 
             // 0. Initial step
             
-            List<Node> nodes = smartMesh.Nodes;
+            //List<Node> nodes = smartMesh.Nodes;
             //List<Element> elements = smartMesh.Elements;
             
 
@@ -93,7 +94,17 @@ namespace SolidFEM.FiniteElementMethod
             // 1. Get global stiffness matrix
 
             List<Element> elements;
+            List<Node> femNodes = new List<Node>();
+
             List<Point3d> nodePos = FEM_Utility.GetMeshNodes(meshList);
+
+            for (int i = 0; i < nodePos.Count; i++)
+            {
+                Node node = new Node(i, nodePos[i]);
+                femNodes.Add(node);
+            }
+            
+
             int numNodes = nodePos.Count;
             FEM_Utility.ElementsFromMeshList(meshList, nodePos ,out elements);
 
@@ -190,6 +201,9 @@ namespace SolidFEM.FiniteElementMethod
             }
             infoList.Add($"Time used on output preparation: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
+            // TEMPORARY WHILE WAITING FOR MARCIN's MESH CLASS
+            TempFE_Mesh outMesh = new TempFE_Mesh(meshList, femNodes, elements, elementMises, u1, u2, u3, material);
+            
             // Output
             DA.SetDataList(0, u1);
             DA.SetDataList(1, u2);
@@ -198,6 +212,7 @@ namespace SolidFEM.FiniteElementMethod
             DA.SetDataList(4, nodalMises);
             // temporary information
             DA.SetDataList(5, infoList);
+            DA.SetData(6, outMesh);
         }
 
         #region Methods

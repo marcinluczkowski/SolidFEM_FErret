@@ -43,7 +43,17 @@ namespace SolidFEM.Classes
         {
             //empty constructor
         }
-
+        public Element(Element element)
+        {
+            Id = element.Id;
+            name = element.name;
+            Nodes = element.Nodes;
+            Connectivity = element.Connectivity;
+            Type = element.Type;
+            MeshQuality = element.MeshQuality;
+            ID = element.ID;
+            ElementMesh = element.ElementMesh;
+        }
         public Element(List<Node> nodeList, int id)
         {
             ID = id;
