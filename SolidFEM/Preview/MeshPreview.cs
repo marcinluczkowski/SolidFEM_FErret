@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using SolidFEM.Classes;
 using System.Drawing;
-    
+using System.Linq;
 
 namespace SolidFEM.Preview
 {
@@ -26,7 +26,7 @@ namespace SolidFEM.Preview
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Analysed FE-Mesh","rslt","The resulting mesh from the analysis",GH_ParamAccess.item); // 0
-            pManager.AddIntegerParameter("Type", "t", "Type of results to preview. 1 = displacement; 2 = Mises stresses; 3 = utilisation.", GH_ParamAccess.item, 0); // 1
+            pManager.AddIntegerParameter("Type", "t", "Type of results to preview. 1 = displacement; 2 = Mises stresses; 3 = utilisation; 4 = sigma_xx; 5 = sigma_yy; 6 = sigma_zz.", GH_ParamAccess.item, 0); // 1
             pManager.AddNumberParameter("Displacement scaling", "scaling", "The scaling factor of the results. 1.0 gives real displacements", GH_ParamAccess.item, 1.0); // 2
         }
 
@@ -108,65 +108,238 @@ namespace SolidFEM.Preview
             {
                 newPts.Add(node.Coordinate);
             }
-
-            // if von Mises stresses are to be output
-            if (type == 2)
+            if (type == 1)
             {
-                ColorMeshAfterStress(copyMesh);
+                // preview displacement as mesh colours
+                ColorMeshAfterDisplacements(copyMesh);
             }
 
+            // if von Mises stresses are to be output
+            else if (type == 2)
+            {
+                MeshColorMises(copyMesh);
+            }
+            else if (type == 3)
+            {
+               MeshColorUtilisation(copyMesh);
+            }
+            else if (type == 4)
+            {
+                MeshColorStresses(copyMesh, copyMesh.Sigma_xx);
+            }
+            else if (type == 5)
+            {
+                MeshColorStresses(copyMesh, copyMesh.Sigma_yy);
+            }
+            else if (type == 6)
+            {
+                MeshColorStresses(copyMesh, copyMesh.Sigma_zz);
+            }
+            else if (type == 7)
+            {
+                MeshColorStresses(copyMesh, copyMesh.Sigma_xy);
+            }
+            else if (type == 8)
+            {
+                MeshColorStresses(copyMesh, copyMesh.Sigma_xz);
+            }
+            else if (type == 9)
+            {
+                MeshColorStresses(copyMesh, copyMesh.Sigma_yz);
+            }
             // -- output --
             DA.SetData(0, copyMesh);
             DA.SetDataList(1, newMeshList);
         }
-
-        private void ColorMeshAfterStress(TempFE_Mesh mesh)
+        private void ColorMeshAfterDisplacements(TempFE_Mesh mesh)
         {
-            Material material = mesh.Material;
-            List<double> mises = mesh.MisesStress;
-            double maxValue = material.YieldingStress;
-            double minValue = 0;
-            Color color = Color.White;
-            double range = (maxValue - minValue) / (double)13;
+            List<Color> colourPalette = DisplacementColors();
 
+            // get max displacement
+            List<double> displacements = new List<double>();
+            for (int i = 0; i < mesh.dU.Count; i++)
+            {
+                double disp = Math.Sqrt( Math.Pow(mesh.dU[i], 2) + Math.Pow(mesh.dV[i], 2) + Math.Pow(mesh.dW[i], 2)); // calculate absolute displacement
+                displacements.Add(disp);
+            }
+
+            double maxDisp = displacements.Max() + 0.001;
+            double min = 0;
+            double stepSize = (maxDisp - 0) / colourPalette.Count;
+
+            // iterate through all elements
+            for (int i = 0; i < mesh.MeshElements.Count; i++)
+            {
+                Element el = mesh.MeshElements[i];
+                List<int> con = el.Connectivity;
+
+                for (int j = 0; j < con.Count; j++)
+                {
+                    int globalInd = con[j]; // index of the global node to take the displacement from
+                    int colInd = (int)Math.Truncate(displacements[globalInd] / stepSize); // the index to use for vertex colours
+                    mesh.MeshList[i].VertexColors.SetColor(j, colourPalette[colInd]); // colour the mesh vertex
+                }
+            }
+
+
+
+        }
+        private void ColorMeshAfterMisesStress2(TempFE_Mesh mesh)
+        {
+            List<Color> colourPalette = MisesColors();
+            List<double> misesValues = mesh.MisesStress; // the element mises stresses
+
+
+            // -- calculate the average mises stresses of each node --
+
+            double[] nodalStresses = new double[mesh.MeshNodes.Count]; // new list double
+            double[] nodalCount = new double[mesh.MeshNodes.Count]; // number of element connected to each node
             // iterate through each element
             for (int i = 0; i < mesh.MeshElements.Count; i++)
             {
-                Element element = mesh.MeshElements[i];
-                List<int> con = element.Connectivity; // list of global node indices
+                Element el = mesh.MeshElements[i];
+                List<int> con = el.Connectivity;
 
-                // iterate through each node
-                for (int j = 0; j < element.Nodes.Count; j++)
+                for (int j = 0; j < con.Count; j++)
                 {
-                    int nodeInd = con[j]; // the global index of the node
+                    double elStress = misesValues[i];
+                    nodalStresses[con[j]] += elStress; // add the element stress to the node
+                    nodalCount[con[j]] += 1; // add one node to the nodal count
+                }
+            }
+            // calculate the average stresses
+            List<double> avgMises = new List<double>();
+            for (int i = 0; i < nodalStresses.Length; i++)
+            {
+                avgMises.Add( nodalStresses[i] / nodalCount[i] ); // the average mises stresses of each node
+            }
 
-                    // find the correct colour:
-                    if (mises[i] < minValue + range) color = Color.Blue;
-                    else if (mises[i] < minValue + 2 * range) color = Color.RoyalBlue;
-                    else if (mises[i] < minValue + 3 * range) color = Color.DeepSkyBlue;
-                    else if (mises[i] < minValue + 4 * range) color = Color.Cyan;
-                    else if (mises[i] < minValue + 5 * range) color = Color.PaleGreen;
-                    else if (mises[i] < minValue + 6 * range) color = Color.LimeGreen;
-                    else if (mises[i] < minValue + 7 * range) color = Color.Lime;
-                    else if (mises[i] < minValue + 8 * range) color = Color.Lime;
-                    else if (mises[i] < minValue + 9 * range) color = Color.GreenYellow;
-                    else if (mises[i] < minValue + 10 * range) color = Color.Yellow;
-                    else if (mises[i] < minValue + 11 * range) color = Color.Orange;
-                    else if (mises[i] < minValue + 12 * range) color = Color.OrangeRed;
-                    else color = Color.Red;
+            // -- colour the mesh vertices --
 
-                    // add the colour to the element
-                    bool colourVertex = mesh.MeshList[i].VertexColors.SetColor(j, color);
-                    if (!colourVertex)
+            double maxMises = avgMises.Max() + 0.001;
+            double stepSize = (maxMises - 0) / colourPalette.Count;
+            for (int i = 0; i < mesh.MeshElements.Count; i++)
+            {
+                Element el = mesh.MeshElements[i];
+                List<int> con = el.Connectivity;
+
+                for (int j = 0; j < con.Count; j++)
+                {
+                    
+                    int globalInd = con[j]; // global node index
+                    int colourInd = (int)Math.Truncate(avgMises[globalInd] / stepSize); // the index to use for vertex colours
+                    mesh.MeshList[i].VertexColors.SetColor(j, colourPalette[colourInd]); // set the mesh vertex colour
+                }
+            }
+
+        }
+        private void MeshColorUtilisation(TempFE_Mesh mesh)
+        {
+            List<double> nodalMises = mesh.NodelMisesStresses;
+            double yieldStress = mesh.Material.YieldingStress;
+            List<double> utilisation = new List<double>();
+            // divide all stresses with yield stress
+            for (int i = 0; i < nodalMises.Count; i++)
+            {
+                utilisation.Add(nodalMises[i] / yieldStress);
+            }
+            // colours
+            List<Color> positiveCols = PositiveStressColors();
+            List<Color> negativeCols = NegativeStressColors();
+
+            double stepSize = 1.001 / positiveCols.Count;
+
+            for (int i = 0; i < mesh.MeshElements.Count; i++)
+            {
+                Element el = mesh.MeshElements[i];
+                List<int> con = el.Connectivity;
+
+                for (int j = 0; j < con.Count; j++)
+                {
+                    int globalInd = con[j];
+                    double util = utilisation[globalInd];
+
+                    if (Math.Abs(util) > 1.0)
                     {
-                        throw new IndexOutOfRangeException("The vertex index for colouring is out of range");
+                        // the allowed stress is too high. For now, all nodes with utilisation above 1.0 is black regardless of positive or negative value
+                        mesh.MeshList[i].VertexColors.SetColor(j, Color.Black);
+                        continue;
+                    }
+
+                    if (util > 0.0)
+                    {
+                        int colInd = (int)Math.Truncate(util / stepSize);
+                        mesh.MeshList[i].VertexColors.SetColor(j, positiveCols[colInd]);
+                    }
+                    else
+                    {
+                        int colInd = (int)Math.Truncate(Math.Abs(util) / stepSize);
+                        mesh.MeshList[i].VertexColors.SetColor(j, negativeCols[colInd]);
+                    }
+
+
+                }
+            }
+            
+        }
+        private void MeshColorMises(TempFE_Mesh mesh)
+        {
+            List<Color> cPalette = MisesColors();
+            List<double> nodalMises = mesh.NodelMisesStresses;
+
+            double maxStress = nodalMises.Max() + 0.001;
+            double stepSize = (maxStress - 0.0 ) / cPalette.Count;
+
+            for (int i = 0; i < mesh.MeshElements.Count; i++)
+            {
+                Element el = mesh.MeshElements[i];
+                List<int> con = el.Connectivity;
+
+                for (int j = 0; j < con.Count; j++)
+                {
+                    int globalInd = con[j];
+                    int colInd = (int)Math.Truncate( nodalMises[globalInd] / stepSize );
+                    mesh.MeshList[i].VertexColors.SetColor(j, cPalette[colInd]);
+                }
+            }
+        }
+        
+        private void MeshColorStresses(TempFE_Mesh mesh, List<double> stresses)
+        {
+            List<Color> posColors = PositiveStressColors();
+            List<Color> negColors = NegativeStressColors();
+
+            double maxStress = stresses.Max() + 0.001;
+            double minStress = stresses.Min() - 0.001;
+
+            double posStep = (maxStress - 0.0) / posColors.Count;
+            double negStep = (minStress - 0.0) / negColors.Count;
+
+            for (int i = 0; i < mesh.MeshElements.Count; i++)
+            {
+                Element el = mesh.MeshElements[i];
+                List<int> con = el.Connectivity;
+
+                for (int j = 0; j < con.Count; j++)
+                {
+                    int globalInd = con[j];
+                    double stress = stresses[globalInd];
+
+                    if (stress > 0)
+                    {
+                        int colInd = (int)Math.Truncate(stress / posStep);
+                        mesh.MeshList[i].VertexColors.SetColor(j, posColors[colInd]);
+                    }
+                    else
+                    {
+                        int colInd = (int)Math.Truncate(stress / negStep);
+                        mesh.MeshList[i].VertexColors.SetColor(j, negColors[colInd]);
                     }
 
                 }
             }
-
-            
         }
+
         private Mesh MeshFromElement(Element el)
         {
             List<Point3d> points = el.TopologyVertices;
@@ -191,6 +364,84 @@ namespace SolidFEM.Preview
             return mesh;
         }
 
+        private List<Color> DisplacementColors()
+        {
+            List<Color> colours = new List<Color>(); //
+
+            // add colour gradient from "https://colordesigner.io/gradient-generator"
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#fef1fc")); // 0
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#f7e0f4")); // 1
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#efd0ec")); // 2
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#e7c0e5")); // 3
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#deb0de")); // 4
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#d5a0d7")); // 5
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#cb90d0")); // 6
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#c180ca")); // 7
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#b671c4")); // 8
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#ab61be")); // 9
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#a052b8")); // 10
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#9442b2")); // 11
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#8731ad")); // 12
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#791ea7")); // 13
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#6b00a2")); // 14
+
+            return colours;
+        }
+
+        private List<Color> PositiveStressColors()
+        {
+            List<Color> colours = new List<Color>();
+
+            List<string> colNames = new List<string>() { "#ffffff", "#ecdeff","#d7bdff",  "#c19cff","#a77cff", "#8a5bff", "#6438ff", "#1f02fd" };
+
+            foreach (string colName in colNames)
+            {
+                colours.Add(ColorTranslator.FromHtml(colName));
+            }
+            colours.Add(ColorTranslator.FromHtml("#1f02fd")); // 7
+
+            return colours;
+        }
+        private List<Color> NegativeStressColors()
+        {
+            List<Color> colours = new List<Color>();
+
+            List<string> colNames = new List<string>() { "#ffffff", "#ffe4da", "#ffc8b6", "#ffac93", "#ff8f71", "#ff704f", "#ff4b2d", "#fd0202" };
+
+            foreach (string colName in colNames)
+            {
+                colours.Add(ColorTranslator.FromHtml(colName));
+            }
+            colours.Add(ColorTranslator.FromHtml("#1f02fd")); // 7
+
+            return colours;
+        }
+
+        private List<Color> MisesColors()
+        {
+            List<Color> colours = new List<Color>();
+
+            // add colour gradient from "https://colordesigner.io/gradient-generator"
+            colours.Add(ColorTranslator.FromHtml("#ffffff")); // 0
+            colours.Add(ColorTranslator.FromHtml("#ecddff")); // 1
+            colours.Add(ColorTranslator.FromHtml("#e1cdff")); // 2
+            colours.Add(ColorTranslator.FromHtml("#e7c0e5")); // 3
+            colours.Add(ColorTranslator.FromHtml("#d7bcff")); // 4
+            colours.Add(ColorTranslator.FromHtml("#cbacff")); // 5
+            colours.Add(ColorTranslator.FromHtml("#c09cff")); // 6
+            colours.Add(ColorTranslator.FromHtml("#b38bff")); // 7
+            colours.Add(ColorTranslator.FromHtml("#a67bff")); // 8
+            colours.Add(ColorTranslator.FromHtml("#976bff")); // 9
+            colours.Add(ColorTranslator.FromHtml("#875aff")); // 10
+            colours.Add(ColorTranslator.FromHtml("#7549ff")); // 11
+            colours.Add(ColorTranslator.FromHtml("#6037ff")); // 12
+            colours.Add(ColorTranslator.FromHtml("#4422ff")); // 13
+            colours.Add(ColorTranslator.FromHtml("#0600ff")); // 14
+
+            return colours;
+
+
+        }
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
