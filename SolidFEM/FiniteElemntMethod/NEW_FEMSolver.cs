@@ -202,8 +202,10 @@ namespace SolidFEM.FiniteElementMethod
             infoList.Add($"Time used on output preparation: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
             // TEMPORARY WHILE WAITING FOR MARCIN's MESH CLASS
-            TempFE_Mesh outMesh = new TempFE_Mesh(meshList, femNodes, elements, elementMises, u1, u2, u3, material);
-            
+            TempFE_Mesh outMesh = new TempFE_Mesh(meshList, femNodes, elements, elementMises, nodalMises ,u1, u2, u3, material,
+                globalStress.Row(0).ToList(), globalStress.Row(1).ToList(), globalStress.Row(2).ToList(),
+                globalStress.Row(3).ToList(), globalStress.Row(4).ToList(), globalStress.Row(5).ToList());
+            List<double> test = globalStress.Row(5).ToList();
             // Output
             DA.SetDataList(0, u1);
             DA.SetDataList(1, u2);
