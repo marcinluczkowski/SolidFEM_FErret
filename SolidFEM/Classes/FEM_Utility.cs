@@ -37,7 +37,19 @@ namespace SolidFEM.Classes
                     Point3d mPt = sortedVertices[i]; // point to create node from
 
                     // is the point already registered as a global node
-                    int globalInd = globalNodePts.IndexOf(mPt); // find the global ID of the element node. -1 if not present
+                    int globalInd = -1;
+
+                    
+                    for (int j = 0; j < globalNodePts.Count; j++)
+                    {
+                        double dist = globalNodePts[j].DistanceToSquared(mPt);
+                        if (dist < 0.0001) // random tolerance
+                        {
+                            globalInd = j;
+                        }
+                    }
+                    
+                    //int globalInd = globalNodePts.IndexOf(mPt); // find the global ID of the element node. -1 if not present
                     Node n;
                     if (globalInd == -1) 
                     {
@@ -70,19 +82,44 @@ namespace SolidFEM.Classes
         {
             List<Point3d> uniquePts = new List<Point3d>();
 
+            // add the first points
+            uniquePts.Add(meshList[0].Vertices.ToPoint3dArray()[0]); 
             foreach (Mesh mesh in meshList)
             {
                 Point3d[] vertices = mesh.Vertices.ToPoint3dArray();
                 foreach (Point3d point3D in vertices)
                 {
+                    double dist = uniquePts.Min(pt=> pt.DistanceToSquared(point3D));
+                    if(dist > 0.0001)
+                    {
+                        uniquePts.Add(point3D); // if the minimum distance between the current point and all other unique points are greater than a tolerance, it is not already in the list
+                    }
+                    /*
                     int index = uniquePts.IndexOf(point3D); // returns -1 if the point is not already added to the list
                     if (index == -1)
                     {
                         uniquePts.Add(point3D); // add the new point to the list
-                    }
+                    }*/
                 }
             }
             return uniquePts;
+        }
+        public static List<Point3d> LocalCartesianCoordinates(Element el)
+        {
+            List<Point3d> localCoord = new List<Point3d>();
+            List<Node> nodes = el.Nodes;
+            Point3d newOrigin = nodes[0].Coordinate; // this is the new local origin of the element. 
+            localCoord.Add(new Point3d(0, 0, 0)); // set the first point to 0,0,0 in the "local system"
+            for (int i = 1; i < nodes.Count; i++)
+            {
+                double newX = nodes[i].Coordinate.X - newOrigin.X;
+                double newY = nodes[i].Coordinate.Y - newOrigin.Y;
+                double newZ = nodes[i].Coordinate.Z - newOrigin.Z;
+
+                localCoord.Add(new Point3d(newX, newY, newZ));
+            }
+
+            return localCoord;
         }
 
         public static LA.Vector<double> GetBodyForceVector(Material material, List<Element> elements, int numGlobalNodes)
@@ -140,9 +177,10 @@ namespace SolidFEM.Classes
                     var gaussPointLoadVector = interpolationMatrix.TransposeThisAndMultiply(bodyLoadVector);
                     gaussPointLoadVector = gaussPointLoadVector.Multiply( jacobianDeterminant * alpha_ijk * t_ijk );
 
-                    
+
                     // add the vector from the gauss point to the element load vector
-                    elForceVec = elForceVec.Add(gaussPointLoadVector);
+                    elForceVec.Add(gaussPointLoadVector, elForceVec);
+                    //elForceVec = elForceVec.Add(gaussPointLoadVector, elForceVec);
                 }
 
 
@@ -193,7 +231,7 @@ namespace SolidFEM.Classes
 
                     };
                     //var naturalCoordinatesGauss = new CSD.DenseMatrix(8, 3, gaussArray);
-                    var naturalCoordinatesGauss = LA.Matrix<double>.Build.Dense(8, 3, gaussArray);
+                    var naturalCoordinatesGauss = LA.Matrix<double>.Build.DenseOfRowMajor(8, 3, gaussArray);
                     return naturalCoordinatesGauss;
 
                 }
