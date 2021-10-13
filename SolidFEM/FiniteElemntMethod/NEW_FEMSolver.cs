@@ -113,7 +113,7 @@ namespace SolidFEM.FiniteElementMethod
             CSD.DenseMatrix K_globalC = GlobalStiffnessCSparse(elements, numNodes, material);
             var sumStiffness = K_globalC.Values;
             infoList.Add($"The sum of all elements in the stiffness matrix from mesh elements:  {sumStiffness.Sum()}");
-            
+
             //var K_sparse = new CSD.SparseMatrix()
             watch.Stop();
             infoList.Add($"Time used calculating global stiffness matrix: {watch.ElapsedMilliseconds} ms"); watch.Reset();
@@ -134,7 +134,7 @@ namespace SolidFEM.FiniteElementMethod
             }
 
             CSD.DenseMatrix R = (CSD.DenseMatrix)R_self.Add(R_external);
-
+            
             watch.Stop();
             infoList.Add($"Time used to establish global load vector: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
@@ -193,6 +193,9 @@ namespace SolidFEM.FiniteElementMethod
 
                 nodalMises.Add(mises[i]);
             }
+
+            // test - delete after
+            double maxDisp = u3.Max(x => Math.Abs(x));
 
             List<double[]> nodalStress = new List<double[]>();
             for (int i = 0; i < globalStress.ColumnCount; i++)
@@ -296,6 +299,17 @@ namespace SolidFEM.FiniteElementMethod
 
             // Global coordinates of the corner nodes of the actual element
             LA.Matrix<double> globalCoordinates = LA.Matrix<double>.Build.Dense(numElementNodes, 3);
+
+            List<Point3d> localCoordinates = FEM_Utility.LocalCartesianCoordinates(element);
+            /*
+            // this does not seem to have any effect on the global displacements
+            for (int i = 0; i < localCoordinates.Count; i++)
+            {
+                globalCoordinates[i, 0] = localCoordinates[i].X;
+                globalCoordinates[i, 1] = localCoordinates[i].Y;
+                globalCoordinates[i, 2] = localCoordinates[i].Z;
+            }*/
+            
             for (int i = 0; i < numElementNodes; i++)
             {
                 globalCoordinates[i, 0] = element.Nodes[i].Coordinate.X; // column of x coordinates
@@ -304,33 +318,48 @@ namespace SolidFEM.FiniteElementMethod
             }
 
             //Numerical integration
-            LA.Matrix<double> gaussNodes = FEM.GetNaturalCoordinate((double)Math.Sqrt((double)1 / (double)3), 3);
-
-            for (int n = 0; n < gaussNodes.RowCount; n++)  // loop gauss nodes
+            //LA.Matrix<double> gaussNodes = FEM.GetNaturalCoordinate((double)Math.Sqrt((double)1 / (double)3), 3);
+            var gaussCoordinates = FEM_Utility.GetGaussPointMatrix(); // by defaul we have a 2x2x2 integration of Hex8 element
+            for (int n = 0; n < gaussCoordinates.RowCount; n++)  // loop gauss nodes
             {
                 // Substitute the natural coordinates into the symbolic expression
-                var r = gaussNodes.Row(n)[0];
-                var s = gaussNodes.Row(n)[1];
-                var t = gaussNodes.Row(n)[2];
+                var r = gaussCoordinates.Row(n)[0];
+                var s = gaussCoordinates.Row(n)[1];
+                var t = gaussCoordinates.Row(n)[2];
 
                 // Partial derivatives of the shape functions
-                LA.Matrix<double> shapeFunctionsDerivatedNatural = FEM.DerivateWithNatrualCoordinates(r, s, t, 3);
+                //LA.Matrix<double> shapeFunctionsDerivatedNatural = FEM.DerivateWithNatrualCoordinates(r, s, t, 3);
+                var partialDerivatives = FEM_Utility.PartialDerivateShapeFunctions(r, s, t, "Hex8");
 
                 // Calculate Jacobian matrix
-                LA.Matrix<double> jacobianMatrix = shapeFunctionsDerivatedNatural.Multiply(globalCoordinates);
+                LA.Matrix<double> jacobianMatrix = partialDerivatives.Multiply(globalCoordinates);
 
                 // Calculate B - LA.Matrix
-                LA.Matrix<double> shapeFuncDerivatedCartesian = jacobianMatrix.Inverse().Multiply(shapeFunctionsDerivatedNatural);
+                LA.Matrix<double> shapeFuncDerivatedCartesian = (jacobianMatrix.Inverse()).Multiply(partialDerivatives);
 
                 double jacobianDeterminant = jacobianMatrix.Determinant();
                 if (jacobianDeterminant < 0) { AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Negativ jac det"); }
                 int dimRowB = 6;
 
-
+                // establish the B-matrix
                 LA.Matrix<double> B_i = LA.Double.DenseMatrix.Build.Dense(dimRowB, 3 * numElementNodes);
 
                 for (int i = 0; i < numElementNodes; i++)
                 {
+                    
+                    // with the shape functions derivated with respect to the cartesian coordinates the rotated and unrotated element vectors are not the same... This is the correct one according to the formulas
+                    var B_i_sub = DenseMatrix.Build.DenseOfRowMajor(6, 3, new double[] {
+                        shapeFuncDerivatedCartesian.Row(0)[i], 0, 0,
+                        0, shapeFuncDerivatedCartesian.Row(1)[i], 0,
+                        0, 0, shapeFuncDerivatedCartesian.Row(2)[i],
+                        shapeFuncDerivatedCartesian.Row(1)[i], shapeFuncDerivatedCartesian.Row(0)[i], 0,
+                        shapeFuncDerivatedCartesian.Row(2)[i], 0, shapeFuncDerivatedCartesian.Row(0)[i],
+                        0, shapeFuncDerivatedCartesian.Row(2)[i], shapeFuncDerivatedCartesian.Row(1)[i]
+                        });                   
+
+                    
+                    B_i.SetSubMatrix(0, i * 3, B_i_sub);
+                    /*
                     for (int j = 0; j < 3; j++)
                     {
                         if (j == 0)
@@ -351,13 +380,16 @@ namespace SolidFEM.FiniteElementMethod
                             B_i[3, j + 3 * i] = shapeFuncDerivatedCartesian.Row(1)[i];
                             B_i[4, j + 3 * i] = shapeFuncDerivatedCartesian.Row(0)[i];
                         }
-                    }
+                    }*/
                 }
 
                 B_local.Add(B_i);
-                K_local += B_i.Transpose().Multiply(C).Multiply(B_i).Multiply(jacobianDeterminant);
+                //K_local += ((B_i.Transpose()).Multiply(C).Multiply(B_i)).Multiply(jacobianDeterminant);
+                var k_i = (B_i.Transpose()).Multiply(C.Multiply(B_i)).Multiply(jacobianDeterminant); 
+               
+                K_local.Add( k_i , K_local);
             }
-
+            
             return Tuple.Create(K_local, B_local);
         }
 
@@ -372,12 +404,15 @@ namespace SolidFEM.FiniteElementMethod
             // Initiate empty matrix
             CSD.DenseMatrix m = new CSD.DenseMatrix(numNode * 3, numNode * 3);
 
+            List<double> elementSums = new List<double>();
             foreach (Element element in elements)
             {
                 List<int> con = element.Connectivity; // get the connectivity of each element
 
                 // iterate over the connectivity indices
                 LA.Matrix<double> K_local = CalculateElementMatrices(element, material).Item1;
+                elementSums.Add(K_local.AsColumnMajorArray().Sum(x => Math.Abs(x))) ; // the sum of each element
+                
 
                 // loop nodes of elements
                 for (int i = 0; i < con.Count; i++)
@@ -389,13 +424,13 @@ namespace SolidFEM.FiniteElementMethod
                         {
                             for (int dofCol = 0; dofCol < 3; dofCol++)
                             {
-                                m[3 * con[i] + dofRow, 3 * con[j] + dofCol] += +K_local[3 * i + dofRow, 3 * j + dofCol];
+                                m[3 * con[i] + dofRow, 3 * con[j] + dofCol] += K_local[3 * i + dofRow, 3 * j + dofCol];
                             }
                         }
                     }
                 }
             }
-
+            var sum_Element = m.Values.Sum(x=> Math.Abs(x)); // calculates the sum of all elements in the matrix
             return m;
         }
 
@@ -596,7 +631,7 @@ namespace SolidFEM.FiniteElementMethod
                 }
             }
             */
-            return u;
+                    return u;
         }
 
         /// <summary>
@@ -646,7 +681,7 @@ namespace SolidFEM.FiniteElementMethod
             LA.Matrix<double> C = material.GetMaterialConstant();
 
             
-            List<LA.Matrix<double>> B_local = CalculateElementMatrices(element, material).Item2;
+            List<LA.Matrix<double>> B_local = CalculateElementMatrices(element, material).Item2; // this can be changed to save time.. No need to establish the stiffness matrix of an element for this
             LA.Matrix<double> elementGaussStrain = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
             LA.Matrix<double> elementGaussStress = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
             LA.Matrix<double> elementStrain = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);

@@ -110,7 +110,8 @@ namespace SolidFEM.FiniteElementMethod
                 for (int i = 0; i < loadVectors.Count; i++)
                 {
                     //int nodeIndex = GetClosestNodeIndex(smartMesh.Nodes, loadPosition[i]);
-                    int nodeIndex = nodePts.IndexOf(loadPosition[i]);
+                    //int nodeIndex = GetClosestNodeIndex(mesh)
+                    int nodeIndex = GetClosestNodeIndex(nodePts, loadPosition[i]);
                     if (nodeIndex == -1)
                     {
                         continue; // the point is not on the mesh
@@ -232,21 +233,18 @@ namespace SolidFEM.FiniteElementMethod
         /// Get the index of the node closest to the load position.
         /// </summary>
         /// <returns> Index of node closest to load position.</returns>
-        private int GetClosestNodeIndex(List<Node> nodes, Point3d loadPosition)
+        private int GetClosestNodeIndex(List<Point3d> nodePoints, Point3d loadPosition)
         {
-            double minDistance = 10000000;
-            int nodeIndex = 0;
+            int nodeIndex = -1;
 
-            for (int i = 0; i < nodes.Count; i++)
+            for (int i = 0; i < nodePoints.Count; i++)
             {
-                Vector3d vec = nodes[i].Coordinate - loadPosition;
-                double distance = vec.Length;
-                if (distance < minDistance)
+                double distance = nodePoints[i].DistanceToSquared(loadPosition);
+                if (distance < 0.00001) // set tolerance
                 {
-                    minDistance = distance;
                     nodeIndex = i;
+                    break;
                 }
-                if (distance < 0.0001) { break; }
             }
             return nodeIndex;
         }

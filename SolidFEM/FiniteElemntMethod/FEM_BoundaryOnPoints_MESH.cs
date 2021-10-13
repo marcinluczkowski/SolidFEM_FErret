@@ -62,11 +62,17 @@ namespace SolidFEM.FiniteElementMethod
 
 
             // -- method --
+            List<Point3d> nodePts = FEM_Utility.GetMeshNodes(meshList);
             List<Support> supportList = new List<Support>();
             foreach (var pt in positions)
             {
-                Support sup = new Support(pt, tx, ty, tz);
-                supportList.Add(sup);
+                int nodeIndex = GetClosestNodeIndex(nodePts, pt);
+                if (nodeIndex != -1)
+                {
+                    Support sup = new Support(nodePts[nodeIndex], tx, ty, tz);
+                    supportList.Add(sup);
+                }
+                
             }
             
 
@@ -74,6 +80,21 @@ namespace SolidFEM.FiniteElementMethod
             // -- output --
             DA.SetDataList(0, supportList);
 
+        }
+        private int GetClosestNodeIndex(List<Point3d> nodePoints, Point3d loadPosition)
+        {
+            int nodeIndex = -1;
+
+            for (int i = 0; i < nodePoints.Count; i++)
+            {
+                double distance = nodePoints[i].DistanceToSquared(loadPosition);
+                if (distance < 0.00001) // set tolerance
+                {
+                    nodeIndex = i;
+                    break;
+                }
+            }
+            return nodeIndex;
         }
 
         /// <summary>
