@@ -54,6 +54,7 @@ namespace SolidFEM.FiniteElementMethod
 
             pManager.AddTextParameter("Diagonstics", "text", "List of information on the components performance", GH_ParamAccess.list);
             pManager.AddGenericParameter("FE_Mesh", "femesh", "The FE_Mesh containing results from the analysis.", GH_ParamAccess.item) ;
+            pManager.AddGenericParameter("Global K", "", "", GH_ParamAccess.list);
             
         }
 
@@ -132,7 +133,7 @@ namespace SolidFEM.FiniteElementMethod
                 //R[i, 0] = loads[i];
                 R_external[i,0] = loads[i];
             }
-
+            
             CSD.DenseMatrix R = (CSD.DenseMatrix)R_self.Add(R_external);
             
             watch.Stop();
@@ -218,6 +219,7 @@ namespace SolidFEM.FiniteElementMethod
             // temporary information
             DA.SetDataList(5, infoList);
             DA.SetData(6, outMesh);
+            DA.SetDataList(7, K_globalC.Values);
         }
 
         #region Methods
@@ -285,7 +287,8 @@ namespace SolidFEM.FiniteElementMethod
         private Tuple<LA.Matrix<double>, List<LA.Matrix<double>>> CalculateElementMatrices(Element element, Material material)
         {
             // summary: calculate local K and B matrix
-
+            int roundrecisionBMatrix = 6;
+            int rpb = roundrecisionBMatrix;
             // material
             LA.Matrix<double> C = material.GetMaterialConstant();
 
@@ -346,7 +349,7 @@ namespace SolidFEM.FiniteElementMethod
 
                 for (int i = 0; i < numElementNodes; i++)
                 {
-                    
+                    /*
                     // with the shape functions derivated with respect to the cartesian coordinates the rotated and unrotated element vectors are not the same... This is the correct one according to the formulas
                     var B_i_sub = DenseMatrix.Build.DenseOfRowMajor(6, 3, new double[] {
                         shapeFuncDerivatedCartesian.Row(0)[i], 0, 0,
@@ -355,9 +358,19 @@ namespace SolidFEM.FiniteElementMethod
                         shapeFuncDerivatedCartesian.Row(1)[i], shapeFuncDerivatedCartesian.Row(0)[i], 0,
                         shapeFuncDerivatedCartesian.Row(2)[i], 0, shapeFuncDerivatedCartesian.Row(0)[i],
                         0, shapeFuncDerivatedCartesian.Row(2)[i], shapeFuncDerivatedCartesian.Row(1)[i]
-                        });                   
+                        });   */
 
+                    // with the shape functions derivated with respect to the cartesian coordinates the rotated and unrotated element vectors are not the same... This is the correct one according to the formulas
+                    var B_i_sub = DenseMatrix.Build.DenseOfRowMajor(6, 3, new double[] {
+                        Math.Round(shapeFuncDerivatedCartesian.Row(0)[i], rpb), 0, 0,
+                        0, Math.Round(shapeFuncDerivatedCartesian.Row(1)[i], rpb), 0,
+                        0, 0, Math.Round(shapeFuncDerivatedCartesian.Row(2)[i], rpb),
+                        Math.Round(shapeFuncDerivatedCartesian.Row(1)[i], rpb), Math.Round(shapeFuncDerivatedCartesian.Row(0)[i],rpb), 0,
+                        Math.Round(shapeFuncDerivatedCartesian.Row(2)[i], rpb), 0, Math.Round(shapeFuncDerivatedCartesian.Row(0)[i],rpb),
+                        0, Math.Round(shapeFuncDerivatedCartesian.Row(2)[i],rpb), Math.Round(shapeFuncDerivatedCartesian.Row(1)[i],rpb)
+                        });
                     
+
                     B_i.SetSubMatrix(0, i * 3, B_i_sub);
                     /*
                     for (int j = 0; j < 3; j++)
@@ -431,6 +444,7 @@ namespace SolidFEM.FiniteElementMethod
                 }
             }
             var sum_Element = m.Values.Sum(x=> Math.Abs(x)); // calculates the sum of all elements in the matrix
+            m.
             return m;
         }
 
