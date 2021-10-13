@@ -111,8 +111,8 @@ namespace SolidFEM.FiniteElementMethod
 
             watch.Start();
             //LA.Matrix<double> K_global = CalculateGlobalStiffnessMatrix(elements, numNodes, material);
-            CSD.DenseMatrix K_globalC = GlobalStiffnessCSparse(elements, numNodes, material);
-            var sumStiffness = K_globalC.Values;
+            var K_globalC = GlobalStiffnessCSparse(elements, numNodes, material);
+            var sumStiffness = K_globalC.AsColumnMajorArray();
             infoList.Add($"The sum of all elements in the stiffness matrix from mesh elements:  {sumStiffness.Sum()}");
 
             //var K_sparse = new CSD.SparseMatrix()
@@ -219,7 +219,7 @@ namespace SolidFEM.FiniteElementMethod
             // temporary information
             DA.SetDataList(5, infoList);
             DA.SetData(6, outMesh);
-            DA.SetDataList(7, K_globalC.Values);
+            DA.SetDataList(7, K_globalC.AsColumnMajorArray());
         }
 
         #region Methods
@@ -315,9 +315,9 @@ namespace SolidFEM.FiniteElementMethod
             
             for (int i = 0; i < numElementNodes; i++)
             {
-                globalCoordinates[i, 0] = element.Nodes[i].Coordinate.X; // column of x coordinates
-                globalCoordinates[i, 1] = element.Nodes[i].Coordinate.Y; // column of y coordinates
-                globalCoordinates[i, 2] = element.Nodes[i].Coordinate.Z; // colum of z coordinates
+                globalCoordinates[i, 0] = Math.Round(element.Nodes[i].Coordinate.X, rpb); // column of x coordinates
+                globalCoordinates[i, 1] = Math.Round(element.Nodes[i].Coordinate.Y, rpb) ; // column of y coordinates
+                globalCoordinates[i, 2] = Math.Round(element.Nodes[i].Coordinate.Z, rpb); // colum of z coordinates
             }
 
             //Numerical integration
@@ -337,6 +337,13 @@ namespace SolidFEM.FiniteElementMethod
                 // Calculate Jacobian matrix
                 LA.Matrix<double> jacobianMatrix = partialDerivatives.Multiply(globalCoordinates);
 
+                // round the jacobian
+                var jColMajArr = jacobianMatrix.AsColumnMajorArray();
+                for (int k = 0; k < jColMajArr.Length; k++)
+                {
+                    jColMajArr[k] = Math.Round(jColMajArr[k], rpb);
+                }
+                jacobianMatrix = LA.Matrix<double>.Build.DenseOfColumnMajor(3, 3, jColMajArr);
                 // Calculate B - LA.Matrix
                 LA.Matrix<double> shapeFuncDerivatedCartesian = (jacobianMatrix.Inverse()).Multiply(partialDerivatives);
 
@@ -349,7 +356,7 @@ namespace SolidFEM.FiniteElementMethod
 
                 for (int i = 0; i < numElementNodes; i++)
                 {
-                    /*
+                    
                     // with the shape functions derivated with respect to the cartesian coordinates the rotated and unrotated element vectors are not the same... This is the correct one according to the formulas
                     var B_i_sub = DenseMatrix.Build.DenseOfRowMajor(6, 3, new double[] {
                         shapeFuncDerivatedCartesian.Row(0)[i], 0, 0,
@@ -358,8 +365,8 @@ namespace SolidFEM.FiniteElementMethod
                         shapeFuncDerivatedCartesian.Row(1)[i], shapeFuncDerivatedCartesian.Row(0)[i], 0,
                         shapeFuncDerivatedCartesian.Row(2)[i], 0, shapeFuncDerivatedCartesian.Row(0)[i],
                         0, shapeFuncDerivatedCartesian.Row(2)[i], shapeFuncDerivatedCartesian.Row(1)[i]
-                        });   */
-
+                        });
+                    /*
                     // with the shape functions derivated with respect to the cartesian coordinates the rotated and unrotated element vectors are not the same... This is the correct one according to the formulas
                     var B_i_sub = DenseMatrix.Build.DenseOfRowMajor(6, 3, new double[] {
                         Math.Round(shapeFuncDerivatedCartesian.Row(0)[i], rpb), 0, 0,
@@ -369,31 +376,10 @@ namespace SolidFEM.FiniteElementMethod
                         Math.Round(shapeFuncDerivatedCartesian.Row(2)[i], rpb), 0, Math.Round(shapeFuncDerivatedCartesian.Row(0)[i],rpb),
                         0, Math.Round(shapeFuncDerivatedCartesian.Row(2)[i],rpb), Math.Round(shapeFuncDerivatedCartesian.Row(1)[i],rpb)
                         });
-                    
+                    */
 
                     B_i.SetSubMatrix(0, i * 3, B_i_sub);
-                    /*
-                    for (int j = 0; j < 3; j++)
-                    {
-                        if (j == 0)
-                        {
-                            B_i[0, 3 * i] = shapeFuncDerivatedCartesian.Row(0)[i];
-                            B_i[4, 3 * i] = shapeFuncDerivatedCartesian.Row(2)[i];
-                            B_i[5, 3 * i] = shapeFuncDerivatedCartesian.Row(1)[i];
-                        }
-                        else if (j == 1)
-                        {
-                            B_i[1, j + 3 * i] = shapeFuncDerivatedCartesian.Row(1)[i];
-                            B_i[3, j + 3 * i] = shapeFuncDerivatedCartesian.Row(2)[i];
-                            B_i[5, j + 3 * i] = shapeFuncDerivatedCartesian.Row(0)[i];
-                        }
-                        else if (j == 2)
-                        {
-                            B_i[2, j + 3 * i] = shapeFuncDerivatedCartesian.Row(2)[i];
-                            B_i[3, j + 3 * i] = shapeFuncDerivatedCartesian.Row(1)[i];
-                            B_i[4, j + 3 * i] = shapeFuncDerivatedCartesian.Row(0)[i];
-                        }
-                    }*/
+                    
                 }
 
                 B_local.Add(B_i);
@@ -412,11 +398,11 @@ namespace SolidFEM.FiniteElementMethod
         /// <returns> Global stiffness matrix. </returns>
         
         
-        private CSD.DenseMatrix GlobalStiffnessCSparse(List<Element> elements, int numNode, Material material)
+        private LA.Matrix<double> GlobalStiffnessCSparse(List<Element> elements, int numNode, Material material)
         {
             // Initiate empty matrix
-            CSD.DenseMatrix m = new CSD.DenseMatrix(numNode * 3, numNode * 3);
-
+            //CSD.DenseMatrix m = new CSD.DenseMatrix(numNode * 3, numNode * 3);
+            LA.Matrix<double> m = LA.Matrix<double>.Build.Dense(numNode * 3, numNode * 3);
             List<double> elementSums = new List<double>();
             foreach (Element element in elements)
             {
@@ -443,8 +429,17 @@ namespace SolidFEM.FiniteElementMethod
                     }
                 }
             }
-            var sum_Element = m.Values.Sum(x=> Math.Abs(x)); // calculates the sum of all elements in the matrix
-            m.
+
+            // small code to round the values of the elements
+            /*
+            double[] colMayArray = m.AsColumnMajorArray();
+            for (int i = 0; i < colMayArray.Length; i++)
+            {
+                colMayArray[i] = Math.Round(colMayArray[i], 14);
+            }
+            var globalK = LA.Matrix<double>.Build.DenseOfColumnMajor(numNode * 3, numNode * 3, colMayArray);
+            */
+            var sum_Element = m.AsColumnMajorArray().Sum();
             return m;
         }
 
@@ -485,7 +480,7 @@ namespace SolidFEM.FiniteElementMethod
         /// Include boundary conditions, reduce matrices and solve for displacement. 
         /// </summary>
         /// <returns> List of nodal displacement. </returns>
-        private CSD.DenseMatrix CalculateDisplacementCSparse(CSD.DenseMatrix K_gl, CSD.DenseMatrix R_gl, List<List<int>> applyBCToDOF, ref List<string> info)
+        private CSD.DenseMatrix CalculateDisplacementCSparse(LA.Matrix<double> K_gl, CSD.DenseMatrix R_gl, List<List<int>> applyBCToDOF, ref List<string> info)
         {
             var timer = new System.Diagnostics.Stopwatch();
 
@@ -521,9 +516,8 @@ namespace SolidFEM.FiniteElementMethod
                 }
             }
 
-
-            double[] CMA = K_gl.Values;
-            CompressedColumnStorage<double> CCS = CSD.SparseMatrix.OfColumnMajor(K_gl.RowCount, K_gl.ColumnCount, CMA);          
+            
+            CompressedColumnStorage<double> CCS = CSD.SparseMatrix.OfColumnMajor(K_gl.RowCount, K_gl.ColumnCount, K_gl.AsColumnMajorArray());          
 
 
             SparseLU CS_K_global = SparseLU.Create(CCS, ColumnOrdering.MinimumDegreeAtPlusA, 0.0);
@@ -531,6 +525,10 @@ namespace SolidFEM.FiniteElementMethod
             double[] CS_u = CSD.Vector.Create(K_gl.RowCount * 1, 0.0);
             //double[] CS_R = R_red.Column(0).ToArray();
             double[] CS_R = R_gl.Column(0).ToArray();
+            for (int i = 0; i < CS_R.Length; i++)
+            {
+                CS_R[i] = Math.Round(CS_R[i], 6);
+            }
 
             CS_K_global.Solve(CS_R, CS_u);
             
