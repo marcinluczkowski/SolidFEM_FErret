@@ -887,8 +887,9 @@ namespace SolidFEM.FiniteElementMethod
             get
             {
                 //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return null;//  return Properties.Resources.Icon_FEM;
+                //return Resources.IconForThisComponent;
+                //return FEMLoad;
+                return Properties.Resources.FESolver;
             }
         }
 
