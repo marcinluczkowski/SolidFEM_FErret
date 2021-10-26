@@ -28,3 +28,5 @@ C:\Program Files\Rhino 7\Plug-ins\Accord.dll.config
 C:\Program Files\Rhino 7\Plug-ins\SolidFEM.dll
 C:\Program Files\Rhino 7\Plug-ins\SolidFEM.pdb
 C:\Program Files\Rhino 7\Plug-ins\SolidFEM.dll.config
+C:\Users\sverremh\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.Properties.Resources.resources
+C:\Users\sverremh\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.GenerateResource.cache

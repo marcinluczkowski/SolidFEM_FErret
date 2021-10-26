@@ -113,6 +113,11 @@
     <Compile Include="FiniteElemntMethod\FEM_BoundaryOnPoints.cs" />
     <Compile Include="FiniteElemntMethod\FEM_Element.cs" />
     <Compile Include="Preview\MeshPreview.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
     <Compile Include="SolidFEMInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -122,6 +127,27 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Tools\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Properties\Resources\FEMaterial.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Properties\Resources\FELoad.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Properties\Resources\FEPreview.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Properties\Resources\FESolver.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Properties\Resources\FESupport.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
