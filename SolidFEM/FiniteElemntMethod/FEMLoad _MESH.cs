@@ -71,12 +71,22 @@ namespace SolidFEM.FiniteElementMethod
 
             // Code
 
-            
+            var newMeshList = new List<Mesh>();
+            foreach (Mesh mesh in meshList)
+            {
+                Mesh nM = GrahamScan.DoGrahamScan(mesh);
 
-            
+                if (nM.IsValid)
+                {
+                    newMeshList.Add(nM);
+                }
+                else newMeshList.Add(mesh);
+            }
+
+
             List<Point3d> pointsWithLoad = new List<Point3d>();
 
-            List<Point3d> nodePts = FEM_Utility.GetMeshNodes(meshList);
+            List<Point3d> nodePts = FEM_Utility.GetMeshNodes(newMeshList);
 
             int numNodes = nodePts.Count;
 

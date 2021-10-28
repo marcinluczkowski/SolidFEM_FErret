@@ -29,7 +29,7 @@ namespace SolidFEM.Classes
                 var vertices = mEl.Vertices.ToPoint3dArray(); // an array of the vertices of each mesh element
 
                 // sort the vertices by a Graham 
-                List<Point3d> sortedVertices = SortVerticesByGrahamScan(vertices.ToList());
+                //List<Point3d> sortedVertices = SortVerticesByGrahamScan(vertices.ToList());
                
 
                 for (int i = 0; i < vertices.Length; i++)
@@ -91,7 +91,7 @@ namespace SolidFEM.Classes
                 foreach (Point3d point3D in vertices)
                 {
                     double dist = uniquePts.Min(pt=> pt.DistanceToSquared(point3D));
-                    if(dist > 0.001)
+                    if(dist > 0.00001)
                     {
                         //uniquePts.Add(point3D); // if the minimum distance between the current point and all other unique points are greater than a tolerance, it is not already in the list
                         uniquePts.Add(new Point3d(Math.Round(point3D.X, 4), Math.Round(point3D.Y, 4), Math.Round(point3D.Z, 4)));

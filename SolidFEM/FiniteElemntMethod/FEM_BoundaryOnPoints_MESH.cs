@@ -62,7 +62,21 @@ namespace SolidFEM.FiniteElementMethod
 
 
             // -- method --
-            List<Point3d> nodePts = FEM_Utility.GetMeshNodes(meshList);
+
+            var newMeshList = new List<Mesh>();
+            foreach (Mesh mesh in meshList)
+            {
+                Mesh nM = GrahamScan.DoGrahamScan(mesh);
+
+                if (nM.IsValid)
+                {
+                    newMeshList.Add(nM);
+                }
+                else newMeshList.Add(mesh);
+            }
+
+
+            List<Point3d> nodePts = FEM_Utility.GetMeshNodes(newMeshList);
             List<Support> supportList = new List<Support>();
             foreach (var pt in positions)
             {
