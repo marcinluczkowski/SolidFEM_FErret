@@ -11,14 +11,12 @@ C:\Users\marcl\AppData\Roaming\Grasshopper\Libraries\Custom\SolidFEM\SolidFEM.dl
 C:\Users\marcl\AppData\Roaming\Grasshopper\Libraries\Custom\SolidFEM\SolidFEM.pdb
 C:\Users\marcl\source\repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CopyComplete
 C:\Program Files\Rhino 6\Plug-ins\Accord.dll.config
-C:\Users\sverremh\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csprojAssemblyReference.cache
 C:\Users\sverremh\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CoreCompileInputs.cache
 C:\Users\sverremh\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.dll
 C:\Users\sverremh\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.pdb
 C:\Users\sverremh\AppData\Roaming\Grasshopper\Libraries\Custom\SolidFEM\Accord.dll.config
 C:\Users\sverremh\AppData\Roaming\Grasshopper\Libraries\Custom\SolidFEM\SolidFEM.dll
 C:\Users\sverremh\AppData\Roaming\Grasshopper\Libraries\Custom\SolidFEM\SolidFEM.pdb
-C:\Users\sverremh\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CopyComplete
 C:\Users\marcinl\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csprojAssemblyReference.cache
 C:\Users\marcinl\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CoreCompileInputs.cache
 C:\Users\marcinl\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.dll
@@ -30,3 +28,4 @@ C:\Program Files\Rhino 7\Plug-ins\SolidFEM.pdb
 C:\Program Files\Rhino 7\Plug-ins\SolidFEM.dll.config
 C:\Users\sverremh\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.Properties.Resources.resources
 C:\Users\sverremh\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.GenerateResource.cache
+C:\Users\sverremh\source\repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.AssemblyReference.cache

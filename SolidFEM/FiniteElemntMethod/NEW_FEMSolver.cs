@@ -85,20 +85,29 @@ namespace SolidFEM.FiniteElementMethod
 
 
             // 0. Initial step
-            
+
             //List<Node> nodes = smartMesh.Nodes;
             //List<Element> elements = smartMesh.Elements;
-            
+
             // clean the mesh and sort nodes
+            var newMeshList = new List<Mesh>();
+            foreach (Mesh mesh in meshList)
+            {
+                Mesh nM = GrahamScan.DoGrahamScan(mesh);
+
+                if (nM.IsValid)
+                {
+                    newMeshList.Add(nM);
+                }
+                else newMeshList.Add(mesh);
+            }
 
 
-
-            // 1. Get global stiffness matrix
-
+            
             List<Element> elements;
             List<Node> femNodes = new List<Node>();
 
-            List<Point3d> nodePos = FEM_Utility.GetMeshNodes(meshList);
+            List<Point3d> nodePos = FEM_Utility.GetMeshNodes(newMeshList);
 
             for (int i = 0; i < nodePos.Count; i++)
             {
@@ -108,7 +117,9 @@ namespace SolidFEM.FiniteElementMethod
             
 
             int numNodes = nodePos.Count;
-            FEM_Utility.ElementsFromMeshList(meshList, nodePos ,out elements);
+            FEM_Utility.ElementsFromMeshList(newMeshList, nodePos ,out elements);
+
+            // 1. Get global stiffness matrix
 
             watch.Start();
             //LA.Matrix<double> K_global = CalculateGlobalStiffnessMatrix(elements, numNodes, material);
@@ -132,9 +143,9 @@ namespace SolidFEM.FiniteElementMethod
             for (int i = 0; i < loads.Count; i++)
             {
                 //R[i, 0] = loads[i];
-                R_external[i,0] = loads[i];
+                //R_external[i,0] = loads[i];
             }
-            
+
             CSD.DenseMatrix R = (CSD.DenseMatrix)R_self.Add(R_external);
             
             watch.Stop();

@@ -79,6 +79,7 @@
     <Compile Include="Classes\FEM.cs" />
     <Compile Include="Classes\FEM_Utility.cs" />
     <Compile Include="Classes\Geometry.cs" />
+    <Compile Include="Classes\GrahamScan.cs" />
     <Compile Include="Classes\Material.cs" />
     <Compile Include="Classes\Node.cs" />
     <Compile Include="Classes\qConstans.cs" />
