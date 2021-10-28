@@ -32,9 +32,9 @@ namespace SolidFEM.Classes
                 List<Point3d> sortedVertices = SortVerticesByGrahamScan(vertices.ToList());
                
 
-                for (int i = 0; i < sortedVertices.Count; i++)
+                for (int i = 0; i < vertices.Length; i++)
                 {
-                    Point3d mPt = sortedVertices[i]; // point to create node from
+                    Point3d mPt = vertices[i]; // point to create node from
 
                     // is the point already registered as a global node
                     int globalInd = -1;
@@ -43,23 +43,22 @@ namespace SolidFEM.Classes
                     for (int j = 0; j < globalNodePts.Count; j++)
                     {
                         double dist = globalNodePts[j].DistanceToSquared(mPt);
-                        if (dist < 0.0001) // random tolerance
+                        if (dist < 0.01) // random tolerance
                         {
                             globalInd = j;
                         }
                     }
                     
                     //int globalInd = globalNodePts.IndexOf(mPt); // find the global ID of the element node. -1 if not present
-                    Node n;
                     if (globalInd == -1) 
                     {
                         throw new Exception("There is a mismatch between the elements' node and the nodes of the system... ");
                     }
                     // create a new node
-                    n = new Node(globalInd, mPt);
-                    
+                    //n = new Node(globalInd, mPt);
+                    Node n = new Node(globalInd, globalNodePts[globalInd]);                    
                     n.ID = localNodeID; // 
-                    ;
+                    
                     elNodes.Add(n); // add node to list of the element's nodes
                     connectivity.Add(globalInd); // add the global index to the connectivity list
 
@@ -83,16 +82,19 @@ namespace SolidFEM.Classes
             List<Point3d> uniquePts = new List<Point3d>();
 
             // add the first points
-            uniquePts.Add(meshList[0].Vertices.ToPoint3dArray()[0]); 
+
+            var firstPt = meshList[0].Vertices.ToPoint3dArray()[0];
+            uniquePts.Add(new Point3d(Math.Round(firstPt.X, 4), Math.Round(firstPt.Y, 4), Math.Round(firstPt.Z, 4))); 
             foreach (Mesh mesh in meshList)
             {
                 Point3d[] vertices = mesh.Vertices.ToPoint3dArray();
                 foreach (Point3d point3D in vertices)
                 {
                     double dist = uniquePts.Min(pt=> pt.DistanceToSquared(point3D));
-                    if(dist > 0.0001)
+                    if(dist > 0.001)
                     {
-                        uniquePts.Add(point3D); // if the minimum distance between the current point and all other unique points are greater than a tolerance, it is not already in the list
+                        //uniquePts.Add(point3D); // if the minimum distance between the current point and all other unique points are greater than a tolerance, it is not already in the list
+                        uniquePts.Add(new Point3d(Math.Round(point3D.X, 4), Math.Round(point3D.Y, 4), Math.Round(point3D.Z, 4)));
                     }
                     /*
                     int index = uniquePts.IndexOf(point3D); // returns -1 if the point is not already added to the list
@@ -331,6 +333,73 @@ namespace SolidFEM.Classes
 
         }
 
+        public static List<Point3d> SortedVerticesGraham(Mesh mesh)
+        {
+            // -- find the lowest and highest face of the mesh --
+            int lowface = 0;
+            int highFace = 0;
+
+
+            int count = 0;
+
+            // get the first centroid: 
+            var p0 = mesh.TopologyVertices[mesh.Faces[0].A];
+            var p1 = mesh.TopologyVertices[mesh.Faces[0].B];
+            var p2 = mesh.TopologyVertices[mesh.Faces[0].C];
+            var p3 = mesh.TopologyVertices[mesh.Faces[0].D];
+
+            List<Point3d> pts = new List<Point3d>() { p0, p1, p2, p3 };
+            double x = 0; double y = 0; double z = 0;
+            foreach (Point3d point in pts)
+            {
+                x += point.X;
+                y += point.Y;
+                z += point.Z;
+            }
+            Point3d currentFaceCenter = new Point3d(x / pts.Count, y / pts.Count, z / pts.Count);
+
+            for (int i = 1; i < mesh.Faces.Count; i++)
+            {
+                // get the first centroid: 
+                p0 = mesh.TopologyVertices[mesh.Faces[i].A];
+                p1 = mesh.TopologyVertices[mesh.Faces[i].B];
+                p2 = mesh.TopologyVertices[mesh.Faces[i].C];
+                p3 = mesh.TopologyVertices[mesh.Faces[i].D];
+
+                pts = new List<Point3d>() { p0, p1, p2, p3 };
+                x = 0; y = 0; z = 0;
+                foreach (Point3d point in pts)
+                {
+                    x += point.X;
+                    y += point.Y;
+                    z += point.Z;
+                }
+                Point3d faceCenter = new Point3d(x / pts.Count, y / pts.Count, z / pts.Count);
+
+                if (faceCenter.Z > currentFaceCenter.Z)
+                {
+                    highFace = i;
+                }
+                else if (faceCenter.Z < currentFaceCenter.Z)
+                {
+                    lowface = i;
+                }
+            }
+
+            // -- get the vertices from the lowest and highest face --
+            List<Point3f> lowPts = new List<Point3f>() { mesh.TopologyVertices[mesh.Faces[lowface].A], mesh.TopologyVertices[mesh.Faces[lowface].B], mesh.TopologyVertices[mesh.Faces[lowface].C], mesh.TopologyVertices[mesh.Faces[lowface].D] };
+            List<Point3f> highPts = new List<Point3f>() { mesh.TopologyVertices[mesh.Faces[highFace].A], mesh.TopologyVertices[mesh.Faces[highFace].B], mesh.TopologyVertices[mesh.Faces[highFace].C], mesh.TopologyVertices[mesh.Faces[highFace].D] };
+
+
+
+            
+            List<Point3d> sortedVertices = new List<Point3d>();
+
+            Stack<Point3d> stack = new Stack<Point3d>();
+
+
+            return sortedVertices;
+        }
         public static List<Point3d> SortVerticesByGrahamScan(List<Point3d> vertices)
         {
             
@@ -364,14 +433,14 @@ namespace SolidFEM.Classes
             #endregion
             #region Sort top and bottom nodes
             topNodes = topNodes.OrderBy(pt => pt.Y).ThenBy(pt => pt.X).ToList(); // Is it working if several points has the same y-value?
-            topNodes = topNodes.OrderBy(pt => Math.Atan2(pt.Y - topNodes[0].Y, pt.X - topNodes[0].X)).ToList();
+            //topNodes = topNodes.OrderBy(pt => Math.Atan2(pt.Y - topNodes[0].Y, pt.X - topNodes[0].X)).ToList();
             List<Point3d> sortedTop = new List<Point3d>();
             while (topNodes.Count > 0)
             {
                 GrahamScan(ref topNodes, ref sortedTop);
             }
             bottomNodes = bottomNodes.OrderBy(pt => pt.Y).ThenBy(pt => pt.X).ToList();
-            bottomNodes = bottomNodes.OrderBy(pt => Math.Atan2(pt.Y - bottomNodes[0].Y, pt.X - bottomNodes[0].X)).ToList();
+            //bottomNodes = bottomNodes.OrderBy(pt => Math.Atan2(pt.Y - bottomNodes[0].Y, pt.X - bottomNodes[0].X)).ToList();
             List<Point3d> sortedBottom = new List<Point3d>();
             while (bottomNodes.Count > 0)
             {
