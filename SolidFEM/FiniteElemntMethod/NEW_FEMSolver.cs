@@ -89,6 +89,7 @@ namespace SolidFEM.FiniteElementMethod
             //List<Node> nodes = smartMesh.Nodes;
             //List<Element> elements = smartMesh.Elements;
             
+            // clean the mesh and sort nodes
 
 
 
@@ -517,7 +518,13 @@ namespace SolidFEM.FiniteElementMethod
             }
 
             
-            CompressedColumnStorage<double> CCS = CSD.SparseMatrix.OfColumnMajor(K_gl.RowCount, K_gl.ColumnCount, K_gl.AsColumnMajorArray());          
+            CompressedColumnStorage<double> CCS = CSD.SparseMatrix.OfColumnMajor(K_gl.RowCount, K_gl.ColumnCount, K_gl.AsColumnMajorArray());
+
+            #region Testing problems
+            var R_LA = LA.Double.DenseVector.Build.DenseOfArray(R_gl.Values);
+
+            var u_LA = K_gl.Solve(R_LA);
+            #endregion
 
 
             SparseLU CS_K_global = SparseLU.Create(CCS, ColumnOrdering.MinimumDegreeAtPlusA, 0.0);
@@ -534,7 +541,8 @@ namespace SolidFEM.FiniteElementMethod
             
 
             var u = new CSD.DenseMatrix(CS_u.Length, 1, CS_u);
-            
+            //var u = new CSD.DenseMatrix(CS_u.Length, 1, u_LA.ToArray());
+
             //LA.Matrix<double> u = LA.Double.DenseMatrix.OfColumnArrays(CS_u);
 
             return u;
