@@ -91,6 +91,7 @@ namespace SolidFEM.FiniteElementMethod
 
             // clean the mesh and sort nodes
             var newMeshList = new List<Mesh>();
+            int c = 0; // delete after testing
             foreach (Mesh mesh in meshList)
             {
                 Mesh nM = GrahamScan.DoGrahamScan(mesh);
@@ -100,6 +101,7 @@ namespace SolidFEM.FiniteElementMethod
                     newMeshList.Add(nM);
                 }
                 else newMeshList.Add(mesh);
+                c++;
             }
 
 
@@ -143,7 +145,7 @@ namespace SolidFEM.FiniteElementMethod
             for (int i = 0; i < loads.Count; i++)
             {
                 //R[i, 0] = loads[i];
-                //R_external[i,0] = loads[i];
+                R_external[i,0] = loads[i];
             }
 
             CSD.DenseMatrix R = (CSD.DenseMatrix)R_self.Add(R_external);
@@ -416,6 +418,13 @@ namespace SolidFEM.FiniteElementMethod
             //CSD.DenseMatrix m = new CSD.DenseMatrix(numNode * 3, numNode * 3);
             LA.Matrix<double> m = LA.Matrix<double>.Build.Dense(numNode * 3, numNode * 3);
             List<double> elementSums = new List<double>();
+            
+            // test the functionality: 
+            int[] testElInds = new int[] { 0, 21, 84, 105, 168, 189, 252, 273 };
+            List<LA.Matrix<double>> testElsMat = new List<LA.Matrix<double>>();
+            List<Element> testEls = new List<Element>();
+            int count = 0; 
+            // delete the above after finished test
             foreach (Element element in elements)
             {
                 List<int> con = element.Connectivity; // get the connectivity of each element
@@ -423,7 +432,12 @@ namespace SolidFEM.FiniteElementMethod
                 // iterate over the connectivity indices
                 LA.Matrix<double> K_local = CalculateElementMatrices(element, material).Item1;
                 elementSums.Add(K_local.AsColumnMajorArray().Sum(x => Math.Abs(x))) ; // the sum of each element
-                
+
+                if (testElInds.Contains(count))
+                {
+                    testElsMat.Add(K_local);
+                    testEls.Add(element);
+                }
 
                 // loop nodes of elements
                 for (int i = 0; i < con.Count; i++)
@@ -440,6 +454,7 @@ namespace SolidFEM.FiniteElementMethod
                         }
                     }
                 }
+                count++; // delete after testing
             }
 
             // small code to round the values of the elements

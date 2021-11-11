@@ -100,8 +100,34 @@ namespace SolidFEM.Classes
 
         public static Mesh DoGrahamScan(Mesh oldMesh)
         {
+            // find top and bottom mesh
+            List<List<Point3f>> topAndBottom = GetTopAndBottomNodes(oldMesh);
+
+            List<Point3f> bottomPts = topAndBottom[0];
+            List<Point3f> topPts = topAndBottom[1];
+
+            List<Point3f> sortedBottom = GrahamScanFace(bottomPts);
+            List<Point3f> sortedTop = GrahamScanFace(topPts);
+            List<Point3f> sortedPts = new List<Point3f>( sortedBottom);
+            sortedPts.AddRange(sortedTop);
+            // with the sorted points, create an updated mesh
+            Mesh mesh = SortedMesh(sortedPts);
+
+            return mesh;
+
+        }
+        public static Mesh DoGrahamScanOriginal(Mesh oldMesh)
+        {
+
+            // find top and bottom mesh
+            List<List<Point3f>> topAndBottom = GetTopAndBottomNodes(oldMesh);
+
+            List<Point3f> bottomPts = topAndBottom[0];
+            List<Point3f> topPts = topAndBottom[1];
+
 
             List<Point3f> pts = oldMesh.TopologyVertices.ToList();
+
 
             int n = pts.Count();
             Stack<Point3f> pointStack = new Stack<Point3f>();
@@ -159,6 +185,62 @@ namespace SolidFEM.Classes
 
             return mesh;
         }
+
+        private static List<Point3f> GrahamScanFace(List<Point3f> pts)
+        {
+
+            int n = pts.Count();
+            Stack<Point3f> pointStack = new Stack<Point3f>();
+            List<Point3f> sortedPts = new List<Point3f>();
+
+            // find point with lowest y- and x- coordinate:
+            var sortedXY = pts.OrderBy(pt => pt.Y).ThenBy(pt => pt.X).ToList();
+            p0 = sortedXY[0]; // the first point
+                              // remove the first point from the sorted point.
+                              //sortedXY.RemoveAt(0);
+
+            // sort point by polar angle with P0
+            sortedXY.Sort(Compare);
+
+            // in the case of two or more points bein colinear, we only want to keep the one at the furthest distance
+            int m = 1;
+            for (int i = 0; i < n; i++)
+            {
+
+                while ((i < n - 1) && (Orientation(p0, sortedXY[i], sortedXY[i + 1])) == 0)
+                {
+                    i += 1;
+                }
+                sortedXY[m] = sortedXY[i];
+                m += 1;
+            }
+
+            if (m < 3) return null; // only three points exists, return
+
+            // create empty stack and push first three points to it
+            Stack<Point3f> stack = new Stack<Point3f>();
+            stack.Push(sortedXY[0]);
+            stack.Push(sortedXY[1]);
+            stack.Push(sortedXY[2]);
+
+
+
+            // process for remaing n-3 points
+            for (int i = 3; i < m; i++)
+            {
+                // keep removing top while the angle formed by points next-to-top and sortedXY[i] makes a non-left turn
+                while (stack.Count > 1 && Orientation(NextToPop(stack), stack.Peek(), sortedXY[i]) != 2)
+                {
+                    stack.Pop();
+                }
+                stack.Push(sortedXY[i]);
+            }
+
+            sortedPts = stack.ToList();
+            sortedPts.Reverse();
+
+            return sortedPts;
+        }
         private static Point3f NextToPop(Stack<Point3f> stack)
         {
             Point3f p = stack.Pop();
@@ -203,6 +285,7 @@ namespace SolidFEM.Classes
             else return 2;
 
         }
+
 
     }
 }
