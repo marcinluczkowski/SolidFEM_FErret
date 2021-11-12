@@ -46,7 +46,7 @@ namespace SolidFEM.Deconstructors
             var info = new List<string>();
 
             List<Point3d> nodes = new List<Point3d>();
-            int i = 0;
+            
             foreach (var n in el.Nodes)
             {
                 Point3d pt = n.Coordinate;

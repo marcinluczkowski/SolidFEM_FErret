@@ -247,9 +247,6 @@ namespace SolidFEM.Classes
             {
                 throw new NotImplementedException("This method is not yet implemented");
             }
-
-
-            return null;
         }
 
         /// <summary>
@@ -338,9 +335,7 @@ namespace SolidFEM.Classes
             // -- find the lowest and highest face of the mesh --
             int lowface = 0;
             int highFace = 0;
-
-
-            int count = 0;
+            
 
             // get the first centroid: 
             var p0 = mesh.TopologyVertices[mesh.Faces[0].A];
