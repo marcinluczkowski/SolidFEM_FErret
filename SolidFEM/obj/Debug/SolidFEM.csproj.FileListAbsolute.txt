@@ -33,3 +33,4 @@ C:\Program Files\Rhino 7\Plug-ins\SolidFEM\Accord.dll.config
 C:\Program Files\Rhino 7\Plug-ins\SolidFEM\SolidFEM.dll.config
 C:\Program Files\Rhino 7\Plug-ins\SolidFEM\SolidFEM.dll
 C:\Program Files\Rhino 7\Plug-ins\SolidFEM\SolidFEM.pdb
+C:\Users\sverremh\source\repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CopyComplete
