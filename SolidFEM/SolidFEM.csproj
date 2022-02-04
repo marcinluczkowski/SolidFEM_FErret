@@ -96,6 +96,7 @@
     <Compile Include="Classes\Solid_Mesh.cs" />
     <Compile Include="Classes\Support.cs" />
     <Compile Include="Classes\TempFE_Mesh.cs" />
+    <Compile Include="Classes\testClass.cs" />
     <Compile Include="Components\CreateElement.cs" />
     <Compile Include="Components\PreviewElement.cs" />
     <Compile Include="Components\Solver1.cs" />
