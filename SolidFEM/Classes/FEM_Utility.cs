@@ -11,7 +11,7 @@ namespace SolidFEM.Classes
         public static void ElementsFromMeshList(List<Mesh> mList, List<Point3d> globalNodePts,out List<Element> femElements)
         {
             List<Element> elements = new List<Element>(); // all the elements of the mesh
-            List<Node> globalNodes = new List<Node>(); // all the nodes of the mesh
+            List<Node> globalNodes = new List<Node>(); // all the nodes of the mesh // not in use
             
             int IDCounter = 0; // id for each element         
             
@@ -67,6 +67,15 @@ namespace SolidFEM.Classes
                 
                 el.Nodes = elNodes; // add nodes to the elements
                 el.Connectivity = connectivity; // Add the connectivity
+
+                if(elNodes.Count == 8)
+                {
+                    el.Type = "Hex8";
+                }
+                else if(elNodes.Count == 4)
+                {
+                    el.Type = "Tet4";
+                }
 
                 elements.Add(el);
                 IDCounter++;
@@ -148,7 +157,8 @@ namespace SolidFEM.Classes
                 }
 
                 // get the matrix of natural coordinates in gauss points
-                var gaussCoordinates = GetGaussPointMatrix(); // by defaul we have a 2x2x2 integration of Hex8 element
+                int order = 2;  //Order for gauss integration
+                var gaussCoordinates = GetGaussPointMatrix(order, el.Type); // by defaul we have a 2x2x2 integration of Hex8 element
 
                 // element force vector
                 LA.Vector<double> elForceVec = LA.Vector<double>.Build.Dense(el.Nodes.Count * 3);
@@ -161,7 +171,7 @@ namespace SolidFEM.Classes
                     double t = gaussCoordinates[j, 2];
 
                     // get the partial derivatives evaluated at a gauss point
-                    var partialDerivatives = PartialDerivateShapeFunctions(r, s, t, "Hex8");
+                    var partialDerivatives = PartialDerivateShapeFunctions(r, s, t, el.Type);
 
                     // get the jacobian
                     var jacobianOperator = partialDerivatives.Multiply(globalElementCoordinate);
@@ -169,13 +179,24 @@ namespace SolidFEM.Classes
                     elementJacobianTest += jacobianDeterminant;
                     //double jacobianDet = jacobianOperator. // how to calculate the  determinant????
                     // get the H matrix from the shape functions
-                    var shapeFunctions = GetShapeFunctions(r, s, t, "Hex8");
+                    var shapeFunctions = GetShapeFunctions(r, s, t, el.Type);
 
                     // the H-matrix is the displacement interpolation matrix. 
                     var interpolationMatrix = DisplacementInterpolationMatrix(shapeFunctions, 3);
-                    double alpha_ijk = 1.0; // should probably be a vector in a complete solver
+
+                    //Get wheights for gauss integration // Can later change GetGaussPointMatrix() to also give the wheights as output
+
+                    double alpha_ijk = 1.0;
+                    if (el.Type == "Hex8")
+                    {
+                        alpha_ijk = 1.0;    // with a 2x2x2 integration scheme the integration constant is 1.0 for all gauss points. 
+                    }
+                    else if (el.Type == "Tet4")
+                    {
+                        alpha_ijk = 0.25;   // with a 4 point integration scheme the integration constant is 0.25 for all gauss points
+                    }
+
                     double t_ijk = 1.0; // not sure what this is yet
-                    // with a 2x2x2 integration scheme the integration constant is 1.0 for all gauss points. 
                     var gaussPointLoadVector = interpolationMatrix.TransposeThisAndMultiply(bodyLoadVector);
                     gaussPointLoadVector = gaussPointLoadVector.Multiply( jacobianDeterminant * alpha_ijk * t_ijk );
 
@@ -209,15 +230,15 @@ namespace SolidFEM.Classes
         /// <summary>
         /// Returns the natural coordinate of Gauss points in a matrix
         /// </summary>
-        /// <param name="numPoints">e.g. 2 for 2x2x2x gauss points</param>
+        /// <param name="order">e.g. 2 for quadratic gauss integration</param>
         /// <param name="elType"> Which element to work on use "Hex8" for now. </param>
         /// <returns></returns>
-        public static LA.Matrix<double> GetGaussPointMatrix(int numPoints = 2, string elType = "Hex8")
+        public static LA.Matrix<double> GetGaussPointMatrix(int order, string elType)//= "Hex8")
         {
             // for now we only have Hex8 element implementation
             if (elType == "Hex8")
             {
-                if(numPoints == 2)
+                if(order == 2)
                 {
                     double gaussPoint = 0.57735; // Numerical value of the +- natural coordinate to use in gauss point integration for 2 sampling point. From Bathes book Table 5.6
                     double[] gaussArray = new double[]
@@ -243,6 +264,27 @@ namespace SolidFEM.Classes
                 }
 
             }
+            else if (elType == "Tet4")
+            {   if(order == 2)
+                {
+                    double alpha = 0.58541;
+                    double beta = 0.13820;
+                    double[] gaussArray = new double[]
+                    {
+                        alpha, beta, beta ,
+                        beta, alpha, beta,
+                        beta, beta, alpha,
+                        beta, beta, beta
+                    };
+                    var naturalCoordinatesGauss = LA.Matrix<double>.Build.DenseOfRowMajor(4, 3, gaussArray);
+                    return naturalCoordinatesGauss;
+                }
+                else
+                {
+                    throw new NotImplementedException("The integration type is not yet implemented.");
+                }
+
+            }
             else
             {
                 throw new NotImplementedException("This method is not yet implemented");
@@ -257,7 +299,7 @@ namespace SolidFEM.Classes
         /// <param name="t"></param>
         /// <param name="elType"></param>
         /// <returns></returns>
-        public static CSparse.Storage.DenseColumnMajorStorage<double> GetShapeFunctions(double r, double s, double t ,string elType = "Hex8")
+        public static CSparse.Storage.DenseColumnMajorStorage<double> GetShapeFunctions(double r, double s, double t ,string elType)
         {
             if (elType == "Hex8")
             {
@@ -271,6 +313,17 @@ namespace SolidFEM.Classes
                 double N8 = 0.125 * (1 - r) * (1 + s) * (1 + t);
 
                 double[] shapeArray = new double[] { N1, N2, N3, N4, N5, N6, N7, N8 };
+                var shapeFunctions = CSD.DenseMatrix.OfColumnMajor(1, shapeArray.Length, shapeArray);
+                return shapeFunctions;
+            }
+            else if(elType == "Tet4")
+            {
+                double N1 = r;
+                double N2 = s;
+                double N3 = t;
+                double N4 = 1 - r - s - t;
+
+                double[] shapeArray = new double[] { N1, N2, N3, N4};
                 var shapeFunctions = CSD.DenseMatrix.OfColumnMajor(1, shapeArray.Length, shapeArray);
                 return shapeFunctions;
             }
@@ -290,7 +343,7 @@ namespace SolidFEM.Classes
         /// <param name="s"></param>
         /// <param name="t"></param>
         /// <returns></returns>
-        public static LA.Matrix<double> PartialDerivateShapeFunctions(double r, double s, double t, string elType = "Hex8")
+        public static LA.Matrix<double> PartialDerivateShapeFunctions(double r, double s, double t, string elType)
         {
             if (elType == "Hex8")
             {
@@ -306,6 +359,17 @@ namespace SolidFEM.Classes
                 //derivativeMatrix = derivativeMat
                 return derivativeMatrix; 
 
+            }
+            else if (elType == "Tet4")
+            {
+                double[,] derivateArray = new double[,]
+                {
+                    {1, 0, 0, -1 },
+                    {0, 1, 0, -1 },
+                    {0, 0, 1, -1 }
+                };
+                var derivativeMatrix = LA.Matrix<double>.Build.DenseOfArray(derivateArray);
+                return derivativeMatrix;
             }
             else
             {
