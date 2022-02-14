@@ -6,9 +6,6 @@ using SolidFEM.Classes;
 using MathNet.Numerics.LinearAlgebra.Double;
 using System.Drawing;
 using System.Linq;
-using NLog;
-using NLog.Config;
-using NLog.Targets;
 
 // Csparse
 using LA = MathNet.Numerics.LinearAlgebra;
@@ -71,14 +68,10 @@ namespace SolidFEM.FiniteElementMethod
             
             // stopwatch
             var watch = new System.Diagnostics.Stopwatch();
-
-
-            NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
-
-            Logger.Info("The component has started...");
+            
+            
             var infoList = new List<string>(); // list to input information
-            Logger.Info("Some more text ...");
-
+ 
             List<Mesh> meshList = new List<Mesh>();
             SmartMesh smartMesh = new SmartMesh();
             List<double> loads = new List<double>();
