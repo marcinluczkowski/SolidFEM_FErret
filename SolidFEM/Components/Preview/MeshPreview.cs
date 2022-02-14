@@ -339,7 +339,11 @@ namespace SolidFEM.Preview
                 }
             }
         }
-
+        /// <summary>
+        /// Create a Rhino mesh from an element
+        /// </summary>
+        /// <param name="el">Rhino element to create mesh from. Currently HEX8 and TET4 are implemented</param>
+        /// <returns></returns>
         private Mesh MeshFromElement(Element el)
         {
             List<Point3d> points = el.TopologyVertices;
@@ -349,13 +353,26 @@ namespace SolidFEM.Preview
             // create vertices
             mesh.Vertices.AddVertices(points);
 
-            // create faces
-            mesh.Faces.AddFace(new MeshFace(0, 1, 2, 3));
-            mesh.Faces.AddFace(new MeshFace(4, 5, 6, 7));
-            mesh.Faces.AddFace(new MeshFace(0, 1, 5, 4));
-            mesh.Faces.AddFace(new MeshFace(1, 2, 6, 5));
-            mesh.Faces.AddFace(new MeshFace(2, 3, 7, 6));
-            mesh.Faces.AddFace(new MeshFace(3, 0, 4, 7));
+            if (points.Count == 8) // HEX8 element
+            {
+                // create faces for HEX8
+                mesh.Faces.AddFace(new MeshFace(0, 1, 2, 3));
+                mesh.Faces.AddFace(new MeshFace(4, 5, 6, 7));
+                mesh.Faces.AddFace(new MeshFace(0, 1, 5, 4));
+                mesh.Faces.AddFace(new MeshFace(1, 2, 6, 5));
+                mesh.Faces.AddFace(new MeshFace(2, 3, 7, 6));
+                mesh.Faces.AddFace(new MeshFace(3, 0, 4, 7));
+            }
+            else if (points.Count == 4)
+            {
+                // create faces for TET4
+                mesh.Faces.AddFace(new MeshFace(0, 1, 3));
+                mesh.Faces.AddFace(new MeshFace(1, 2, 3));
+                mesh.Faces.AddFace(new MeshFace(0, 2, 3));
+                mesh.Faces.AddFace(new MeshFace(0, 1, 2));
+            }
+            
+
 
             // clean 
             mesh.FaceNormals.ComputeFaceNormals();

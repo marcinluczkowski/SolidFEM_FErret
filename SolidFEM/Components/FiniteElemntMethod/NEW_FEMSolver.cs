@@ -30,6 +30,7 @@ namespace SolidFEM.FiniteElementMethod
         {
         }
 
+
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
@@ -55,7 +56,6 @@ namespace SolidFEM.FiniteElementMethod
             pManager.AddTextParameter("Diagonstics", "text", "List of information on the components performance", GH_ParamAccess.list);
             pManager.AddGenericParameter("FE_Mesh", "femesh", "The FE_Mesh containing results from the analysis.", GH_ParamAccess.item) ;
             pManager.AddGenericParameter("Global K", "", "", GH_ParamAccess.list);
-            
         }
 
         /// <summary>
@@ -68,8 +68,10 @@ namespace SolidFEM.FiniteElementMethod
             
             // stopwatch
             var watch = new System.Diagnostics.Stopwatch();
+            
+            
             var infoList = new List<string>(); // list to input information
-
+ 
             List<Mesh> meshList = new List<Mesh>();
             SmartMesh smartMesh = new SmartMesh();
             List<double> loads = new List<double>();
@@ -83,6 +85,7 @@ namespace SolidFEM.FiniteElementMethod
             DA.GetDataList(2, supports);
             DA.GetData(3, ref material);
 
+            
 
             // 0. Initial step
 
@@ -94,14 +97,21 @@ namespace SolidFEM.FiniteElementMethod
             int c = 0; // delete after testing
             foreach (Mesh mesh in meshList)
             {
-                Mesh nM = GrahamScan.DoGrahamScan(mesh);
-
-                if (nM.IsValid)
+                if (mesh.Vertices.Count == 8)
                 {
-                    newMeshList.Add(nM);
+                    Mesh nM = GrahamScan.DoGrahamScan(mesh);
+
+                    if (nM.IsValid)
+                    {
+                        newMeshList.Add(nM);
+                    }
+                    else newMeshList.Add(mesh);
+                    c++;
                 }
-                else newMeshList.Add(mesh);
-                c++;
+                else
+                {
+                    newMeshList.Add(mesh);
+                }
             }
 
 
@@ -126,6 +136,7 @@ namespace SolidFEM.FiniteElementMethod
             watch.Start();
             //LA.Matrix<double> K_global = CalculateGlobalStiffnessMatrix(elements, numNodes, material);
             var K_globalC = GlobalStiffnessCSparse(elements, numNodes, material);
+            
             var sumStiffness = K_globalC.AsColumnMajorArray();
             infoList.Add($"The sum of all elements in the stiffness matrix from mesh elements:  {sumStiffness.Sum()}");
 
@@ -136,6 +147,7 @@ namespace SolidFEM.FiniteElementMethod
             // 3. Get load vector
             watch.Start();
 
+            
             // self weight
             var selfWeight = FEM_Utility.GetBodyForceVector(material, elements, numNodes);
             CSD.DenseMatrix R_self = new CSD.DenseMatrix(numNodes * 3, 1, selfWeight.ToArray());
@@ -314,7 +326,7 @@ namespace SolidFEM.FiniteElementMethod
             // create local deformation matrix
             List<LA.Matrix<double>> B_local = new List<LA.Matrix<double>>();
 
-            // Global coordinates of the corner nodes of the actual element
+            // Global coordinates of the (corner) nodes of the actual element
             LA.Matrix<double> globalCoordinates = LA.Matrix<double>.Build.Dense(numElementNodes, 3);
 
             List<Point3d> localCoordinates = FEM_Utility.LocalCartesianCoordinates(element);
@@ -334,20 +346,82 @@ namespace SolidFEM.FiniteElementMethod
                 globalCoordinates[i, 2] = Math.Round(element.Nodes[i].Coordinate.Z, rpb); // colum of z coordinates
             }
 
-            //Numerical integration
-            //LA.Matrix<double> gaussNodes = FEM.GetNaturalCoordinate((double)Math.Sqrt((double)1 / (double)3), 3);
-            var gaussCoordinates = FEM_Utility.GetGaussPointMatrix(); // by defaul we have a 2x2x2 integration of Hex8 element
-            for (int n = 0; n < gaussCoordinates.RowCount; n++)  // loop gauss nodes
+            // Different methods for Hex8 and Tet4. Tet4 doesn't need gauss integration because B and Jacobian are constant!
+            if (element.Type == "Hex8")
             {
-                // Substitute the natural coordinates into the symbolic expression
-                var r = gaussCoordinates.Row(n)[0];
-                var s = gaussCoordinates.Row(n)[1];
-                var t = gaussCoordinates.Row(n)[2];
+                //Numerical integration
+                //LA.Matrix<double> gaussNodes = FEM.GetNaturalCoordinate((double)Math.Sqrt((double)1 / (double)3), 3);
+                var gaussCoordinates = FEM_Utility.GetGaussPointMatrix(2, element.Type); // by defaul we have a 2x2x2 integration of Hex8 element
+                for (int n = 0; n < gaussCoordinates.RowCount; n++)  // loop gauss nodes
+                {
+                    // Substitute the natural coordinates into the symbolic expression
+                    var r = gaussCoordinates.Row(n)[0];
+                    var s = gaussCoordinates.Row(n)[1];
+                    var t = gaussCoordinates.Row(n)[2];
 
-                // Partial derivatives of the shape functions
-                //LA.Matrix<double> shapeFunctionsDerivatedNatural = FEM.DerivateWithNatrualCoordinates(r, s, t, 3);
-                var partialDerivatives = FEM_Utility.PartialDerivateShapeFunctions(r, s, t, "Hex8");
+                    // Partial derivatives of the shape functions
+                    //LA.Matrix<double> shapeFunctionsDerivatedNatural = FEM.DerivateWithNatrualCoordinates(r, s, t, 3);
+                    var partialDerivatives = FEM_Utility.PartialDerivateShapeFunctions(r, s, t, element.Type);
 
+                    // Calculate Jacobian matrix
+                    LA.Matrix<double> jacobianMatrix = partialDerivatives.Multiply(globalCoordinates);
+
+                    // round the jacobian
+                    var jColMajArr = jacobianMatrix.AsColumnMajorArray();
+                    for (int k = 0; k < jColMajArr.Length; k++)
+                    {
+                        jColMajArr[k] = Math.Round(jColMajArr[k], rpb);
+                    }
+                    jacobianMatrix = LA.Matrix<double>.Build.DenseOfColumnMajor(3, 3, jColMajArr);
+                    // Calculate B - LA.Matrix
+                    LA.Matrix<double> shapeFuncDerivatedCartesian = (jacobianMatrix.Inverse()).Multiply(partialDerivatives);
+
+                    double jacobianDeterminant = jacobianMatrix.Determinant();
+                    if (jacobianDeterminant < 0) { AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Negativ jac det"); }
+                    int dimRowB = 6;
+
+                    // establish the B-matrix
+                    LA.Matrix<double> B_i = LA.Double.DenseMatrix.Build.Dense(dimRowB, 3 * numElementNodes);
+
+                    for (int i = 0; i < numElementNodes; i++)
+                    {
+
+                        // with the shape functions derivated with respect to the cartesian coordinates the rotated and unrotated element vectors are not the same... This is the correct one according to the formulas
+                        var B_i_sub = DenseMatrix.Build.DenseOfRowMajor(6, 3, new double[] {
+                            shapeFuncDerivatedCartesian.Row(0)[i], 0, 0,
+                            0, shapeFuncDerivatedCartesian.Row(1)[i], 0,
+                            0, 0, shapeFuncDerivatedCartesian.Row(2)[i],
+                            shapeFuncDerivatedCartesian.Row(1)[i], shapeFuncDerivatedCartesian.Row(0)[i], 0,
+                            shapeFuncDerivatedCartesian.Row(2)[i], 0, shapeFuncDerivatedCartesian.Row(0)[i],
+                            0, shapeFuncDerivatedCartesian.Row(2)[i], shapeFuncDerivatedCartesian.Row(1)[i]
+                            });
+                        /*
+                        // with the shape functions derivated with respect to the cartesian coordinates the rotated and unrotated element vectors are not the same... This is the correct one according to the formulas
+                        var B_i_sub = DenseMatrix.Build.DenseOfRowMajor(6, 3, new double[] {
+                            Math.Round(shapeFuncDerivatedCartesian.Row(0)[i], rpb), 0, 0,
+                            0, Math.Round(shapeFuncDerivatedCartesian.Row(1)[i], rpb), 0,
+                            0, 0, Math.Round(shapeFuncDerivatedCartesian.Row(2)[i], rpb),
+                            Math.Round(shapeFuncDerivatedCartesian.Row(1)[i], rpb), Math.Round(shapeFuncDerivatedCartesian.Row(0)[i],rpb), 0,
+                            Math.Round(shapeFuncDerivatedCartesian.Row(2)[i], rpb), 0, Math.Round(shapeFuncDerivatedCartesian.Row(0)[i],rpb),
+                            0, Math.Round(shapeFuncDerivatedCartesian.Row(2)[i],rpb), Math.Round(shapeFuncDerivatedCartesian.Row(1)[i],rpb)
+                            });
+                        */
+
+                        B_i.SetSubMatrix(0, i * 3, B_i_sub);
+
+                    }
+
+                    B_local.Add(B_i);
+                    //K_local += ((B_i.Transpose()).Multiply(C).Multiply(B_i)).Multiply(jacobianDeterminant);
+                    var k_i = (B_i.Transpose()).Multiply(C.Multiply(B_i)).Multiply(jacobianDeterminant);
+
+                    K_local.Add(k_i, K_local);
+                }
+            }
+            else if (element.Type == "Tet4")
+            {
+                var partialDerivatives = FEM_Utility.PartialDerivateShapeFunctions(1, 1, 1, "Tet4");    //Random coordinates (1,1,1) because the method requires coordinate inputs
+                
                 // Calculate Jacobian matrix
                 LA.Matrix<double> jacobianMatrix = partialDerivatives.Multiply(globalCoordinates);
 
@@ -358,51 +432,48 @@ namespace SolidFEM.FiniteElementMethod
                     jColMajArr[k] = Math.Round(jColMajArr[k], rpb);
                 }
                 jacobianMatrix = LA.Matrix<double>.Build.DenseOfColumnMajor(3, 3, jColMajArr);
+
                 // Calculate B - LA.Matrix
                 LA.Matrix<double> shapeFuncDerivatedCartesian = (jacobianMatrix.Inverse()).Multiply(partialDerivatives);
-
-                double jacobianDeterminant = jacobianMatrix.Determinant();
-                if (jacobianDeterminant < 0) { AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Negativ jac det"); }
+                
                 int dimRowB = 6;
-
-                // establish the B-matrix
                 LA.Matrix<double> B_i = LA.Double.DenseMatrix.Build.Dense(dimRowB, 3 * numElementNodes);
 
                 for (int i = 0; i < numElementNodes; i++)
                 {
-                    
+
                     // with the shape functions derivated with respect to the cartesian coordinates the rotated and unrotated element vectors are not the same... This is the correct one according to the formulas
                     var B_i_sub = DenseMatrix.Build.DenseOfRowMajor(6, 3, new double[] {
-                        shapeFuncDerivatedCartesian.Row(0)[i], 0, 0,
-                        0, shapeFuncDerivatedCartesian.Row(1)[i], 0,
-                        0, 0, shapeFuncDerivatedCartesian.Row(2)[i],
-                        shapeFuncDerivatedCartesian.Row(1)[i], shapeFuncDerivatedCartesian.Row(0)[i], 0,
-                        shapeFuncDerivatedCartesian.Row(2)[i], 0, shapeFuncDerivatedCartesian.Row(0)[i],
-                        0, shapeFuncDerivatedCartesian.Row(2)[i], shapeFuncDerivatedCartesian.Row(1)[i]
-                        });
-                    /*
-                    // with the shape functions derivated with respect to the cartesian coordinates the rotated and unrotated element vectors are not the same... This is the correct one according to the formulas
-                    var B_i_sub = DenseMatrix.Build.DenseOfRowMajor(6, 3, new double[] {
-                        Math.Round(shapeFuncDerivatedCartesian.Row(0)[i], rpb), 0, 0,
-                        0, Math.Round(shapeFuncDerivatedCartesian.Row(1)[i], rpb), 0,
-                        0, 0, Math.Round(shapeFuncDerivatedCartesian.Row(2)[i], rpb),
-                        Math.Round(shapeFuncDerivatedCartesian.Row(1)[i], rpb), Math.Round(shapeFuncDerivatedCartesian.Row(0)[i],rpb), 0,
-                        Math.Round(shapeFuncDerivatedCartesian.Row(2)[i], rpb), 0, Math.Round(shapeFuncDerivatedCartesian.Row(0)[i],rpb),
-                        0, Math.Round(shapeFuncDerivatedCartesian.Row(2)[i],rpb), Math.Round(shapeFuncDerivatedCartesian.Row(1)[i],rpb)
-                        });
-                    */
+                            shapeFuncDerivatedCartesian.Row(0)[i], 0, 0,
+                            0, shapeFuncDerivatedCartesian.Row(1)[i], 0,
+                            0, 0, shapeFuncDerivatedCartesian.Row(2)[i],
+                            shapeFuncDerivatedCartesian.Row(1)[i], shapeFuncDerivatedCartesian.Row(0)[i], 0,
+                            shapeFuncDerivatedCartesian.Row(2)[i], 0, shapeFuncDerivatedCartesian.Row(0)[i],
+                            0, shapeFuncDerivatedCartesian.Row(2)[i], shapeFuncDerivatedCartesian.Row(1)[i]
+                            });
+                   
 
                     B_i.SetSubMatrix(0, i * 3, B_i_sub);
-                    
-                }
 
+                }
                 B_local.Add(B_i);
-                //K_local += ((B_i.Transpose()).Multiply(C).Multiply(B_i)).Multiply(jacobianDeterminant);
-                var k_i = (B_i.Transpose()).Multiply(C.Multiply(B_i)).Multiply(jacobianDeterminant); 
-               
-                K_local.Add( k_i , K_local);
+                // Get volume of Tetrahedra
+                Brep triangle1 = Brep.CreateFromCornerPoints(element.TopologyVertices[0], element.TopologyVertices[1], element.TopologyVertices[2], 0.0001);
+                Brep triangle2 = Brep.CreateFromCornerPoints(element.TopologyVertices[0], element.TopologyVertices[1], element.TopologyVertices[3], 0.0001);
+                Brep triangle3 = Brep.CreateFromCornerPoints(element.TopologyVertices[0], element.TopologyVertices[2], element.TopologyVertices[3], 0.0001);
+                Brep triangle4 = Brep.CreateFromCornerPoints(element.TopologyVertices[1], element.TopologyVertices[2], element.TopologyVertices[3], 0.0001);
+
+                List<Brep> triangles = new List<Brep> { triangle1, triangle2, triangle3, triangle4 };
+
+                Brep[] tetra = Brep.CreateSolid(triangles, 0.0001);
+
+                VolumeMassProperties vmp = VolumeMassProperties.Compute(tetra[0]);
+                double V = vmp.Volume;
+
+                var k_i = V*(B_i.Transpose()).Multiply(C.Multiply(B_i));
+
+                K_local.Add(k_i, K_local);
             }
-            
             return Tuple.Create(K_local, B_local);
         }
 
@@ -732,7 +803,7 @@ namespace SolidFEM.FiniteElementMethod
             LA.Matrix<double> elementGaussStress = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
             LA.Matrix<double> elementStrain = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
             LA.Matrix<double> elementStress = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
-            LA.Matrix<double> localDeformation = LA.Double.DenseMatrix.Build.Dense(3 * B_local.Count, 1);
+            LA.Matrix<double> localDeformation = LA.Double.DenseMatrix.Build.Dense(3 * element.Nodes.Count, 1);
 
             // get deformation of nodes connected to element
             for (int i = 0; i < element.Connectivity.Count; i++)
@@ -741,39 +812,63 @@ namespace SolidFEM.FiniteElementMethod
                 localDeformation[3 * i + 1, 0] = u[3 * element.Connectivity[i] + 1, 0];
                 localDeformation[3 * i + 2, 0] = u[3 * element.Connectivity[i] + 2, 0];
             }
-            // get gauss strain and stress
-            for (int n = 0; n < B_local.Count; n++)
+            if (element.Type == "Hex8")
             {
-                // B-matrix is calculated from gauss points
-                LA.Matrix<double> gaussStrain = B_local[n].Multiply(localDeformation);
-                LA.Matrix<double> gaussStress = C.Multiply(B_local[n]).Multiply(localDeformation);
-
-                for (int i = 0; i < B_local[0].RowCount; i++)
+                // get gauss strain and stress
+                for (int n = 0; n < B_local.Count; n++)
                 {
-                    elementGaussStrain[i, n] = gaussStrain[i, 0];
-                    elementGaussStress[i, n] = gaussStress[i, 0];
+                    // B-matrix is calculated from gauss points
+                    LA.Matrix<double> gaussStrain = B_local[n].Multiply(localDeformation);
+                    LA.Matrix<double> gaussStress = C.Multiply(B_local[n]).Multiply(localDeformation);
+
+                    for (int i = 0; i < B_local[0].RowCount; i++)
+                    {
+                        elementGaussStrain[i, n] = gaussStrain[i, 0];
+                        elementGaussStress[i, n] = gaussStress[i, 0];
+                    }
+                }
+
+                // get node strain and stress by extrapolation
+                LA.Matrix<double> extrapolationNodes = FEM.GetNaturalCoordinate(Math.Sqrt(3), 3);
+
+                for (int n = 0; n < B_local.Count; n++)
+                {
+                    // get stress and strain in nodes
+                    var r = extrapolationNodes.Row(n)[0];
+                    var s = extrapolationNodes.Row(n)[1];
+                    double t = extrapolationNodes.Row(n)[2];
+
+                    LA.Vector<double> shapefunctionValuesInNode = FEM.GetShapeFunctions(r, s, t, 3);
+                    LA.Vector<double> nodeStrain = elementGaussStrain.Multiply(shapefunctionValuesInNode);
+                    LA.Vector<double> nodeStress = elementGaussStress.Multiply(shapefunctionValuesInNode);
+                    for (int i = 0; i < B_local[0].RowCount; i++)
+                    {
+                        elementStrain[i, n] = nodeStrain[i];
+                        elementStress[i, n] = nodeStress[i];
+                    }
                 }
             }
-
-            // get node strain and stress by extrapolation
-            LA.Matrix<double> extrapolationNodes = FEM.GetNaturalCoordinate(Math.Sqrt(3), 3);
-
-            for (int n = 0; n < B_local.Count; n++)
+            else if (element.Type == "Tet4")    // no need for gauss strains because B-matrix is constant
             {
-                // get stress and strain in nodes
-                var r = extrapolationNodes.Row(n)[0];
-                var s = extrapolationNodes.Row(n)[1];
-                double t = extrapolationNodes.Row(n)[2];
-
-                LA.Vector<double> shapefunctionValuesInNode = FEM.GetShapeFunctions(r, s, t, 3);
-                LA.Vector<double> nodeStrain = elementGaussStrain.Multiply(shapefunctionValuesInNode);
-                LA.Vector<double> nodeStress = elementGaussStress.Multiply(shapefunctionValuesInNode);
-                for (int i = 0; i < B_local[0].RowCount; i++)
+                
+                for(int i = 0; i < element.Nodes.Count; i++)
                 {
-                    elementStrain[i, n] = nodeStrain[i];
-                    elementStress[i, n] = nodeStress[i];
+                    
+                    //Get deformation at node
+                    LA.Matrix<double> nodalDeformation = LA.Double.DenseMatrix.Build.Dense(3 , 1);
+                    LA.Matrix<double> nodeStrain = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, 1);
+                    LA.Matrix<double> nodeStress = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, 1);
+                    
+
+                    nodeStrain = (B_local[0]).Multiply(localDeformation);
+                    nodeStress.Add(C.Multiply(nodeStrain));
+
+                    elementStrain.SetSubMatrix(0, i, nodeStrain);
+                    elementStress.SetSubMatrix(0, i, nodeStress);
+
                 }
             }
+            
             return Tuple.Create(elementStrain, elementStress);
         }
 
@@ -863,7 +958,7 @@ namespace SolidFEM.FiniteElementMethod
             LA.Vector<double> elementMises = DenseVector.Build.Dense(elements.Count);
             for (int i = 0; i < elementStressList.Count; i++)
             {
-                for (int j = 0; j < 8; j++)
+                for (int j = 0; j < elements[0].Nodes.Count; j++)
                 {
                     LA.Vector<double> nodeStress = elementStressList[i].Column(j);
                     double Sxx = nodeStress[0];

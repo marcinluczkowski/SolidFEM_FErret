@@ -62,7 +62,30 @@ namespace SolidFEM.FiniteElementMethod
 
 
             // -- method --
+            // clean the mesh and sort nodes
+            var newMeshList = new List<Mesh>();
+            int c = 0; // delete after testing
+            foreach (Mesh mesh in meshList)
+            {
+                if (mesh.Vertices.Count == 8)
+                {
+                    Mesh nM = GrahamScan.DoGrahamScan(mesh);
 
+                    if (nM.IsValid)
+                    {
+                        newMeshList.Add(nM);
+                    }
+                    else newMeshList.Add(mesh);
+                    c++;
+                }
+                else
+                {
+                    newMeshList.Add(mesh);
+                }
+            }
+
+
+            /* Delete if OK
             var newMeshList = new List<Mesh>();
             foreach (Mesh mesh in meshList)
             {
@@ -73,7 +96,7 @@ namespace SolidFEM.FiniteElementMethod
                     newMeshList.Add(nM);
                 }
                 else newMeshList.Add(mesh);
-            }
+            }*/
 
 
             List<Point3d> nodePts = FEM_Utility.GetMeshNodes(newMeshList);

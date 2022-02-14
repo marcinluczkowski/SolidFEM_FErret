@@ -44,26 +44,32 @@
     <Reference Include="Accord.Math.Core, Version=3.8.0.0, Culture=neutral, PublicKeyToken=fa1a88e29555ccf7, processorArchitecture=MSIL">
       <HintPath>..\packages\Accord.Math.3.8.0\lib\net462\Accord.Math.Core.dll</HintPath>
     </Reference>
-    <Reference Include="CSparse, Version=3.5.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\CSparse.3.5.0\lib\net45\CSparse.dll</HintPath>
+    <Reference Include="CSparse, Version=3.6.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\CSparse.3.6.0\lib\netstandard2.0\CSparse.dll</HintPath>
     </Reference>
     <Reference Include="Eto, Version=2.6.0.0, Culture=neutral, PublicKeyToken=552281e97c755530, processorArchitecture=MSIL">
-      <HintPath>..\packages\RhinoCommon.7.12.21313.6341\lib\net48\Eto.dll</HintPath>
+      <HintPath>..\packages\RhinoCommon.7.15.22039.13001\lib\net48\Eto.dll</HintPath>
     </Reference>
     <Reference Include="MathNet.Numerics, Version=4.15.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\MathNet.Numerics.4.15.0\lib\net461\MathNet.Numerics.dll</HintPath>
     </Reference>
-    <Reference Include="Rhino.UI, Version=7.12.21313.6340, Culture=neutral, PublicKeyToken=552281e97c755530, processorArchitecture=MSIL">
-      <HintPath>..\packages\RhinoCommon.7.12.21313.6341\lib\net48\Rhino.UI.dll</HintPath>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Rhino.UI, Version=7.15.22039.13000, Culture=neutral, PublicKeyToken=552281e97c755530, processorArchitecture=MSIL">
+      <HintPath>..\packages\RhinoCommon.7.15.22039.13001\lib\net48\Rhino.UI.dll</HintPath>
     </Reference>
-    <Reference Include="RhinoCommon, Version=7.12.21313.6340, Culture=neutral, PublicKeyToken=552281e97c755530, processorArchitecture=MSIL">
-      <HintPath>..\packages\RhinoCommon.7.12.21313.6341\lib\net48\RhinoCommon.dll</HintPath>
+    <Reference Include="RhinoCommon, Version=7.15.22039.13000, Culture=neutral, PublicKeyToken=552281e97c755530, processorArchitecture=MSIL">
+      <HintPath>..\packages\RhinoCommon.7.15.22039.13001\lib\net48\RhinoCommon.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
+    <Reference Include="System.IO.Compression" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Transactions" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Drawing" />
@@ -82,6 +88,7 @@
   <ItemGroup>
     <Compile Include="Classes\Element.cs" />
     <Compile Include="Classes\FEM.cs" />
+    <Compile Include="Classes\FEMLogger.cs" />
     <Compile Include="Classes\FEM_Matrices.cs" />
     <Compile Include="Classes\FEM_Utility.cs" />
     <Compile Include="Classes\Unused classes\Geometry.cs" />
@@ -129,8 +136,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
-    <None Include="packages.config" />
+    <None Include="app.config" />
+    <None Include="packages.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Tools\" />
@@ -182,8 +191,8 @@ Erase "$(TargetPath)"</PostBuildEvent>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Accord.3.8.0\build\Accord.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Accord.3.8.0\build\Accord.targets'))" />
-    <Error Condition="!Exists('..\packages\RhinoCommon.7.12.21313.6341\build\RhinoCommon.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\RhinoCommon.7.12.21313.6341\build\RhinoCommon.targets'))" />
+    <Error Condition="!Exists('..\packages\RhinoCommon.7.15.22039.13001\build\RhinoCommon.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\RhinoCommon.7.15.22039.13001\build\RhinoCommon.targets'))" />
   </Target>
   <Import Project="..\packages\Accord.3.8.0\build\Accord.targets" Condition="Exists('..\packages\Accord.3.8.0\build\Accord.targets')" />
-  <Import Project="..\packages\RhinoCommon.7.12.21313.6341\build\RhinoCommon.targets" Condition="Exists('..\packages\RhinoCommon.7.12.21313.6341\build\RhinoCommon.targets')" />
+  <Import Project="..\packages\RhinoCommon.7.15.22039.13001\build\RhinoCommon.targets" Condition="Exists('..\packages\RhinoCommon.7.15.22039.13001\build\RhinoCommon.targets')" />
 </Project>
