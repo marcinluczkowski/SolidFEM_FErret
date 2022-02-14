@@ -6,6 +6,9 @@ using SolidFEM.Classes;
 using MathNet.Numerics.LinearAlgebra.Double;
 using System.Drawing;
 using System.Linq;
+using NLog;
+using NLog.Config;
+using NLog.Targets;
 
 // Csparse
 using LA = MathNet.Numerics.LinearAlgebra;
@@ -29,6 +32,7 @@ namespace SolidFEM.FiniteElementMethod
               "SmartMesh", "FEM-Mesh")
         {
         }
+
 
         /// <summary>
         /// Registers all the input parameters for this component.
@@ -67,7 +71,13 @@ namespace SolidFEM.FiniteElementMethod
             
             // stopwatch
             var watch = new System.Diagnostics.Stopwatch();
+
+
+            NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+
+            Logger.Info("The component has started...");
             var infoList = new List<string>(); // list to input information
+            Logger.Info("Some more text ...");
 
             List<Mesh> meshList = new List<Mesh>();
             SmartMesh smartMesh = new SmartMesh();
@@ -82,6 +92,7 @@ namespace SolidFEM.FiniteElementMethod
             DA.GetDataList(2, supports);
             DA.GetData(3, ref material);
 
+            
 
             // 0. Initial step
 
@@ -132,6 +143,7 @@ namespace SolidFEM.FiniteElementMethod
             watch.Start();
             //LA.Matrix<double> K_global = CalculateGlobalStiffnessMatrix(elements, numNodes, material);
             var K_globalC = GlobalStiffnessCSparse(elements, numNodes, material);
+            
             var sumStiffness = K_globalC.AsColumnMajorArray();
             infoList.Add($"The sum of all elements in the stiffness matrix from mesh elements:  {sumStiffness.Sum()}");
 
