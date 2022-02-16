@@ -214,7 +214,9 @@ namespace SolidFEM.Classes
 
                 }
                 B_local.Add(B_i);
+
                 // Get volume of Tetrahedra
+                /*
                 Brep triangle1 = Brep.CreateFromCornerPoints(element.TopologyVertices[0], element.TopologyVertices[1], element.TopologyVertices[2], 0.0001);
                 Brep triangle2 = Brep.CreateFromCornerPoints(element.TopologyVertices[0], element.TopologyVertices[1], element.TopologyVertices[3], 0.0001);
                 Brep triangle3 = Brep.CreateFromCornerPoints(element.TopologyVertices[0], element.TopologyVertices[2], element.TopologyVertices[3], 0.0001);
@@ -223,8 +225,9 @@ namespace SolidFEM.Classes
                 List<Brep> triangles = new List<Brep> { triangle1, triangle2, triangle3, triangle4 };
 
                 Brep[] tetra = Brep.CreateSolid(triangles, 0.0001);
+                */
 
-                VolumeMassProperties vmp = VolumeMassProperties.Compute(tetra[0]);
+                VolumeMassProperties vmp = VolumeMassProperties.Compute(element.ElementMesh);
                 double V = vmp.Volume;
 
                 var k_i = V * (B_i.Transpose()).Multiply(C.Multiply(B_i));

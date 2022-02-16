@@ -76,8 +76,9 @@ namespace SolidFEM.Classes
                 
                 el.Nodes = elNodes; // add nodes to the elements
                 el.Connectivity = connectivity; // Add the connectivity
+                el.ElementMesh = mEl;   // Add the mesh to each element
 
-                if(elNodes.Count == 8)
+                if (elNodes.Count == 8)
                 {
                     el.Type = "Hex8";
                 }
@@ -654,7 +655,7 @@ namespace SolidFEM.Classes
 
 
                     nodeStrain = (B_local[0]).Multiply(localDeformation);
-                    nodeStress.Add(C.Multiply(nodeStrain));
+                    nodeStress.Add(C.Multiply(nodeStrain), nodeStress);
 
                     elementStrain.SetSubMatrix(0, i, nodeStrain);
                     elementStress.SetSubMatrix(0, i, nodeStress);
