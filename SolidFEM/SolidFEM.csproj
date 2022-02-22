@@ -114,7 +114,6 @@
     <Compile Include="FiniteElemntMethod\FEMLoad.cs" />
     <Compile Include="FiniteElemntMethod\FEM_BoundaryOnPoints_MESH.cs" />
     <Compile Include="FiniteElemntMethod\NEW_FEMSolver.cs" />
-    <Compile Include="FiniteElemntMethod\FEMSolver.cs" />
     <Compile Include="FiniteElemntMethod\FEMMaterial.cs" />
     <Compile Include="FiniteElemntMethod\FEM_BoundaryOnPoints.cs" />
     <Compile Include="FiniteElemntMethod\FEM_Element.cs" />

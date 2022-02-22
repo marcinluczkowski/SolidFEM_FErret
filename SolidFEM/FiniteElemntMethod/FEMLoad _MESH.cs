@@ -25,16 +25,16 @@ namespace SolidFEM.FiniteElementMethod
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddMeshParameter("Mesh List", "mList", "List of mesh representing solid elements.", GH_ParamAccess.list); // 0
-            pManager.AddIntegerParameter("Type", "type", "Load type: Point load = 1, Surface load = 2.", GH_ParamAccess.item); // 1
+            pManager.AddMeshParameter("Mesh", "m", "List of mesh representing solid elements.", GH_ParamAccess.list); // 0
+            //pManager.AddIntegerParameter("Type", "type", "Load type: Point load = 1, Surface load = 2.", GH_ParamAccess.item); // 1
             pManager.AddGenericParameter("Position", "pos", "If type = 1: List of coordinates for point loads.", GH_ParamAccess.list); // 2
-            pManager.AddIntegerParameter("Surface", "srf", "If type = 2: Face index of geometry to apply surface load.", GH_ParamAccess.list); // 3
+            //pManager.AddIntegerParameter("Surface", "srf", "If type = 2: Face index of geometry to apply surface load.", GH_ParamAccess.list); // 3
             pManager.AddGenericParameter("Vector", "vec", "List of vectors of the loads. If surface load, only one vector.", GH_ParamAccess.list); // 4
 
-            pManager[0].Optional = true;
-            pManager[1].Optional = true;
-            pManager[2].Optional = true;
-            pManager[3].Optional = true;
+            //pManager[0].Optional = true;
+            //pManager[1].Optional = true;
+            //pManager[2].Optional = true;
+            //pManager[3].Optional = true;
 
         }
 
@@ -43,7 +43,7 @@ namespace SolidFEM.FiniteElementMethod
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Load", "load", "List of residual forces (R).", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Loads", "load", "List of residual forces (R).", GH_ParamAccess.list);
             pManager.AddGenericParameter("Points", "pts", "List of points subjected to load.", GH_ParamAccess.list);
         }
 
@@ -58,16 +58,16 @@ namespace SolidFEM.FiniteElementMethod
 
             //SmartMesh smartMesh = new SmartMesh();
             List<Mesh> meshList = new List<Mesh>(); // 0
-            int loadType = 0; // 1
+            int loadType = 1; // 1
             List<Vector3d> loadVectors = new List<Vector3d>();
             List<Point3d> loadPosition = new List<Point3d>();
-            List<int> surfaceIndex = new List<int>();
+            //List<int> surfaceIndex = new List<int>();
 
             DA.GetDataList(0, meshList);
-            DA.GetData(1, ref loadType);
-            DA.GetDataList(2, loadPosition);
-            DA.GetDataList(3, surfaceIndex);
-            DA.GetDataList(4, loadVectors);
+            //DA.GetData(1, ref loadType);
+            DA.GetDataList(1, loadPosition);
+            //DA.GetDataList(3, surfaceIndex);
+            DA.GetDataList(2, loadVectors);
 
             // Code
 

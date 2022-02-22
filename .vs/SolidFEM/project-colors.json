@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "ProjectMap": {
+    "1de880d5-0a1c-4660-aa62-1ccac5451657": {
+      "ProjectGuid": "1de880d5-0a1c-4660-aa62-1ccac5451657",
+      "DisplayName": "SolidFEM",
+      "ColorIndex": 0
+    }
+  },
+  "NextColorIndex": 1
+}

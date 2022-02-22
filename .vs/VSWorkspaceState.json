@@ -1,6 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\SolidFEM",
+    "\\SolidFEM\\FiniteElemntMethod"
   ],
   "SelectedNode": "\\SolidFEM.sln",
   "PreviewInSolutionExplorer": false

@@ -35,9 +35,9 @@ namespace SolidFEM.FiniteElementMethod
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Mesh", "m", "Normal mesh as a list of elements.", GH_ParamAccess.list); // 0
-            pManager.AddGenericParameter("Loads", "load", "Load vector from FEM Load.", GH_ParamAccess.list); // 1
-            pManager.AddGenericParameter("Boundary Conditions", "BC", "Boundary conditions from FEM Boundary Condtion.", GH_ParamAccess.list); // 2
+            pManager.AddMeshParameter("Mesh", "m", "Normal mesh as a list of elements.", GH_ParamAccess.list); // 0
+            pManager.AddNumberParameter("Loads", "load", "Load vector from FEM Load.", GH_ParamAccess.list); // 1
+            pManager.AddGenericParameter("Supports", "BC", "Boundary conditions from FEM Boundary Condtion.", GH_ParamAccess.list); // 2
             pManager.AddGenericParameter("Material", "material", "Material from FEM Material.", GH_ParamAccess.item); // 3
         }
 
@@ -46,15 +46,15 @@ namespace SolidFEM.FiniteElementMethod
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("u1", "u1", "Displacement of nodes in x-direction.", GH_ParamAccess.list);
-            pManager.AddGenericParameter("u2", "u2", "Displacement of nodes in y-direction.", GH_ParamAccess.list);
-            pManager.AddGenericParameter("u3", "u3", "Displacement of nodes in z-direction.", GH_ParamAccess.list);
-            pManager.AddGenericParameter("Element Stress", "element mises", "List of Von Mises stress in element.", GH_ParamAccess.list);
-            pManager.AddGenericParameter("Node Stress", "node mises", "List of von Mises stress in node.", GH_ParamAccess.list);
+            //pManager.AddGenericParameter("u1", "u1", "Displacement of nodes in x-direction.", GH_ParamAccess.list);
+            //pManager.AddGenericParameter("u2", "u2", "Displacement of nodes in y-direction.", GH_ParamAccess.list);
+            //pManager.AddGenericParameter("u3", "u3", "Displacement of nodes in z-direction.", GH_ParamAccess.list);
+            //pManager.AddGenericParameter("Element Stress", "element mises", "List of Von Mises stress in element.", GH_ParamAccess.list);
+            //pManager.AddGenericParameter("Node Stress", "node mises", "List of von Mises stress in node.", GH_ParamAccess.list);
 
-            pManager.AddTextParameter("Diagonstics", "text", "List of information on the components performance", GH_ParamAccess.list);
+            //pManager.AddTextParameter("Diagonstics", "text", "List of information on the components performance", GH_ParamAccess.list);
             pManager.AddGenericParameter("FE_Mesh", "femesh", "The FE_Mesh containing results from the analysis.", GH_ParamAccess.item) ;
-            pManager.AddGenericParameter("Global K", "", "", GH_ParamAccess.list);
+            //pManager.AddGenericParameter("Global K", "", "", GH_ParamAccess.list);
             
         }
 
@@ -225,15 +225,15 @@ namespace SolidFEM.FiniteElementMethod
                 globalStress.Row(3).ToList(), globalStress.Row(4).ToList(), globalStress.Row(5).ToList());
             List<double> test = globalStress.Row(5).ToList();
             // Output
-            DA.SetDataList(0, u1);
-            DA.SetDataList(1, u2);
-            DA.SetDataList(2, u3);
-            DA.SetDataList(3, elementMises);
-            DA.SetDataList(4, nodalMises);
+            //DA.SetDataList(0, u1);
+           // DA.SetDataList(1, u2);
+            //DA.SetDataList(2, u3);
+            //DA.SetDataList(3, elementMises);
+            //DA.SetDataList(4, nodalMises);
             // temporary information
-            DA.SetDataList(5, infoList);
-            DA.SetData(6, outMesh);
-            DA.SetDataList(7, K_globalC.AsColumnMajorArray());
+            //DA.SetDataList(5, infoList);
+            DA.SetData(0, outMesh);
+            //DA.SetDataList(7, K_globalC.AsColumnMajorArray());
         }
 
         #region Methods
@@ -362,7 +362,7 @@ namespace SolidFEM.FiniteElementMethod
                 LA.Matrix<double> shapeFuncDerivatedCartesian = (jacobianMatrix.Inverse()).Multiply(partialDerivatives);
 
                 double jacobianDeterminant = jacobianMatrix.Determinant();
-                if (jacobianDeterminant < 0) { AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Negativ jac det"); }
+                //if (jacobianDeterminant < 0) { AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Negativ jac det"); }
                 int dimRowB = 6;
 
                 // establish the B-matrix
@@ -417,7 +417,6 @@ namespace SolidFEM.FiniteElementMethod
             // Initiate empty matrix
             //CSD.DenseMatrix m = new CSD.DenseMatrix(numNode * 3, numNode * 3);
             LA.Matrix<double> m = LA.Matrix<double>.Build.Dense(numNode * 3, numNode * 3);
-            List<double> elementSums = new List<double>();
             
             // test the functionality: 
             int[] testElInds = new int[] { 0, 21, 84, 105, 168, 189, 252, 273 };
@@ -431,8 +430,7 @@ namespace SolidFEM.FiniteElementMethod
 
                 // iterate over the connectivity indices
                 LA.Matrix<double> K_local = CalculateElementMatrices(element, material).Item1;
-                elementSums.Add(K_local.AsColumnMajorArray().Sum(x => Math.Abs(x))) ; // the sum of each element
-
+                
                 if (testElInds.Contains(count))
                 {
                     testElsMat.Add(K_local);
@@ -466,7 +464,7 @@ namespace SolidFEM.FiniteElementMethod
             }
             var globalK = LA.Matrix<double>.Build.DenseOfColumnMajor(numNode * 3, numNode * 3, colMayArray);
             */
-            var sum_Element = m.AsColumnMajorArray().Sum();
+            //var sum_Element = m.AsColumnMajorArray().Sum();
             return m;
         }
 
@@ -546,12 +544,7 @@ namespace SolidFEM.FiniteElementMethod
             
             CompressedColumnStorage<double> CCS = CSD.SparseMatrix.OfColumnMajor(K_gl.RowCount, K_gl.ColumnCount, K_gl.AsColumnMajorArray());
 
-            #region Testing problems
-            var R_LA = LA.Double.DenseVector.Build.DenseOfArray(R_gl.Values);
-
-            var u_LA = K_gl.Solve(R_LA);
-            #endregion
-
+           
 
             SparseLU CS_K_global = SparseLU.Create(CCS, ColumnOrdering.MinimumDegreeAtPlusA, 0.0);
             //double[] CS_u = CSD.Vector.Create(K_global_red.RowCount * 1, 0.0);
