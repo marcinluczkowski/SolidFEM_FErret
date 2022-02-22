@@ -2,8 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using Rhino.Geometry;
-using CSD = CSparse.Double;
 using LA = MathNet.Numerics.LinearAlgebra;
+using System.Drawing;
+using CSparse;
+using CSD = CSparse.Double;
+using CSparse.Double.Factorization;
+using CSparse.Storage;
+using Grasshopper;
+using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Types;
+
+
 namespace SolidFEM.Classes
 {
     static class FEM_Utility
@@ -392,6 +401,383 @@ namespace SolidFEM.Classes
             }
             return interpolationMatrix;
 
+        }
+
+
+        /// <summary>
+        /// Include boundary conditions, reduce matrices and solve for displacement. 
+        /// </summary>
+        /// <returns> List of nodal displacement. </returns>
+        public static CSD.DenseMatrix CalculateDisplacementCSparse(LA.Matrix<double> K_gl, CSD.DenseMatrix R_gl, List<List<int>> applyBCToDOF, ref FEMLogger logger)
+        {
+            var timer = new System.Diagnostics.Stopwatch();
+
+            // Make list of boundary condistions
+            logger.AddInfo("--- Displacement calculations ---");
+            //timer.Start();
+            List<int> BCList = new List<int>();
+            for (int i = 0; i < applyBCToDOF.Count; i++)
+            {
+                for (int j = 0; j < applyBCToDOF[0].Count; j++)
+                {
+                    BCList.Add(applyBCToDOF[i][j]); // list of 0 and 1 values for boundary condition for dof; true = 1, false = 0
+                }
+            }
+
+            // Apply boundary conditions to movement
+            for (int i = 0; i < BCList.Count; i++)
+            {
+                for (int j = 0; j < BCList.Count; j++)
+                {
+                    if (BCList[i] == 1)
+                    {
+                        if (i != j)
+                        {
+                            K_gl[i, j] = 0;
+                        }
+                        else
+                        {
+                            K_gl[i, j] = 1;
+                            R_gl[i, 0] = 0;
+                        }
+                    }
+                }
+            }
+
+
+            CompressedColumnStorage<double> CCS = CSD.SparseMatrix.OfColumnMajor(K_gl.RowCount, K_gl.ColumnCount, K_gl.AsColumnMajorArray());
+
+            #region Testing problems
+            var R_LA = LA.Double.DenseVector.Build.DenseOfArray(R_gl.Values);
+
+            var u_LA = K_gl.Solve(R_LA);
+            #endregion
+
+
+            SparseLU CS_K_global = SparseLU.Create(CCS, ColumnOrdering.MinimumDegreeAtPlusA, 0.0);
+            //double[] CS_u = CSD.Vector.Create(K_global_red.RowCount * 1, 0.0);
+            double[] CS_u = CSD.Vector.Create(K_gl.RowCount * 1, 0.0);
+            //double[] CS_R = R_red.Column(0).ToArray();
+            double[] CS_R = R_gl.Column(0).ToArray();
+            for (int i = 0; i < CS_R.Length; i++)
+            {
+                CS_R[i] = Math.Round(CS_R[i], 6);
+            }
+
+            CS_K_global.Solve(CS_R, CS_u);
+
+
+            var u = new CSD.DenseMatrix(CS_u.Length, 1, CS_u);
+            //var u = new CSD.DenseMatrix(CS_u.Length, 1, u_LA.ToArray());
+
+            //LA.Matrix<double> u = LA.Double.DenseMatrix.OfColumnArrays(CS_u);
+
+            return u;
+
+
+        }
+
+        public static LA.Matrix<double> CalculateDisplacement(LA.Matrix<double> K_gl, LA.Matrix<double> R_gl, List<List<int>> applyBCToDOF, ref FEMLogger logger)
+        {
+            // summary: include boundary condistions and calculate global displacement
+            var timer = new System.Diagnostics.Stopwatch();
+
+            // Make list of boundary condistions
+            logger.AddInfo("--- Displacement calculations ---");
+            timer.Start();
+            List<int> BCList = new List<int>();
+            for (int i = 0; i < applyBCToDOF.Count; i++)
+            {
+                for (int j = 0; j < applyBCToDOF[0].Count; j++)
+                {
+                    BCList.Add(applyBCToDOF[i][j]); // list of 0 and 1 values for boundary condition for dof; true = 1, false = 0
+                }
+            }
+
+            for (int i = 0; i < BCList.Count; i++)
+            {
+                for (int j = 0; j < BCList.Count; j++)
+                {
+
+                    if (BCList[i] == 1)
+                    {
+                        if (i != j)
+                        {
+                            K_gl[i, j] = 0;
+                        }
+                        else
+                        {
+                            K_gl[i, j] = 1;
+                            R_gl[i, 0] = 0;
+                        }
+                    }
+                }
+            }
+
+            timer.Stop();
+            logger.AddInfo($"Time elapsed during boundary conditions: {timer.ElapsedMilliseconds} ms"); timer.Reset();
+
+            // Reduce K_global and R
+            timer.Start();
+
+            // -- EDIT SVERRE ---
+            //int numRows = K_gl.RowCount;
+            //ReduceMatrices(BCList, numRows, ref K_gl,ref R_gl);
+
+            //var reducedData = ReduceKandR(K_gl, R_gl, BCList);
+
+            //LA.Matrix<double> K_global_red = reducedData.Item1;
+            //LA.Matrix<double> R_red = reducedData.Item2;
+            timer.Stop();
+            logger.AddInfo($"Time elapse for reducing K and R: {timer.ElapsedMilliseconds} ms"); timer.Reset();
+
+            // Time recorder
+            var sw0 = new System.Diagnostics.Stopwatch();
+            timer.Start();
+            // Mathnet.Numerics to CSparse
+            //var CMA = K_global_red.Storage.ToColumnMajorArray();
+            var CMA = K_gl.Storage.ToColumnMajorArray();
+            //CompressedColumnStorage<double> CCS = CSD.SparseMatrix.OfColumnMajor(K_global_red.RowCount, K_global_red.ColumnCount, CMA);
+            CompressedColumnStorage<double> CCS = CSD.SparseMatrix.OfColumnMajor(K_gl.RowCount, K_gl.ColumnCount, CMA);
+            timer.Stop();
+            logger.AddInfo($"Convert MathNet to CSparse: {timer.ElapsedMilliseconds} ms"); timer.Reset();
+
+
+            SparseLU CS_K_global = SparseLU.Create(CCS, ColumnOrdering.MinimumDegreeAtPlusA, 0.0);
+            //double[] CS_u = CSD.Vector.Create(K_global_red.RowCount * 1, 0.0);
+            double[] CS_u = CSD.Vector.Create(K_gl.RowCount * 1, 0.0);
+            //double[] CS_R = R_red.Column(0).ToArray();
+            double[] CS_R = R_gl.Column(0).ToArray();
+
+            timer.Start();
+            sw0.Start();
+            CS_K_global.Solve(CS_R, CS_u);
+            sw0.Stop();
+            timer.Stop();
+            logger.AddInfo($"Solve the system for displacements: {timer.ElapsedMilliseconds} ms"); timer.Reset();
+            //Rhino.RhinoApp.WriteLine($"### {K_global_red.RowCount} x {K_global_red.ColumnCount} Matrix. CSparse Elapsed [msec] = {sw0.Elapsed.TotalMilliseconds}");
+            Rhino.RhinoApp.WriteLine($"### {K_gl.RowCount} x {K_gl.ColumnCount} Matrix. CSparse Elapsed [msec] = {sw0.ElapsedMilliseconds} "); sw0.Reset();
+
+            // CSparse to Mathnet.Numerics
+            timer.Start();
+            LA.Matrix<double> u = LA.Double.DenseMatrix.OfColumnArrays(CS_u);
+            timer.Stop();
+            logger.AddInfo($"Convert back to MathNet: {timer.ElapsedMilliseconds} ms"); timer.Reset();
+            logger.AddInfo("--- End displacement calculations ---");
+
+
+            // Get total displacement
+            // comment this out when skipping the row and column reduction of stiffness matrix
+            /*
+            LA.Vector<double> insertVec = DenseVector.Build.Dense(1);
+
+            for (int i = 0; i < BCList.Count; i++)
+            {
+                if (BCList[i] == 1)
+                {
+                    u = u.InsertRow(i, insertVec);
+                }
+            }
+            */
+            return u;
+        }
+
+        /// <summary>
+        /// Calculate a list of strain and stress vectors for each node in a element.
+        /// </summary>
+        /// <returns> Strain and stress vectors for each node in a element. </returns>
+        public static Tuple<LA.Matrix<double>, LA.Matrix<double>> CalculateElementStrainStress(Element element, LA.Matrix<double> u, Material material, ref FEMLogger logger)
+        {
+            LA.Matrix<double> C = material.GetMaterialConstant();
+
+
+            List<LA.Matrix<double>> B_local = FEM_Matrices.CalculateElementMatrices(element, material, ref logger).Item2; // this can be changed to save time.. No need to establish the stiffness matrix of an element for this
+            LA.Matrix<double> elementGaussStrain = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
+            LA.Matrix<double> elementGaussStress = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
+            LA.Matrix<double> elementStrain = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
+            LA.Matrix<double> elementStress = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
+            LA.Matrix<double> localDeformation = LA.Double.DenseMatrix.Build.Dense(3 * element.Nodes.Count, 1);
+
+            // get deformation of nodes connected to element
+            for (int i = 0; i < element.Connectivity.Count; i++)
+            {
+                localDeformation[3 * i, 0] = u[3 * element.Connectivity[i], 0];
+                localDeformation[3 * i + 1, 0] = u[3 * element.Connectivity[i] + 1, 0];
+                localDeformation[3 * i + 2, 0] = u[3 * element.Connectivity[i] + 2, 0];
+            }
+            if (element.Type == "Hex8")
+            {
+                // get gauss strain and stress
+                for (int n = 0; n < B_local.Count; n++)
+                {
+                    // B-matrix is calculated from gauss points
+                    LA.Matrix<double> gaussStrain = B_local[n].Multiply(localDeformation);
+                    LA.Matrix<double> gaussStress = C.Multiply(B_local[n]).Multiply(localDeformation);
+
+                    for (int i = 0; i < B_local[0].RowCount; i++)
+                    {
+                        elementGaussStrain[i, n] = gaussStrain[i, 0];
+                        elementGaussStress[i, n] = gaussStress[i, 0];
+                    }
+                }
+
+                // get node strain and stress by extrapolation
+                LA.Matrix<double> extrapolationNodes = FEM.GetNaturalCoordinate(Math.Sqrt(3), 3);
+
+                for (int n = 0; n < B_local.Count; n++)
+                {
+                    // get stress and strain in nodes
+                    var r = extrapolationNodes.Row(n)[0];
+                    var s = extrapolationNodes.Row(n)[1];
+                    double t = extrapolationNodes.Row(n)[2];
+
+                    LA.Vector<double> shapefunctionValuesInNode = FEM.GetShapeFunctions(r, s, t, 3);
+                    LA.Vector<double> nodeStrain = elementGaussStrain.Multiply(shapefunctionValuesInNode);
+                    LA.Vector<double> nodeStress = elementGaussStress.Multiply(shapefunctionValuesInNode);
+                    for (int i = 0; i < B_local[0].RowCount; i++)
+                    {
+                        elementStrain[i, n] = nodeStrain[i];
+                        elementStress[i, n] = nodeStress[i];
+                    }
+                }
+            }
+            else if (element.Type == "Tet4")    // no need for gauss strains because B-matrix is constant
+            {
+
+                for (int i = 0; i < element.Nodes.Count; i++)
+                {
+
+                    //Get deformation at node
+                    LA.Matrix<double> nodalDeformation = LA.Double.DenseMatrix.Build.Dense(3, 1);
+                    LA.Matrix<double> nodeStrain = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, 1);
+                    LA.Matrix<double> nodeStress = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, 1);
+
+
+                    nodeStrain = (B_local[0]).Multiply(localDeformation);
+                    nodeStress.Add(C.Multiply(nodeStrain));
+
+                    elementStrain.SetSubMatrix(0, i, nodeStrain);
+                    elementStress.SetSubMatrix(0, i, nodeStress);
+
+                }
+            }
+
+            return Tuple.Create(elementStrain, elementStress);
+        }
+
+
+
+
+
+
+
+        /// <summary>
+        /// Assemble element stress and get global stress and mises stress,
+        /// </summary>
+        /// <returns> Nodal global stress, node mises stress and element mises stress. </returns>
+        /// 
+        public static Tuple<LA.Matrix<double>, LA.Vector<double>, LA.Vector<double>> CalculateGlobalStress(List<Element> elements, LA.Matrix<double> u, Material material, ref FEMLogger logger)
+        {
+            int numNodes = u.RowCount / 3;
+            int stressRowDim = 6;
+            LA.Matrix<double> globalStress = LA.Double.DenseMatrix.Build.Dense(stressRowDim, numNodes);
+            LA.Matrix<double> counter = LA.Double.DenseMatrix.Build.Dense(stressRowDim, numNodes);
+            List<LA.Matrix<double>> elementStressList = new List<LA.Matrix<double>>();
+            foreach (Element element in elements)
+            {
+                LA.Matrix<double> elementStress = CalculateElementStrainStress(element, u, material, ref logger).Item2;
+
+                List<int> connectivity = element.Connectivity;
+
+                for (int i = 0; i < elementStress.RowCount; i++) // loop the stress
+                {
+                    for (int j = 0; j < elementStress.ColumnCount; j++) // loop the element nodes
+                    {
+                        globalStress[i, connectivity[j]] = globalStress[i, connectivity[j]] + elementStress[i, j];
+                        counter[i, connectivity[j]]++;
+                    }
+                }
+                elementStressList.Add(elementStress);
+            }
+
+            // get average
+            for (int i = 0; i < globalStress.RowCount; i++) // loop the stress
+            {
+                for (int j = 0; j < globalStress.ColumnCount; j++) // loop the element nodes
+                {
+                    if (counter[i, j] > 1)
+                    {
+                        globalStress[i, j] = globalStress[i, j] / (double)counter[i, j];
+                        counter[i, j] = 0;
+                    }
+                }
+            }
+
+            // Nodal Mises
+            LA.Vector<double> mises = LA.Double.DenseVector.Build.Dense(numNodes);
+            for (int i = 0; i < numNodes; i++)
+            {
+                LA.Vector<double> nodeStress = globalStress.Column(i);
+                double Sxx = nodeStress[0];
+                double Syy = nodeStress[1];
+                double Szz = nodeStress[2];
+                double Sxy = nodeStress[3];
+                double Sxz = nodeStress[4];
+                double Syz = nodeStress[5];
+                mises[i] = Math.Sqrt(0.5 * (Math.Pow(Sxx - Syy, 2) + Math.Pow(Syy - Szz, 2) + Math.Pow(Szz - Sxx, 2)) + 3 * (Math.Pow(Sxy, 2) + Math.Pow(Sxz, 2) + Math.Pow(Syz, 2)));
+            }
+
+            // Element mises
+            LA.Vector<double> elementMises = LA.Double.DenseVector.Build.Dense(elements.Count);
+            for (int i = 0; i < elementStressList.Count; i++)
+            {
+                for (int j = 0; j < elements[0].Nodes.Count; j++)
+                {
+                    LA.Vector<double> nodeStress = elementStressList[i].Column(j);
+                    double Sxx = nodeStress[0];
+                    double Syy = nodeStress[1];
+                    double Szz = nodeStress[2];
+                    double Sxy = nodeStress[3];
+                    double Sxz = nodeStress[4];
+                    double Syz = nodeStress[5];
+                    elementMises[i] += Math.Sqrt(0.5 * (Math.Pow(Sxx - Syy, 2) + Math.Pow(Syy - Szz, 2) + Math.Pow(Szz - Sxx, 2)) + 3 * (Math.Pow(Sxy, 2) + Math.Pow(Sxz, 2) + Math.Pow(Syz, 2)));
+                }
+                elementMises[i] = elementMises[i] / (double)8; // get average of nodal mises
+            }
+
+
+            return Tuple.Create(globalStress, mises, elementMises);
+        }
+
+        /// <summary>
+        /// Color mesh after nodal stress values.
+        /// </summary>
+        public static void ColorMeshAfterStress(SmartMesh mesh, LA.Vector<double> mises, Material material)
+        {
+            double maxValue = material.YieldingStress;
+            double minValue = 0;
+            Color color = Color.White;
+
+            double range = (maxValue - minValue) / (double)13;
+            for (int i = 0; i < mesh.Nodes.Count; i++)
+            {
+                // to do: Reference Synne, same color mapping
+                if (mises[i] < minValue + range) color = Color.Blue;
+                else if (mises[i] < minValue + 2 * range) color = Color.RoyalBlue;
+                else if (mises[i] < minValue + 3 * range) color = Color.DeepSkyBlue;
+                else if (mises[i] < minValue + 4 * range) color = Color.Cyan;
+                else if (mises[i] < minValue + 5 * range) color = Color.PaleGreen;
+                else if (mises[i] < minValue + 6 * range) color = Color.LimeGreen;
+                else if (mises[i] < minValue + 7 * range) color = Color.Lime;
+                else if (mises[i] < minValue + 8 * range) color = Color.Lime;
+                else if (mises[i] < minValue + 9 * range) color = Color.GreenYellow;
+                else if (mises[i] < minValue + 10 * range) color = Color.Yellow;
+                else if (mises[i] < minValue + 11 * range) color = Color.Orange;
+                else if (mises[i] < minValue + 12 * range) color = Color.OrangeRed;
+                else color = Color.Red;
+
+                //mesh.Mesh.VertexColors.Add(color);
+            }
         }
 
         public static List<Point3d> SortedVerticesGraham(Mesh mesh)
