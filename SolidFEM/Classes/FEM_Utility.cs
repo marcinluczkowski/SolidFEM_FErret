@@ -408,7 +408,7 @@ namespace SolidFEM.Classes
         /// Include boundary conditions, reduce matrices and solve for displacement. 
         /// </summary>
         /// <returns> List of nodal displacement. </returns>
-        public static CSD.DenseMatrix CalculateDisplacementCSparse(LA.Matrix<double> K_gl, CSD.DenseMatrix R_gl, List<List<int>> applyBCToDOF, ref FEMLogger logger)
+        public static CSD.DenseMatrix CalculateDisplacementCSparse(CSD.DenseMatrix K_gl, CSD.DenseMatrix R_gl, List<List<int>> applyBCToDOF, ref FEMLogger logger)
         {
             var timer = new System.Diagnostics.Stopwatch();
 
@@ -444,27 +444,56 @@ namespace SolidFEM.Classes
                 }
             }
 
+            // to do: Time this function. Could be super slow. Better ways to get the array?
+            /*
+            timer.Start();
+            var stiffnessArray = K_gl.AsColumnMajorArray();
+            timer.Stop();
+            logger.AddInfo("Transforming MathNet Matrix to Column Major Array: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
 
-            CompressedColumnStorage<double> CCS = CSD.SparseMatrix.OfColumnMajor(K_gl.RowCount, K_gl.ColumnCount, K_gl.AsColumnMajorArray());
-
+            timer.Start();
+            //CompressedColumnStorage<double> CCS = CSD.SparseMatrix.OfColumnMajor(K_gl.RowCount, K_gl.ColumnCount, stiffnessArray);
+            timer.Stop();
+            logger.AddInfo("Create compressed column storage from array: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
+            */
+            var CCS =  CSD.SparseMatrix.OfMatrix(K_gl); // Try this instead. Need to convert the K_gl from MathNet to CSparse. 
             #region Testing problems
+            
+            /*
+            timer.Start();
             var R_LA = LA.Double.DenseVector.Build.DenseOfArray(R_gl.Values);
-
             var u_LA = K_gl.Solve(R_LA);
+            timer.Stop();
+            logger.AddInfo("Time spent on testing a MathNet solver: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
+            */
             #endregion
 
 
+            timer.Start();
             SparseLU CS_K_global = SparseLU.Create(CCS, ColumnOrdering.MinimumDegreeAtPlusA, 0.0);
+            timer.Stop();
+            logger.AddInfo("Create LU decomposition of stiffness matrix: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
+
             //double[] CS_u = CSD.Vector.Create(K_global_red.RowCount * 1, 0.0);
+
+            timer.Start();
             double[] CS_u = CSD.Vector.Create(K_gl.RowCount * 1, 0.0);
             //double[] CS_R = R_red.Column(0).ToArray();
             double[] CS_R = R_gl.Column(0).ToArray();
+            timer.Stop();
+            logger.AddInfo("Prepare u and R arrays before solving for u: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
+
+            /*
             for (int i = 0; i < CS_R.Length; i++)
             {
                 CS_R[i] = Math.Round(CS_R[i], 6);
             }
+            */
 
+            timer.Start();
             CS_K_global.Solve(CS_R, CS_u);
+            timer.Stop();
+            logger.AddInfo("Time spent solving the equations: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
 
 
             var u = new CSD.DenseMatrix(CS_u.Length, 1, CS_u);
@@ -556,7 +585,7 @@ namespace SolidFEM.Classes
             timer.Stop();
             logger.AddInfo($"Solve the system for displacements: {timer.ElapsedMilliseconds} ms"); timer.Reset();
             //Rhino.RhinoApp.WriteLine($"### {K_global_red.RowCount} x {K_global_red.ColumnCount} Matrix. CSparse Elapsed [msec] = {sw0.Elapsed.TotalMilliseconds}");
-            Rhino.RhinoApp.WriteLine($"### {K_gl.RowCount} x {K_gl.ColumnCount} Matrix. CSparse Elapsed [msec] = {sw0.ElapsedMilliseconds} "); sw0.Reset();
+            //Rhino.RhinoApp.WriteLine($"### {K_gl.RowCount} x {K_gl.ColumnCount} Matrix. CSparse Elapsed [msec] = {sw0.ElapsedMilliseconds} "); sw0.Reset();
 
             // CSparse to Mathnet.Numerics
             timer.Start();

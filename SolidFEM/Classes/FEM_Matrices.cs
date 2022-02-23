@@ -22,16 +22,16 @@ namespace SolidFEM.Classes
         /// Construct global stiffness matrix by assembling element stiffness matrices.
         /// </summary>
         /// <returns> Global stiffness matrix. </returns>
-        public static LA.Matrix<double> GlobalStiffnessCSparse(List<Element> elements, int numNode, Material material, ref FEMLogger logger)
+        public static CSD.DenseMatrix GlobalStiffnessCSparse(List<Element> elements, int numNode, Material material, ref FEMLogger logger)
         {
             // Initiate empty matrix
             //CSD.DenseMatrix m = new CSD.DenseMatrix(numNode * 3, numNode * 3);
-            LA.Matrix<double> m = LA.Matrix<double>.Build.Dense(numNode * 3, numNode * 3);
-            List<double> elementSums = new List<double>();
-
+            //LA.Matrix<double> m = LA.Matrix<double>.Build.Dense(numNode * 3, numNode * 3);
+            //List<double> elementSums = new List<double>();
+            CSD.DenseMatrix mC = new CSD.DenseMatrix(numNode * 3, numNode * 3);
             // test the functionality: 
-            int[] testElInds = new int[] { 0, 21, 84, 105, 168, 189, 252, 273 };
-            List<LA.Matrix<double>> testElsMat = new List<LA.Matrix<double>>();
+            //int[] testElInds = new int[] { 0, 21, 84, 105, 168, 189, 252, 273 };
+            //List<LA.Matrix<double>> testElsMat = new List<LA.Matrix<double>>();
             List<Element> testEls = new List<Element>();
             int count = 0;
             // delete the above after finished test
@@ -41,14 +41,15 @@ namespace SolidFEM.Classes
 
                 // iterate over the connectivity indices
                 LA.Matrix<double> K_local = CalculateElementMatrices(element, material, ref logger).Item1;
-                elementSums.Add(K_local.AsColumnMajorArray().Sum(x => Math.Abs(x))); // the sum of each element
+                //elementSums.Add(K_local.AsColumnMajorArray().Sum(x => Math.Abs(x))); // the sum of each element
 
+                /*
                 if (testElInds.Contains(count))
                 {
                     testElsMat.Add(K_local);
                     testEls.Add(element);
                 }
-
+                */
                 // loop nodes of elements
                 for (int i = 0; i < con.Count; i++)
                 {
@@ -59,12 +60,13 @@ namespace SolidFEM.Classes
                         {
                             for (int dofCol = 0; dofCol < 3; dofCol++)
                             {
-                                m[3 * con[i] + dofRow, 3 * con[j] + dofCol] += K_local[3 * i + dofRow, 3 * j + dofCol];
+                                //m[3 * con[i] + dofRow, 3 * con[j] + dofCol] += K_local[3 * i + dofRow, 3 * j + dofCol];
+                                mC[3 * con[i] + dofRow, 3 * con[j] + dofCol] += K_local[3 * i + dofRow, 3 * j + dofCol];
                             }
                         }
                     }
                 }
-                count++; // delete after testing
+                //count++; // delete after testing
             }
 
             // small code to round the values of the elements
@@ -76,8 +78,8 @@ namespace SolidFEM.Classes
             }
             var globalK = LA.Matrix<double>.Build.DenseOfColumnMajor(numNode * 3, numNode * 3, colMayArray);
             */
-            var sum_Element = m.AsColumnMajorArray().Sum();
-            return m;
+            //var sum_Element = m.AsColumnMajorArray().Sum();
+            return mC;
         }
 
         /// <summary>

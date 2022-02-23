@@ -62,7 +62,7 @@ namespace SolidFEM.FiniteElementMethod
 
             pManager.AddTextParameter("Diagonstics", "text", "List of information on the components performance", GH_ParamAccess.list);
             pManager.AddGenericParameter("FE_Mesh", "femesh", "The FE_Mesh containing results from the analysis.", GH_ParamAccess.item) ;
-            pManager.AddGenericParameter("Global K", "", "", GH_ParamAccess.list);
+            //pManager.AddGenericParameter("Global K", "", "", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -140,7 +140,6 @@ namespace SolidFEM.FiniteElementMethod
             FEM_Utility.ElementsFromMeshList(newMeshList, nodePos , out elements);
 
             // 1. Get global stiffness matrix
-
             watch.Start();
             //LA.Matrix<double> K_global = CalculateGlobalStiffnessMatrix(elements, numNodes, material);
             var K_globalC = FEM_Matrices.GlobalStiffnessCSparse(elements, numNodes, material, ref Logger);
@@ -260,7 +259,7 @@ namespace SolidFEM.FiniteElementMethod
             // temporary information
             DA.SetDataList(5, Logger.LogList);
             DA.SetData(6, outMesh);
-            DA.SetDataList(7, K_globalC.AsColumnMajorArray());
+            //DA.SetDataList(7, K_globalC.AsColumnMajorArray());
         }
 
         #region Methods
