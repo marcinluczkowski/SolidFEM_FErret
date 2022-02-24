@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using LA = MathNet.Numerics.LinearAlgebra;
 using CSparse;
@@ -22,13 +24,21 @@ namespace SolidFEM.Classes
         /// Construct global stiffness matrix by assembling element stiffness matrices.
         /// </summary>
         /// <returns> Global stiffness matrix. </returns>
-        public static CSD.DenseMatrix GlobalStiffnessCSparse(List<Element> elements, int numNode, Material material, ref FEMLogger logger)
+        public static double[,] GlobalStiffnessCSparse(List<Element> elements, int numNode, Material material, ref FEMLogger logger)
         {
+            Stopwatch timer = new Stopwatch();
             // Initiate empty matrix
             //CSD.DenseMatrix m = new CSD.DenseMatrix(numNode * 3, numNode * 3);
             //LA.Matrix<double> m = LA.Matrix<double>.Build.Dense(numNode * 3, numNode * 3);
             //List<double> elementSums = new List<double>();
-            CSD.DenseMatrix mC = new CSD.DenseMatrix(numNode * 3, numNode * 3);
+            //CSD.DenseMatrix mC = new CSD.DenseMatrix(numNode * 3, numNode * 3);
+            //CSD.SparseMatrix mS = new CSD.SparseMatrix(numNode * 3, numNode * 3);
+
+            double[,] kArray = new double[numNode * 3, numNode * 3];
+            //CompressedColumnStorage<double> k = new CSD.SparseMatrix(numNode * 3, numNode * 3);
+           
+            
+
             // test the functionality: 
             //int[] testElInds = new int[] { 0, 21, 84, 105, 168, 189, 252, 273 };
             //List<LA.Matrix<double>> testElsMat = new List<LA.Matrix<double>>();
@@ -60,8 +70,9 @@ namespace SolidFEM.Classes
                         {
                             for (int dofCol = 0; dofCol < 3; dofCol++)
                             {
-                                //m[3 * con[i] + dofRow, 3 * con[j] + dofCol] += K_local[3 * i + dofRow, 3 * j + dofCol];
-                                mC[3 * con[i] + dofRow, 3 * con[j] + dofCol] += K_local[3 * i + dofRow, 3 * j + dofCol];
+                                kArray[3 * con[i] + dofRow, 3 * con[j] + dofCol] += K_local[3 * i + dofRow, 3 * j + dofCol];
+                                
+                                //mC[3 * con[i] + dofRow, 3 * con[j] + dofCol] += K_local[3 * i + dofRow, 3 * j + dofCol];
                             }
                         }
                     }
@@ -79,7 +90,8 @@ namespace SolidFEM.Classes
             var globalK = LA.Matrix<double>.Build.DenseOfColumnMajor(numNode * 3, numNode * 3, colMayArray);
             */
             //var sum_Element = m.AsColumnMajorArray().Sum();
-            return mC;
+            
+            return kArray;
         }
 
         /// <summary>
@@ -104,7 +116,7 @@ namespace SolidFEM.Classes
 
             // Global coordinates of the (corner) nodes of the actual element
             LA.Matrix<double> globalCoordinates = LA.Matrix<double>.Build.Dense(numElementNodes, 3);
-
+            //var globalCoordinates = new CSD.DenseMatrix(numElementNodes, 3);
             List<Point3d> localCoordinates = FEM_Utility.LocalCartesianCoordinates(element);
             
 
@@ -116,11 +128,13 @@ namespace SolidFEM.Classes
             }
 
             // Different methods for Hex8 and Tet4. Tet4 doesn't need gauss integration because B and Jacobian are constant!
+            
             if (element.Type == "Hex8")
             {
                 //Numerical integration
                 //LA.Matrix<double> gaussNodes = FEM.GetNaturalCoordinate((double)Math.Sqrt((double)1 / (double)3), 3);
                 var gaussCoordinates = FEM_Utility.GetGaussPointMatrix(2, element.Type); // by defaul we have a 2x2x2 integration of Hex8 element
+                List<double> pointJacobians = new List<double>(); // list to evaluate the pointwise jacobians
                 for (int n = 0; n < gaussCoordinates.RowCount; n++)  // loop gauss nodes
                 {
                     // Substitute the natural coordinates into the symbolic expression
@@ -133,19 +147,31 @@ namespace SolidFEM.Classes
                     var partialDerivatives = FEM_Utility.PartialDerivateShapeFunctions(r, s, t, element.Type);
 
                     // Calculate Jacobian matrix
-                    LA.Matrix<double> jacobianMatrix = partialDerivatives.Multiply(globalCoordinates);
+                    var jacobianMatrix = partialDerivatives.Multiply(globalCoordinates);
 
                     // round the jacobian
+                    /*
                     var jColMajArr = jacobianMatrix.AsColumnMajorArray();
                     for (int k = 0; k < jColMajArr.Length; k++)
                     {
                         jColMajArr[k] = Math.Round(jColMajArr[k], rpb);
                     }
-                    jacobianMatrix = LA.Matrix<double>.Build.DenseOfColumnMajor(3, 3, jColMajArr);
+                    */
+                    //jacobianMatrix = LA.Matrix<double>.Build.DenseOfColumnMajor(3, 3, jColMajArr);
                     // Calculate B - LA.Matrix
+
+
+                    
                     LA.Matrix<double> shapeFuncDerivatedCartesian = (jacobianMatrix.Inverse()).Multiply(partialDerivatives);
 
-                    double jacobianDeterminant = jacobianMatrix.Determinant();
+                    // calculate B with CSparse
+                    
+                    
+                    
+
+                    double jacobianDeterminant = jacobianMatrix.Determinant(); // To do: Find a way to evaluate this...
+                    pointJacobians.Add(jacobianDeterminant);
+                    //double jacobianDeterminant = FEM_Matrices.GetDeterminantJacobi(jacobianMatrix, logger);
                     //if (jacobianDeterminant < 0) { AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Negativ jac det"); }
                     if (jacobianDeterminant < 0) { logger.AddWarning("Negativ jacobian determeninant"); }
                     int dimRowB = 6;
@@ -182,15 +208,17 @@ namespace SolidFEM.Classes
                 var partialDerivatives = FEM_Utility.PartialDerivateShapeFunctions(1, 1, 1, "Tet4");    //Random coordinates (1,1,1) because the method requires coordinate inputs
 
                 // Calculate Jacobian matrix
-                LA.Matrix<double> jacobianMatrix = partialDerivatives.Multiply(globalCoordinates);
+                var jacobianMatrix = partialDerivatives.Multiply(globalCoordinates);
 
+                /*
                 // round the jacobian
                 var jColMajArr = jacobianMatrix.AsColumnMajorArray();
                 for (int k = 0; k < jColMajArr.Length; k++)
                 {
                     jColMajArr[k] = Math.Round(jColMajArr[k], rpb);
                 }
-                jacobianMatrix = LA.Matrix<double>.Build.DenseOfColumnMajor(3, 3, jColMajArr);
+                */
+                //jacobianMatrix = LA.Matrix<double>.Build.DenseOfColumnMajor(3, 3, jColMajArr);
 
                 // Calculate B - LA.Matrix
                 LA.Matrix<double> shapeFuncDerivatedCartesian = (jacobianMatrix.Inverse()).Multiply(partialDerivatives);
@@ -306,6 +334,36 @@ namespace SolidFEM.Classes
             }
 
 
+        }
+
+
+        public static double GetDeterminantJacobi(DenseColumnMajorStorage<double> JacobiMatrix, FEMLogger logger)
+        {
+            double jac = 0;
+
+            int numRows = JacobiMatrix.RowCount;
+            int numCols = JacobiMatrix.ColumnCount;
+
+            if (numRows == 3 && numCols == 3)
+            {
+                logger.AddError("Something is wrong with the Jacobi matrix for the element!");
+                return 0.0;
+            }
+
+            List<int> inds = new List<int>() {0, 1, 2}; // initial list
+
+            for (int i = 0; i < inds.Count; i++)
+            {
+                double scalar = JacobiMatrix[0, i];
+                List<int> copyInds = new List<int>(inds);
+                copyInds.RemoveAt(i);
+
+                double subDet = scalar * ((JacobiMatrix[2, copyInds[0]] * JacobiMatrix[3, copyInds[1]]) -
+                                (JacobiMatrix[2, copyInds[1]] * JacobiMatrix[3, copyInds[2]]));
+                jac += subDet;
+            }
+
+            return jac;
         }
 
     }

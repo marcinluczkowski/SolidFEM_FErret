@@ -76,7 +76,7 @@ namespace SolidFEM.Classes
                 
                 el.Nodes = elNodes; // add nodes to the elements
                 el.Connectivity = connectivity; // Add the connectivity
-
+                el.ElementMesh = mList[IDCounter];
                 if(elNodes.Count == 8)
                 {
                     el.Type = "Hex8";
@@ -142,9 +142,10 @@ namespace SolidFEM.Classes
             return localCoord;
         }
 
-        public static LA.Vector<double> GetBodyForceVector(Material material, List<Element> elements, int numGlobalNodes)
+        public static LA.Vector<double> GetBodyForceVector(Material material, List<Element> elements, int numGlobalNodes, FEMLogger logger)
         {
             // Initiate the empty body force vector: 
+            var F_body1 = new CSD.DenseMatrix(numGlobalNodes * 3, 1);
             //CSD.DenseMatrix F_body = new CSD.DenseMatrix(numGlobalNodes * 3, 1);
             LA.Vector<double> F_body = LA.Vector<double>.Build.Dense(numGlobalNodes * 3); // create the empty load vector
             LA.Vector<double> bodyLoadVector = LA.Vector<double>.Build.DenseOfArray(new double[] {0, 0, -  (material.Weight * 9.81 * Math.Pow(10, -9) ) });
@@ -155,21 +156,24 @@ namespace SolidFEM.Classes
                 Element el = elements[i];
 
                 // first, get the global coordinates
+                LA.Matrix<double> globalElementCoordinates = LA.Matrix<double>.Build.Dense(el.Nodes.Count, 3);
                 LA.Matrix<double> globalElementCoordinate = LA.Matrix<double>.Build.Dense(el.Nodes.Count, 3);
                 //CSD.DenseMatrix globalElementCoordinate = new CSD.DenseMatrix(el.Nodes.Count, 3); // one column for x,y, and z coordinate
                 for (int j = 0; j < el.Nodes.Count; j++)
                 {
                     Node n = el.Nodes[j];
-                    globalElementCoordinate[j, 0] = n.Coordinate.X;
-                    globalElementCoordinate[j, 1] = n.Coordinate.Y;
-                    globalElementCoordinate[j, 2] = n.Coordinate.Z;
+                    globalElementCoordinates[j, 0] = n.Coordinate.X;
+                    globalElementCoordinates[j, 1] = n.Coordinate.Y;
+                    globalElementCoordinates[j, 2] = n.Coordinate.Z;
                 }
 
                 // get the matrix of natural coordinates in gauss points
                 int order = 2;  //Order for gauss integration
+
+                // Create from, CSparse
                 var gaussCoordinates = GetGaussPointMatrix(order, el.Type); // by defaul we have a 2x2x2 integration of Hex8 element
 
-                // element force vector
+                // element force vector. Create from CSparse
                 LA.Vector<double> elForceVec = LA.Vector<double>.Build.Dense(el.Nodes.Count * 3);
 
                 // iterate through each gauss node
@@ -183,8 +187,10 @@ namespace SolidFEM.Classes
                     var partialDerivatives = PartialDerivateShapeFunctions(r, s, t, el.Type);
 
                     // get the jacobian
-                    var jacobianOperator = partialDerivatives.Multiply(globalElementCoordinate);
+                    var jacobianOperator = partialDerivatives.Multiply(globalElementCoordinates);
                     double jacobianDeterminant = jacobianOperator.Determinant();
+                    //double jacobianDet = FEM_Matrices.GetDeterminantJacobi(jacobianOperator, logger);
+                    
                     elementJacobianTest += jacobianDeterminant;
                     //double jacobianDet = jacobianOperator. // how to calculate the  determinant????
                     // get the H matrix from the shape functions
@@ -193,7 +199,7 @@ namespace SolidFEM.Classes
                     // the H-matrix is the displacement interpolation matrix. 
                     var interpolationMatrix = DisplacementInterpolationMatrix(shapeFunctions, 3);
 
-                    //Get wheights for gauss integration // Can later change GetGaussPointMatrix() to also give the wheights as output
+                    //Get weights for gauss integration // Can later change GetGaussPointMatrix() to also give the wheights as output
 
                     double alpha_ijk = 1.0;
                     if (el.Type == "Hex8")
@@ -231,7 +237,7 @@ namespace SolidFEM.Classes
 
             // I need the shape functions for the element. 8 noded element mean eight nodes. Should ensure that this is applicable for other types of elements as well. 
             // control the sum of the element load. Should be equal to the total weight
-            double numericalWeight = F_body.Sum();
+            //double numericalWeight = F_body.Sum();
 
             return F_body;
         }
@@ -363,8 +369,9 @@ namespace SolidFEM.Classes
                     {-(1-r)*(1-t)*c, -(1+r)*(1-t)*c, (1+r)*(1-t)*c,(1-r)*(1-t)*c,-(1-r)*(1+t)*c,-(1+r)*(1+t)*c,(1+r)*(1+t)*c,(1-r)*(1+t)*c},
                     {-(1-r)*(1-s)*c, -(1+r)*(1-s)*c, -(1+r)*(1+s)*c,-(1-r)*(1+s)*c,(1-r)*(1-s)*c,(1+r)*(1-s)*c,(1+r)*(1+s)*c,(1-r)*(1+s)*c}
                 };
-                //var derivativeMatrix = CSD.DenseMatrix.OfArray(derivateArray);
+
                 var derivativeMatrix = LA.Matrix<double>.Build.DenseOfArray(derivateArray);
+                //var derivativeMatrix = CSD.DenseMatrix.OfArray(derivateArray);
                 //derivativeMatrix = derivativeMat
                 return derivativeMatrix; 
 
@@ -378,6 +385,7 @@ namespace SolidFEM.Classes
                     {0, 0, 1, -1 }
                 };
                 var derivativeMatrix = LA.Matrix<double>.Build.DenseOfArray(derivateArray);
+                //var derivativeMatrix = CSD.DenseMatrix.OfArray(derivateArray);
                 return derivativeMatrix;
             }
             else
@@ -408,13 +416,15 @@ namespace SolidFEM.Classes
         /// Include boundary conditions, reduce matrices and solve for displacement. 
         /// </summary>
         /// <returns> List of nodal displacement. </returns>
-        public static CSD.DenseMatrix CalculateDisplacementCSparse(CSD.DenseMatrix K_gl, CSD.DenseMatrix R_gl, List<List<int>> applyBCToDOF, ref FEMLogger logger)
+        public static CSD.DenseMatrix CalculateDisplacementCSparse(double[,] K_gl, CSD.DenseMatrix R_gl, List<List<int>> applyBCToDOF, ref FEMLogger logger)
         {
             var timer = new System.Diagnostics.Stopwatch();
 
             // Make list of boundary condistions
             logger.AddInfo("--- Displacement calculations ---");
-            //timer.Start();
+            
+            
+            timer.Start();
             List<int> BCList = new List<int>();
             for (int i = 0; i < applyBCToDOF.Count; i++)
             {
@@ -423,8 +433,12 @@ namespace SolidFEM.Classes
                     BCList.Add(applyBCToDOF[i][j]); // list of 0 and 1 values for boundary condition for dof; true = 1, false = 0
                 }
             }
+            timer.Stop();
+            logger.AddInfo("Time to add Boundary conditions: " + timer.ElapsedMilliseconds + " ms");timer.Reset();
+
 
             // Apply boundary conditions to movement
+            timer.Start();
             for (int i = 0; i < BCList.Count; i++)
             {
                 for (int j = 0; j < BCList.Count; j++)
@@ -433,16 +447,21 @@ namespace SolidFEM.Classes
                     {
                         if (i != j)
                         {
+                            //K_gl.Row(i).SetValue(0, j);
                             K_gl[i, j] = 0;
                         }
                         else
                         {
+                            //K_gl.Row(i).SetValue(1, j);
                             K_gl[i, j] = 1;
                             R_gl[i, 0] = 0;
                         }
                     }
                 }
             }
+            timer.Stop();
+            logger.AddInfo("Time to restrain boundary conditions global stiffness and load matrix: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
+
 
             // to do: Time this function. Could be super slow. Better ways to get the array?
             /*
@@ -456,7 +475,9 @@ namespace SolidFEM.Classes
             timer.Stop();
             logger.AddInfo("Create compressed column storage from array: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
             */
-            var CCS =  CSD.SparseMatrix.OfMatrix(K_gl); // Try this instead. Need to convert the K_gl from MathNet to CSparse. 
+            timer.Start();
+            var CCS =  CSD.SparseMatrix.OfArray(K_gl); // Try this instead. Need to convert the K_gl from MathNet to CSparse. 
+            timer.Stop(); logger.AddInfo("Create compressed Column Storage of K: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
             #region Testing problems
             
             /*
@@ -471,13 +492,14 @@ namespace SolidFEM.Classes
 
             timer.Start();
             SparseLU CS_K_global = SparseLU.Create(CCS, ColumnOrdering.MinimumDegreeAtPlusA, 0.0);
+            //SparseLDL CS_K_global = SparseLDL.Create(CCS, ColumnOrdering.MinimumDegreeAtPlusA); // Try an LDL system instead to test the speed
             timer.Stop();
             logger.AddInfo("Create LU decomposition of stiffness matrix: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
 
             //double[] CS_u = CSD.Vector.Create(K_global_red.RowCount * 1, 0.0);
 
             timer.Start();
-            double[] CS_u = CSD.Vector.Create(K_gl.RowCount * 1, 0.0);
+            double[] CS_u = CSD.Vector.Create(K_gl.GetLength(0), 0.0);
             //double[] CS_R = R_red.Column(0).ToArray();
             double[] CS_R = R_gl.Column(0).ToArray();
             timer.Stop();
@@ -493,14 +515,16 @@ namespace SolidFEM.Classes
             timer.Start();
             CS_K_global.Solve(CS_R, CS_u);
             timer.Stop();
-            logger.AddInfo("Time spent solving the equations: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
+            logger.AddInfo("Time spent solving the equations using LU: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
+            //logger.AddInfo("Time spent solving the equations using LDL: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
 
-
+            timer.Start();
             var u = new CSD.DenseMatrix(CS_u.Length, 1, CS_u);
             //var u = new CSD.DenseMatrix(CS_u.Length, 1, u_LA.ToArray());
-
+            timer.Stop();
+            logger.AddInfo("Making a CSparse matrix from u-array: " + timer.ElapsedMilliseconds + "ms"); timer.Reset();
             //LA.Matrix<double> u = LA.Double.DenseMatrix.OfColumnArrays(CS_u);
-
+            logger.AddInfo("----- Displacement calculation done -----");
             return u;
 
 
@@ -641,11 +665,12 @@ namespace SolidFEM.Classes
                 {
                     // B-matrix is calculated from gauss points
                     LA.Matrix<double> gaussStrain = B_local[n].Multiply(localDeformation);
-                    LA.Matrix<double> gaussStress = C.Multiply(B_local[n]).Multiply(localDeformation);
+                    LA.Matrix<double> gaussStress = C.Multiply(gaussStrain);
+                    //LA.Matrix<double> gaussStress = C.Multiply(B_local[n]).Multiply(localDeformation);
 
                     for (int i = 0; i < B_local[0].RowCount; i++)
                     {
-                        elementGaussStrain[i, n] = gaussStrain[i, 0];
+                        elementGaussStrain[i, n] = gaussStrain[i, 0]; // Should there not be += here? Right now they overwrite the Gauss Strainf for each nodal evaluation
                         elementGaussStress[i, n] = gaussStress[i, 0];
                     }
                 }
