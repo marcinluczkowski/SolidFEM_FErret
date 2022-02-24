@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using LA = MathNet.Numerics.LinearAlgebra;
 using CSparse;
@@ -22,13 +24,21 @@ namespace SolidFEM.Classes
         /// Construct global stiffness matrix by assembling element stiffness matrices.
         /// </summary>
         /// <returns> Global stiffness matrix. </returns>
-        public static CSD.DenseMatrix GlobalStiffnessCSparse(List<Element> elements, int numNode, Material material, ref FEMLogger logger)
+        public static double[,] GlobalStiffnessCSparse(List<Element> elements, int numNode, Material material, ref FEMLogger logger)
         {
+            Stopwatch timer = new Stopwatch();
             // Initiate empty matrix
             //CSD.DenseMatrix m = new CSD.DenseMatrix(numNode * 3, numNode * 3);
             //LA.Matrix<double> m = LA.Matrix<double>.Build.Dense(numNode * 3, numNode * 3);
             //List<double> elementSums = new List<double>();
-            CSD.DenseMatrix mC = new CSD.DenseMatrix(numNode * 3, numNode * 3);
+            //CSD.DenseMatrix mC = new CSD.DenseMatrix(numNode * 3, numNode * 3);
+            //CSD.SparseMatrix mS = new CSD.SparseMatrix(numNode * 3, numNode * 3);
+
+            double[,] kArray = new double[numNode * 3, numNode * 3];
+            //CompressedColumnStorage<double> k = new CSD.SparseMatrix(numNode * 3, numNode * 3);
+           
+            
+
             // test the functionality: 
             //int[] testElInds = new int[] { 0, 21, 84, 105, 168, 189, 252, 273 };
             //List<LA.Matrix<double>> testElsMat = new List<LA.Matrix<double>>();
@@ -60,8 +70,9 @@ namespace SolidFEM.Classes
                         {
                             for (int dofCol = 0; dofCol < 3; dofCol++)
                             {
-                                //m[3 * con[i] + dofRow, 3 * con[j] + dofCol] += K_local[3 * i + dofRow, 3 * j + dofCol];
-                                mC[3 * con[i] + dofRow, 3 * con[j] + dofCol] += K_local[3 * i + dofRow, 3 * j + dofCol];
+                                kArray[3 * con[i] + dofRow, 3 * con[j] + dofCol] += K_local[3 * i + dofRow, 3 * j + dofCol];
+                                
+                                //mC[3 * con[i] + dofRow, 3 * con[j] + dofCol] += K_local[3 * i + dofRow, 3 * j + dofCol];
                             }
                         }
                     }
@@ -79,7 +90,8 @@ namespace SolidFEM.Classes
             var globalK = LA.Matrix<double>.Build.DenseOfColumnMajor(numNode * 3, numNode * 3, colMayArray);
             */
             //var sum_Element = m.AsColumnMajorArray().Sum();
-            return mC;
+            
+            return kArray;
         }
 
         /// <summary>

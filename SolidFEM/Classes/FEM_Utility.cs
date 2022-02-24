@@ -76,7 +76,7 @@ namespace SolidFEM.Classes
                 
                 el.Nodes = elNodes; // add nodes to the elements
                 el.Connectivity = connectivity; // Add the connectivity
-
+                el.ElementMesh = mList[IDCounter];
                 if(elNodes.Count == 8)
                 {
                     el.Type = "Hex8";
@@ -416,13 +416,15 @@ namespace SolidFEM.Classes
         /// Include boundary conditions, reduce matrices and solve for displacement. 
         /// </summary>
         /// <returns> List of nodal displacement. </returns>
-        public static CSD.DenseMatrix CalculateDisplacementCSparse(CSD.DenseMatrix K_gl, CSD.DenseMatrix R_gl, List<List<int>> applyBCToDOF, ref FEMLogger logger)
+        public static CSD.DenseMatrix CalculateDisplacementCSparse(double[,] K_gl, CSD.DenseMatrix R_gl, List<List<int>> applyBCToDOF, ref FEMLogger logger)
         {
             var timer = new System.Diagnostics.Stopwatch();
 
             // Make list of boundary condistions
             logger.AddInfo("--- Displacement calculations ---");
-            //timer.Start();
+            
+            
+            timer.Start();
             List<int> BCList = new List<int>();
             for (int i = 0; i < applyBCToDOF.Count; i++)
             {
@@ -431,8 +433,12 @@ namespace SolidFEM.Classes
                     BCList.Add(applyBCToDOF[i][j]); // list of 0 and 1 values for boundary condition for dof; true = 1, false = 0
                 }
             }
+            timer.Stop();
+            logger.AddInfo("Time to add Boundary conditions: " + timer.ElapsedMilliseconds + " ms");timer.Reset();
+
 
             // Apply boundary conditions to movement
+            timer.Start();
             for (int i = 0; i < BCList.Count; i++)
             {
                 for (int j = 0; j < BCList.Count; j++)
@@ -441,16 +447,21 @@ namespace SolidFEM.Classes
                     {
                         if (i != j)
                         {
+                            //K_gl.Row(i).SetValue(0, j);
                             K_gl[i, j] = 0;
                         }
                         else
                         {
+                            //K_gl.Row(i).SetValue(1, j);
                             K_gl[i, j] = 1;
                             R_gl[i, 0] = 0;
                         }
                     }
                 }
             }
+            timer.Stop();
+            logger.AddInfo("Time to restrain boundary conditions global stiffness and load matrix: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
+
 
             // to do: Time this function. Could be super slow. Better ways to get the array?
             /*
@@ -464,7 +475,9 @@ namespace SolidFEM.Classes
             timer.Stop();
             logger.AddInfo("Create compressed column storage from array: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
             */
-            var CCS =  CSD.SparseMatrix.OfMatrix(K_gl); // Try this instead. Need to convert the K_gl from MathNet to CSparse. 
+            timer.Start();
+            var CCS =  CSD.SparseMatrix.OfArray(K_gl); // Try this instead. Need to convert the K_gl from MathNet to CSparse. 
+            timer.Stop(); logger.AddInfo("Create compressed Column Storage of K: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
             #region Testing problems
             
             /*
@@ -486,7 +499,7 @@ namespace SolidFEM.Classes
             //double[] CS_u = CSD.Vector.Create(K_global_red.RowCount * 1, 0.0);
 
             timer.Start();
-            double[] CS_u = CSD.Vector.Create(K_gl.RowCount * 1, 0.0);
+            double[] CS_u = CSD.Vector.Create(K_gl.GetLength(0), 0.0);
             //double[] CS_R = R_red.Column(0).ToArray();
             double[] CS_R = R_gl.Column(0).ToArray();
             timer.Stop();
@@ -509,7 +522,7 @@ namespace SolidFEM.Classes
             var u = new CSD.DenseMatrix(CS_u.Length, 1, CS_u);
             //var u = new CSD.DenseMatrix(CS_u.Length, 1, u_LA.ToArray());
             timer.Stop();
-            logger.AddInfo("Makin a CSparse matrix from u-array: " + timer.ElapsedMilliseconds + "ms"); timer.Reset();
+            logger.AddInfo("Making a CSparse matrix from u-array: " + timer.ElapsedMilliseconds + "ms"); timer.Reset();
             //LA.Matrix<double> u = LA.Double.DenseMatrix.OfColumnArrays(CS_u);
             logger.AddInfo("----- Displacement calculation done -----");
             return u;
@@ -652,11 +665,12 @@ namespace SolidFEM.Classes
                 {
                     // B-matrix is calculated from gauss points
                     LA.Matrix<double> gaussStrain = B_local[n].Multiply(localDeformation);
-                    LA.Matrix<double> gaussStress = C.Multiply(B_local[n]).Multiply(localDeformation);
+                    LA.Matrix<double> gaussStress = C.Multiply(gaussStrain);
+                    //LA.Matrix<double> gaussStress = C.Multiply(B_local[n]).Multiply(localDeformation);
 
                     for (int i = 0; i < B_local[0].RowCount; i++)
                     {
-                        elementGaussStrain[i, n] = gaussStrain[i, 0];
+                        elementGaussStrain[i, n] = gaussStrain[i, 0]; // Should there not be += here? Right now they overwrite the Gauss Strainf for each nodal evaluation
                         elementGaussStress[i, n] = gaussStress[i, 0];
                     }
                 }
