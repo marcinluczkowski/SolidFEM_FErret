@@ -78,7 +78,7 @@ namespace SolidFEM.Preview
                 Vector3d vec =  Vector3d.Multiply( scaling, (new Vector3d(du, dv, dw)) ); // the scaled vector
                 scaleVecs.Add(vec);
 
-
+                //copyMesh.MeshNodes[i].Coordinate = Point3d.Add(copyMesh.MeshNodes[i].Coordinate, vec); // Move the Nodal coordinates
                 Point3d oPt = feMesh.MeshNodes[i].Coordinate;
                 Transform translate = Transform.Translation(scaleVecs[i]);
                 oPt.Transform(translate);
@@ -94,10 +94,10 @@ namespace SolidFEM.Preview
                 for (int j = 0; j < con.Count; j++)
                 {
                     int nodeInd = con[j]; // the global index of the coordinate
-                    newElement.Nodes[j].Coordinate = newNodes[nodeInd].Coordinate; // update the Element nodes
+                    newElement.Nodes[j] = copyMesh.MeshNodes[nodeInd]; // update the Element nodes
                 }
                 newElements.Add(newElement);
-                newMeshList.Add(MeshFromElement(element));
+                newMeshList.Add(MeshFromElement(newElement));
             }
             copyMesh.MeshElements = newElements;
             copyMesh.MeshList = newMeshList;
@@ -347,7 +347,8 @@ namespace SolidFEM.Preview
         private Mesh MeshFromElement(Element el)
         {
             List<Point3d> points = el.TopologyVertices;
-
+            Mesh oldM = el.ElementMesh;
+            
             Mesh mesh = new Mesh();
 
             // create vertices
@@ -366,10 +367,16 @@ namespace SolidFEM.Preview
             else if (points.Count == 4)
             {
                 // create faces for TET4
+                foreach (MeshFace face in oldM.Faces)
+                {
+                    mesh.Faces.AddFace(new MeshFace(face.A, face.B, face.C));
+                }
+                /*
                 mesh.Faces.AddFace(new MeshFace(0, 1, 3));
                 mesh.Faces.AddFace(new MeshFace(1, 2, 3));
                 mesh.Faces.AddFace(new MeshFace(0, 2, 3));
                 mesh.Faces.AddFace(new MeshFace(0, 1, 2));
+                */
             }
             
 
