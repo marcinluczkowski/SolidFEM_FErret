@@ -156,7 +156,7 @@ namespace SolidFEM.FiniteElementMethod
 
             
             // self weight
-            var selfWeight = FEM_Utility.GetBodyForceVector(material, elements, numNodes);
+            var selfWeight = FEM_Utility.GetBodyForceVector(material, elements, numNodes, Logger);
             CSD.DenseMatrix R_self = new CSD.DenseMatrix(numNodes * 3, 1, selfWeight.ToArray());
             CSD.DenseMatrix R_external = new CSD.DenseMatrix(numNodes * 3, 1);
             

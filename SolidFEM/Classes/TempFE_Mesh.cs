@@ -10,7 +10,7 @@ namespace SolidFEM.Classes
     public class TempFE_Mesh
     {
         // -- parameters --
-        public List<Mesh> MeshList { get; set; }
+        public List<Mesh> MeshList { get; set; } // Remove
         public List<Node> MeshNodes { get; set; }
         public List<Element> MeshElements { get; set; }
 
