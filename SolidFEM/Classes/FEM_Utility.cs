@@ -711,7 +711,7 @@ namespace SolidFEM.Classes
 
 
                     nodeStrain = (B_local[0]).Multiply(localDeformation);
-                    nodeStress.Add(C.Multiply(nodeStrain));
+                    nodeStress.Add(C.Multiply(nodeStrain), nodeStress);
 
                     elementStrain.SetSubMatrix(0, i, nodeStrain);
                     elementStress.SetSubMatrix(0, i, nodeStress);
