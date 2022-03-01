@@ -24,7 +24,7 @@ namespace SolidFEM.Classes
         /// Construct global stiffness matrix by assembling element stiffness matrices.
         /// </summary>
         /// <returns> Global stiffness matrix. </returns>
-        public static double[,] GlobalStiffnessCSparse(List<Element> elements, int numNode, Material material, ref FEMLogger logger)
+        public static double[,] GlobalStiffnessCSparse(ref List<Element> elements, int numNode, Material material, ref FEMLogger logger)
         {
             Stopwatch timer = new Stopwatch();
             // Initiate empty matrix
@@ -50,7 +50,9 @@ namespace SolidFEM.Classes
                 List<int> con = element.Connectivity; // get the connectivity of each element
 
                 // iterate over the connectivity indices
-                LA.Matrix<double> K_local = CalculateElementMatrices(element, material, ref logger).Item1;
+                var kAndB = CalculateElementMatrices(element, material, ref logger);
+                LA.Matrix<double> K_local = kAndB.Item1;
+                element.LocalB = kAndB.Item2;
                 //elementSums.Add(K_local.AsColumnMajorArray().Sum(x => Math.Abs(x))); // the sum of each element
 
                 /*

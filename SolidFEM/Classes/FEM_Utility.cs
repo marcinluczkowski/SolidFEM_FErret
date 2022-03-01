@@ -644,12 +644,13 @@ namespace SolidFEM.Classes
             LA.Matrix<double> C = material.GetMaterialConstant();
 
 
-            List<LA.Matrix<double>> B_local = FEM_Matrices.CalculateElementMatrices(element, material, ref logger).Item2; // this can be changed to save time.. No need to establish the stiffness matrix of an element for this
+            //List<LA.Matrix<double>> B_local = FEM_Matrices.CalculateElementMatrices(element, material, ref logger).Item2; // this can be changed to save time.. No need to establish the stiffness matrix of an element for this
+            List<LA.Matrix<double>> B_local = element.LocalB;
             LA.Matrix<double> elementGaussStrain = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
             LA.Matrix<double> elementGaussStress = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
             LA.Matrix<double> elementStrain = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
             LA.Matrix<double> elementStress = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
-            LA.Matrix<double> localDeformation = LA.Double.DenseMatrix.Build.Dense(3 * element.Nodes.Count, 1);
+            LA.Matrix<double> localDeformation = LA.Double.DenseMatrix.Build.Dense(3 * element.Nodes.Count, 1); // Could this be attached to the FE_Element class as well?
 
             // get deformation of nodes connected to element
             for (int i = 0; i < element.Connectivity.Count; i++)
@@ -668,6 +669,8 @@ namespace SolidFEM.Classes
                     LA.Matrix<double> gaussStress = C.Multiply(gaussStrain);
                     //LA.Matrix<double> gaussStress = C.Multiply(B_local[n]).Multiply(localDeformation);
 
+
+                    // Use add column here instead of a loop?
                     for (int i = 0; i < B_local[0].RowCount; i++)
                     {
                         elementGaussStrain[i, n] = gaussStrain[i, 0]; // Should there not be += here? Right now they overwrite the Gauss Strainf for each nodal evaluation
