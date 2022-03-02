@@ -6,15 +6,15 @@ using Rhino.Geometry;
 
 namespace SolidFEM.Deconstructors
 {
-    public class DeconsructElement : GH_Component
+    public class DeconstructElement : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the MyComponent1 class.
         /// </summary>
-        public DeconsructElement()
+        public DeconstructElement()
           : base("DeconstructEl", "DeEl",
               "Deconstruct basic element class",
-              "FEM", "Deconstructors")
+              "SmartMesh", "Deconstructors")
         {
         }
 
@@ -31,7 +31,7 @@ namespace SolidFEM.Deconstructors
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("Informations", "", "", GH_ParamAccess.list);
+            pManager.AddMeshParameter("Mesh", "m", "The elements mesh", GH_ParamAccess.item);
             pManager.AddGenericParameter("Nodes", "ns", "solid fem nodes", GH_ParamAccess.list);
         }
 
@@ -42,28 +42,12 @@ namespace SolidFEM.Deconstructors
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             Element el = new Element();
-            DA.GetData(0, ref el);
-            var info = new List<string>();
-
-            List<Point3d> nodes = new List<Point3d>();
+            if(!DA.GetData(0, ref el)) return;
             
-            foreach (var n in el.Nodes)
-            {
-                Point3d pt = n.Coordinate;
-                nodes.Add(pt);
-            }
-            el.SortVerticesByGrahamScan();
-
             
 
-            List<int> ids = new List<int>();
-            foreach(Node n in el.Nodes)
-            {
-                ids.Add(n.ID);
-            }
-
-            info.Add("change brep box into fel"); ;
-            DA.SetDataList(0, info);
+            
+            DA.SetData(0, el.ElementMesh);
             DA.SetDataList(1, el.TopologyVertices);
         }
 
