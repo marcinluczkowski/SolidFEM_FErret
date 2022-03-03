@@ -28,7 +28,7 @@ namespace SolidFEM.FiniteElementMethod
             pManager.AddMeshParameter("Mesh List", "mList", "List of mesh representing solid elements.", GH_ParamAccess.list); // 0
             pManager.AddIntegerParameter("Type", "type", "Load type: Point load = 1, Surface load = 2.", GH_ParamAccess.item); // 1
             pManager.AddGenericParameter("Position", "pos", "If type = 1: List of coordinates for point loads.", GH_ParamAccess.list); // 2
-            pManager.AddIntegerParameter("Surface", "srf", "If type = 2: Face index of geometry to apply surface load.", GH_ParamAccess.list); // 3
+            pManager.AddSurfaceParameter("Surface", "srf", "If type = 2: surface to apply load", GH_ParamAccess.list); // 3
             pManager.AddGenericParameter("Vector", "vec", "List of vectors of the loads. If surface load, only one vector.", GH_ParamAccess.list); // 4
 
             pManager[0].Optional = true;
@@ -61,12 +61,12 @@ namespace SolidFEM.FiniteElementMethod
             int loadType = 0; // 1
             List<Vector3d> loadVectors = new List<Vector3d>();
             List<Point3d> loadPosition = new List<Point3d>();
-            List<int> surfaceIndex = new List<int>();
+            List<Surface> surfaces = new List<Surface>();
 
             DA.GetDataList(0, meshList);
             DA.GetData(1, ref loadType);
             DA.GetDataList(2, loadPosition);
-            DA.GetDataList(3, surfaceIndex);
+            DA.GetDataList(3, surfaces);
             DA.GetDataList(4, loadVectors);
 
             // Code
@@ -161,97 +161,101 @@ namespace SolidFEM.FiniteElementMethod
                     pointsWithLoad.Add(nodePts[nodeIndex]);
                 }
             }
-            /*
-            else if (loadType == 2) // surface load
+            else if(loadType == 2)
             {
-                for (int p = 0; p < loadVectors.Count; p++)
+                for(int i = 0; i < surfaces.Count; i++)
                 {
-                    BrepFace surface = smartMesh.Geometry.Faces[surfaceIndex[p]];
-                    List<int> nodeIndexOnSurface = GetNodeIndexOnSurface(smartMesh.Nodes, surface);
-
-                    // Prepare load lumping
-                    foreach (Element element in smartMesh.Elements)
+                    foreach (Mesh mesh in meshList)
                     {
-                        for (int i = 0; i < element.Connectivity.Count; i++)
+                        if (mesh.Vertices.Count == 8)
                         {
-                            for (int j = 0; j < nodeIndexOnSurface.Count; j++)
+                            List<Point3d> pts = new List<Point3d>();
+                            foreach (Point3d pt in mesh.Vertices)
                             {
-                                if (element.Connectivity[i] == nodeIndexOnSurface[j])
+                                // Find closest point on load surface
+                                double u = 0;
+                                double v = 0;
+                                surfaces[i].ClosestPoint(pt, out u, out v);
+                                if (pt.DistanceTo(surfaces[i].PointAt(u, v)) < 0.001)   // if closer than a tolerance add it to meshpoints
                                 {
-                                    List<List<Node>> faceList = element.GetFaces();
+                                    pts.Add(pt);
+                                }
+                            }
 
-                                    for (int k = 0; k < faceList.Count; k++)
+                            if (pts.Count > 2)
+                            {
+                                NurbsSurface meshSrf = NurbsSurface.CreateFromCorners(pts[0], pts[1], pts[3], pts[2]);  // may need to do a graham scan on meshSrf
+                                AreaMassProperties amp = AreaMassProperties.Compute(meshSrf);
+                                double A = amp.Area;
+                                Vector3d nodalForce = A * loadVectors[i] / pts.Count;
+
+                                // Deconstruct load vector
+                                double xLoad = nodalForce.X;
+                                double yLoad = nodalForce.Y;
+                                double zLoad = nodalForce.Z;
+
+                                foreach (var pt in pts)
+                                {
+                                    int nodeIndex = GetClosestNodeIndex(nodePts, pt);
+                                    if (nodeIndex == -1)
                                     {
-                                        List<Node> face = faceList[k];
-                                        int counter = 0;
-                                        for (int n = 0; n < face.Count; n++)
-                                        {
-                                            if (nodeIndexOnSurface.Contains(face[n].GlobalId))
-                                            {
-                                                counter++;
-                                            }
-                                        }
-                                        if (counter == 4)
-                                        {
-                                            Point3d n0 = face[0].Coordinate;
-                                            Point3d n1 = face[1].Coordinate;
-                                            Point3d n2 = face[2].Coordinate;
-                                            Point3d n3 = face[3].Coordinate;
-
-                                            double area1 = Math.Abs(0.5 * Vector3d.CrossProduct(n0 - n3, n1 - n3).Length);
-                                            double area2 = Math.Abs(0.5 * Vector3d.CrossProduct(n1 - n3, n2 - n3).Length);
-
-                                            // check area
-                                            Vector3d normal = element.ElementMesh.FaceNormals[k];
-                                            if (Vector3d.VectorAngle(n1 - n0, n3 - n0, normal) >= Math.PI)
-                                            {
-                                                area1 = Math.Abs(0.5 * Vector3d.CrossProduct(n1 - n0, n2 - n0).Length);
-                                                area2 = Math.Abs(0.5 * Vector3d.CrossProduct(n3 - n0, n2 - n0).Length);
-                                            }
-                                            if (Vector3d.VectorAngle(n2 - n1, n3 - n1, normal) >= Math.PI)
-                                            {
-                                                area1 = Math.Abs(0.5 * Vector3d.CrossProduct(n2 - n1, n3 - n1).Length);
-                                                area2 = Math.Abs(0.5 * Vector3d.CrossProduct(n0 - n1, n3 - n1).Length);
-                                            }
-
-                                            if (Vector3d.VectorAngle(n3 - n2, n1 - n2, normal) >= Math.PI)
-                                            {
-                                                area1 = Math.Abs(0.5 * Vector3d.CrossProduct(n3 - n2, n0 - n2).Length);
-                                                area2 = Math.Abs(0.5 * Vector3d.CrossProduct(n1 - n2, n0 - n2).Length);
-                                            }
-
-                                            if (Vector3d.VectorAngle(n0 - n3, n2 - n3, normal) >= Math.PI)
-                                            {
-                                                area1 = Math.Abs(0.5 * Vector3d.CrossProduct(n0 - n3, n1 - n3).Length);
-                                                area2 = Math.Abs(0.5 * Vector3d.CrossProduct(n2 - n3, n1 - n3).Length);
-                                            }
-
-                                            double faceArea = area1 + area2;
-
-                                            foreach (Node node in face)
-                                            {
-                                                residualForces[3 * node.GlobalId + 0] = residualForces[node.GlobalId * 3 + 0] + loadVectors[p].X * faceArea / (double)4;
-                                                residualForces[3 * node.GlobalId + 1] = residualForces[node.GlobalId * 3 + 1] + loadVectors[p].Y * faceArea / (double)4;
-                                                residualForces[3 * node.GlobalId + 2] = residualForces[node.GlobalId * 3 + 2] + loadVectors[p].Z * faceArea / (double)4;
-
-                                                if (!pointsWithLoad.Contains(node.Coordinate))
-                                                {
-                                                    pointsWithLoad.Add(node.Coordinate);
-                                                }
-                                            }
-
-                                            i = element.Connectivity.Count; // break
-                                            j = nodeIndexOnSurface.Count; // break
-                                            k = faceList.Count; // break
-                                        }
+                                        continue; // the point is not on the mesh
                                     }
+
+                                    // Construct residual force list
+                                    residualForces[nodeIndex * 3] += xLoad;
+                                    residualForces[nodeIndex * 3 + 1] += yLoad;
+                                    residualForces[nodeIndex * 3 + 2] += zLoad;
+                                    pointsWithLoad.Add(nodePts[nodeIndex]);
                                 }
                             }
                         }
+                        else if (mesh.Vertices.Count == 4)
+                        {
+                            List<Point3d> pts = new List<Point3d>();
+                            foreach (Point3d pt in mesh.Vertices)
+                            {
+                                double u = 0;
+                                double v = 0;
+                                surfaces[i].ClosestPoint(pt, out u, out v);
+                                if (pt.DistanceTo(surfaces[i].PointAt(u, v)) < 0.001)
+                                {
+                                    pts.Add(pt);
+                                }
+                            }
 
+                            if (pts.Count > 2)
+                            {
+                                NurbsSurface meshSrf = NurbsSurface.CreateFromCorners(pts[0], pts[1], pts[2]);
+                                AreaMassProperties amp = AreaMassProperties.Compute(meshSrf);
+                                double A = amp.Area;
+                                Vector3d nodalForce = A * loadVectors[i] / pts.Count;
+
+                                // Deconstruct load vector
+                                double xLoad = nodalForce.X;
+                                double yLoad = nodalForce.Y;
+                                double zLoad = nodalForce.Z;
+
+                                foreach (var pt in pts)
+                                {
+                                    int nodeIndex = GetClosestNodeIndex(nodePts, pt);
+                                    if (nodeIndex == -1)
+                                    {
+                                        continue; // the point is not on the mesh
+                                    }
+
+                                    // Construct residual force list
+                                    residualForces[nodeIndex * 3] += xLoad;
+                                    residualForces[nodeIndex * 3 + 1] += yLoad;
+                                    residualForces[nodeIndex * 3 + 2] += zLoad;
+                                    pointsWithLoad.Add(nodePts[nodeIndex]);
+                                }
+                            }
+                        }
                     }
                 }
-            }*/
+               
+            }
 
             // Output
 

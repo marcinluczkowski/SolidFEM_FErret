@@ -36,6 +36,7 @@ namespace SolidFEM.Classes
             }
         }      
         public Matrix<double> localK; //local stiffness matrix
+        public List<Matrix<double>> LocalB { get; set; } // Local B matrix for the element evaluated in all Gauss points
 
 
         // -- constructors ---
