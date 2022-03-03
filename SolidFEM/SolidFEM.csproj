@@ -104,6 +104,8 @@
     <Compile Include="Classes\Unused classes\Solid_Mesh.cs" />
     <Compile Include="Classes\Support.cs" />
     <Compile Include="Classes\TempFE_Mesh.cs" />
+    <Compile Include="Components\Deconstructors\DeconstructFEMesh.cs" />
+    <Compile Include="Components\Preview\NodalResults.cs" />
     <Compile Include="Components\Unused Components\CreateElement.cs" />
     <Compile Include="Components\Unused Components\PreviewElement.cs" />
     <Compile Include="Components\Unused Components\Solver1.cs" />
@@ -116,7 +118,7 @@
     <Compile Include="Components\Unused Components\DeconstructQElement.cs" />
     <Compile Include="Components\Unused Components\DeconstructQEdge.cs" />
     <Compile Include="Components\Unused Components\DeconstructNode.cs" />
-    <Compile Include="Components\Deconstructors\DeconsructElement.cs" />
+    <Compile Include="Components\Deconstructors\DeconstructElement.cs" />
     <Compile Include="Components\FiniteElemntMethod\FEMBoundary.cs" />
     <Compile Include="Components\FiniteElemntMethod\FEMLoad _MESH.cs" />
     <Compile Include="Components\Unused Components\FEMLoad.cs" />
