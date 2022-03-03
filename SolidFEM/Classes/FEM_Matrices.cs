@@ -24,7 +24,7 @@ namespace SolidFEM.Classes
         /// Construct global stiffness matrix by assembling element stiffness matrices.
         /// </summary>
         /// <returns> Global stiffness matrix. </returns>
-        public static double[,] GlobalStiffnessCSparse(List<Element> elements, int numNode, Material material, ref FEMLogger logger)
+        public static double[,] GlobalStiffnessCSparse(ref List<Element> elements, int numNode, Material material, ref FEMLogger logger)
         {
             Stopwatch timer = new Stopwatch();
             // Initiate empty matrix
@@ -50,7 +50,9 @@ namespace SolidFEM.Classes
                 List<int> con = element.Connectivity; // get the connectivity of each element
 
                 // iterate over the connectivity indices
-                LA.Matrix<double> K_local = CalculateElementMatrices(element, material, ref logger).Item1;
+                var kAndB = CalculateElementMatrices(element, material, ref logger);
+                LA.Matrix<double> K_local = kAndB.Item1;
+                element.LocalB = kAndB.Item2;
                 //elementSums.Add(K_local.AsColumnMajorArray().Sum(x => Math.Abs(x))); // the sum of each element
 
                 /*
@@ -245,16 +247,16 @@ namespace SolidFEM.Classes
                 }
                 B_local.Add(B_i);
                 // Get volume of Tetrahedra
-                Brep triangle1 = Brep.CreateFromCornerPoints(element.TopologyVertices[0], element.TopologyVertices[1], element.TopologyVertices[2], 0.0001);
+                /*Brep triangle1 = Brep.CreateFromCornerPoints(element.TopologyVertices[0], element.TopologyVertices[1], element.TopologyVertices[2], 0.0001);
                 Brep triangle2 = Brep.CreateFromCornerPoints(element.TopologyVertices[0], element.TopologyVertices[1], element.TopologyVertices[3], 0.0001);
                 Brep triangle3 = Brep.CreateFromCornerPoints(element.TopologyVertices[0], element.TopologyVertices[2], element.TopologyVertices[3], 0.0001);
                 Brep triangle4 = Brep.CreateFromCornerPoints(element.TopologyVertices[1], element.TopologyVertices[2], element.TopologyVertices[3], 0.0001);
 
                 List<Brep> triangles = new List<Brep> { triangle1, triangle2, triangle3, triangle4 };
 
-                Brep[] tetra = Brep.CreateSolid(triangles, 0.0001);
+                Brep[] tetra = Brep.CreateSolid(triangles, 0.0001);*/
 
-                VolumeMassProperties vmp = VolumeMassProperties.Compute(tetra[0]);
+                VolumeMassProperties vmp = VolumeMassProperties.Compute(element.ElementMesh);
                 double V = vmp.Volume;
 
                 var k_i = V * (B_i.Transpose()).Multiply(C.Multiply(B_i));

@@ -123,7 +123,6 @@ namespace SolidFEM.FiniteElementMethod
 
 
 
-
             List<Element> elements;
             List<Node> femNodes = new List<Node>();
 
@@ -142,7 +141,7 @@ namespace SolidFEM.FiniteElementMethod
             // 1. Get global stiffness matrix
             watch.Start();
             //LA.Matrix<double> K_global = CalculateGlobalStiffnessMatrix(elements, numNodes, material);
-            var K_globalC = FEM_Matrices.GlobalStiffnessCSparse(elements, numNodes, material, ref Logger);
+            var K_globalC = FEM_Matrices.GlobalStiffnessCSparse(ref elements, numNodes, material, ref Logger);
             
             //var sumStiffness = K_globalC.AsColumnMajorArray();
             //Logger.AddInfo($"The sum of all elements in the stiffness matrix from mesh elements:  {sumStiffness.Sum()}");
