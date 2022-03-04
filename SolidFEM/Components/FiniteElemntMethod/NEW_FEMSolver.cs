@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using SolidFEM.Classes;
 using MathNet.Numerics.LinearAlgebra.Double;
 using System.Linq;
+using ClosedXML.Excel;
 
 // Csparse
 using LA = MathNet.Numerics.LinearAlgebra;
@@ -92,7 +93,7 @@ namespace SolidFEM.FiniteElementMethod
             DA.GetDataList(2, supports);
             DA.GetData(3, ref material);
 
-            
+
 
             // 0. Initial step
 
