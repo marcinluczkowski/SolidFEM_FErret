@@ -64,6 +64,9 @@ namespace SolidFEM.FiniteElementMethod
             pManager.AddTextParameter("Diagonstics", "text", "List of information on the components performance", GH_ParamAccess.list);
             pManager.AddGenericParameter("FE_Mesh", "femesh", "The FE_Mesh containing results from the analysis.", GH_ParamAccess.item) ;
             //pManager.AddGenericParameter("Global K", "", "", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Sigma_xx", "S_xx", "List of nodal normal stresses in x-direction", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Sigma_zz", "S_zz", "List of nodal normal stresses in z-direction", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Sigma_xz", "S_xz", "List of nodal shear stresses in xz-direction", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -213,6 +216,9 @@ namespace SolidFEM.FiniteElementMethod
             List<double> u3 = new List<double>();
             List<double> nodalMises = new List<double>();
             List<double> elementMises = new List<double>();
+            List<double> sigma_xx = new List<double>();
+            List<double> sigma_zz = new List<double>();
+            List<double> sigma_xz = new List<double>();
 
             for (int i = 0; i < elements.Count; i++)
             {
@@ -227,6 +233,12 @@ namespace SolidFEM.FiniteElementMethod
 
                 nodalMises.Add(mises[i]);
             }
+
+            
+            sigma_xx = globalStress.Row(0).ToList();
+            sigma_zz = globalStress.Row(2).ToList();
+            sigma_xz = globalStress.Row(4).ToList();
+
 
             // test - delete after
             double maxDisp = u3.Max(x => Math.Abs(x));
@@ -260,6 +272,9 @@ namespace SolidFEM.FiniteElementMethod
             DA.SetDataList(5, Logger.LogList);
             DA.SetData(6, outMesh);
             //DA.SetDataList(7, K_globalC.AsColumnMajorArray());
+            DA.SetDataList(7, sigma_xx);
+            DA.SetDataList(8, sigma_zz);
+            DA.SetDataList(9, sigma_xz);
         }
 
         #region Methods
