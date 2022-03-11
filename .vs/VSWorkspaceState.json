@@ -2,10 +2,8 @@
   "ExpandedNodes": [
     "",
     "\\SolidFEM",
-    "\\SolidFEM\\Classes",
-    "\\SolidFEM\\Components",
-    "\\SolidFEM\\FiniteElemntMethod"
+    "\\SolidFEM\\Components"
   ],
-  "SelectedNode": "\\SolidFEM.sln",
+  "SelectedNode": "\\SolidFEM\\App.config",
   "PreviewInSolutionExplorer": false
 }

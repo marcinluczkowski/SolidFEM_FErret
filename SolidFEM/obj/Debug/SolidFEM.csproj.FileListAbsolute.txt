@@ -41,3 +41,14 @@ C:\Users\Markus\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CoreCom
 C:\Users\Markus\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CopyComplete
 C:\Users\Markus\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.dll
 C:\Users\Markus\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.pdb
+C:\Users\Brage\AppData\Roaming\McNeel\Rhinoceros\7.0\Plug-ins\Accord.dll.config
+C:\Users\Brage\AppData\Roaming\McNeel\Rhinoceros\7.0\Plug-ins\SolidFEM.dll.config
+C:\Users\Brage\AppData\Roaming\McNeel\Rhinoceros\7.0\Plug-ins\SolidFEM.dll
+C:\Users\Brage\AppData\Roaming\McNeel\Rhinoceros\7.0\Plug-ins\SolidFEM.pdb
+C:\Users\Brage\source\repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.AssemblyReference.cache
+C:\Users\Brage\source\repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.Properties.Resources.resources
+C:\Users\Brage\source\repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.GenerateResource.cache
+C:\Users\Brage\source\repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CoreCompileInputs.cache
+C:\Users\Brage\source\repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CopyComplete
+C:\Users\Brage\source\repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.dll
+C:\Users\Brage\source\repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.pdb
