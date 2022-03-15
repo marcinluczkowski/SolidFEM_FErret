@@ -40,6 +40,7 @@ namespace SolidFEM.DeconstructClasses
             pManager.AddGenericParameter("Id", "id", "Element Id.", GH_ParamAccess.item);
             pManager.AddGenericParameter("Mesh", "mesh", "Element mesh.", GH_ParamAccess.item);
             pManager.AddGenericParameter("Determinant", "det", "Jacobian ratio of mesh", GH_ParamAccess.list);
+            pManager.AddTextParameter("B matrix", "B", "", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -52,12 +53,21 @@ namespace SolidFEM.DeconstructClasses
             Element e = new Element();
             DA.GetData(0, ref e);
 
+            List<string> bmat = new List<string>();
+            for (int i = 0; i < e.LocalB.Count; i++)
+            {
+                string bm = e.LocalB[i].ToString();
+                bmat.Add(bm);
+            }
+            
+
             // Output
             DA.SetDataList(0, e.Nodes);
             DA.SetDataList(1, e.Connectivity);
             DA.SetData(2, e.Type);
             DA.SetData(3, e.Id);
             DA.SetData(4, e.ElementMesh);
+            DA.SetDataList(6, bmat);
         }
 
         /// <summary>

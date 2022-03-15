@@ -48,6 +48,7 @@ namespace SolidFEM.FiniteElementMethod
             pManager.AddGenericParameter("Loads", "load", "Load vector from FEM Load.", GH_ParamAccess.list); // 1
             pManager.AddGenericParameter("Boundary Conditions", "BC", "Boundary conditions from FEM Boundary Condtion.", GH_ParamAccess.list); // 2
             pManager.AddGenericParameter("Material", "material", "Material from FEM Material.", GH_ParamAccess.item); // 3
+            pManager.AddTextParameter("Element type", "elemType", "Element type to be used in analysis Hex8 og Hex20", GH_ParamAccess.item); //4
         }
 
         /// <summary>
@@ -62,8 +63,9 @@ namespace SolidFEM.FiniteElementMethod
             pManager.AddGenericParameter("Node Stress", "node mises", "List of von Mises stress in node.", GH_ParamAccess.list);
 
             pManager.AddTextParameter("Diagonstics", "text", "List of information on the components performance", GH_ParamAccess.list);
-            pManager.AddGenericParameter("FE_Mesh", "femesh", "The FE_Mesh containing results from the analysis.", GH_ParamAccess.item) ;
-            //pManager.AddGenericParameter("Global K", "", "", GH_ParamAccess.list);
+            pManager.AddGenericParameter("FE_Mesh", "femesh", "The FE_Mesh containing results from the analysis.", GH_ParamAccess.item);
+            pManager.AddGenericParameter("", "", "", GH_ParamAccess.list);
+            pManager.AddTextParameter("Global K", "", "", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -86,13 +88,16 @@ namespace SolidFEM.FiniteElementMethod
             //List<List<int>> boundaryConditions = new List<List<int>>();
             List<Support> supports = new List<Support>();
             Material material = new Material();
+            string elemType = "Hex8";
 
             DA.GetDataList(0, meshList);
             DA.GetDataList(1, loads);
-            //DA.GetDataList(2, boundaryConditions);
             DA.GetDataList(2, supports);
             DA.GetData(3, ref material);
+            DA.GetData(4, ref elemType);
 
+
+            List<string> info = new List<string>();
 
 
             // 0. Initial step
@@ -103,6 +108,11 @@ namespace SolidFEM.FiniteElementMethod
             // clean the mesh and sort nodes
             var newMeshList = new List<Mesh>();
             int c = 0; // delete after testing
+
+            //Toggle Hex20 elems on/off
+            
+            
+
             foreach (Mesh mesh in meshList)
             {
                 if (mesh.Vertices.Count == 8)
@@ -111,9 +121,50 @@ namespace SolidFEM.FiniteElementMethod
 
                     if (nM.IsValid)
                     {
+                        var vertices_array = nM.Vertices.ToPoint3dArray(); // an array of the vertices of each mesh element
+
+                        List<Point3d> vertices = vertices_array.ToList();
+
+                        if (elemType == "Hex20")
+                        {
+                            nM.Vertices.Add((vertices[0] + vertices[1]) / 2);
+                            nM.Vertices.Add((vertices[1] + vertices[2]) / 2);
+                            nM.Vertices.Add((vertices[2] + vertices[3]) / 2);
+                            nM.Vertices.Add((vertices[3] + vertices[0]) / 2);
+                            nM.Vertices.Add((vertices[4] + vertices[5]) / 2);
+                            nM.Vertices.Add((vertices[5] + vertices[6]) / 2);
+                            nM.Vertices.Add((vertices[6] + vertices[7]) / 2);
+                            nM.Vertices.Add((vertices[7] + vertices[4]) / 2);
+                            nM.Vertices.Add((vertices[0] + vertices[4]) / 2);
+                            nM.Vertices.Add((vertices[1] + vertices[5]) / 2);
+                            nM.Vertices.Add((vertices[2] + vertices[6]) / 2);
+                            nM.Vertices.Add((vertices[3] + vertices[7]) / 2);
+                        }
                         newMeshList.Add(nM);
                     }
-                    else newMeshList.Add(mesh);
+                    else
+                    {
+                        var vertices_array = mesh.Vertices.ToPoint3dArray(); // an array of the vertices of each mesh element
+
+                        List<Point3d> vertices = vertices_array.ToList();
+
+                        if (elemType == "Hex20")
+                        {
+                            mesh.Vertices.Add((vertices[0] + vertices[1]) / 2);
+                            mesh.Vertices.Add((vertices[1] + vertices[2]) / 2);
+                            mesh.Vertices.Add((vertices[2] + vertices[3]) / 2);
+                            mesh.Vertices.Add((vertices[3] + vertices[0]) / 2);
+                            mesh.Vertices.Add((vertices[4] + vertices[5]) / 2);
+                            mesh.Vertices.Add((vertices[5] + vertices[6]) / 2);
+                            mesh.Vertices.Add((vertices[6] + vertices[7]) / 2);
+                            mesh.Vertices.Add((vertices[7] + vertices[4]) / 2);
+                            mesh.Vertices.Add((vertices[0] + vertices[4]) / 2);
+                            mesh.Vertices.Add((vertices[1] + vertices[5]) / 2);
+                            mesh.Vertices.Add((vertices[2] + vertices[6]) / 2);
+                            mesh.Vertices.Add((vertices[3] + vertices[7]) / 2);
+                        }
+                        newMeshList.Add(mesh);
+                    }
                     c++;
                 }
                 else
@@ -134,20 +185,25 @@ namespace SolidFEM.FiniteElementMethod
                 Node node = new Node(i, nodePos[i]);
                 femNodes.Add(node);
             }
-            
+
+
 
             int numNodes = nodePos.Count;
             FEM_Utility.ElementsFromMeshList(newMeshList, nodePos , out elements);
 
-            // 1. Get global stiffness matrix
-            watch.Start();
-            //LA.Matrix<double> K_global = CalculateGlobalStiffnessMatrix(elements, numNodes, material);
-            var K_globalC = FEM_Matrices.GlobalStiffnessCSparse(ref elements, numNodes, material, ref Logger);
-            
-            //var sumStiffness = K_globalC.AsColumnMajorArray();
-            //Logger.AddInfo($"The sum of all elements in the stiffness matrix from mesh elements:  {sumStiffness.Sum()}");
+            DA.SetDataList(7, elements);
 
-            //var K_sparse = new CSD.SparseMatrix()
+            // 1. Get global stiffness matrix
+            watch.Start();  
+            var K_globalC = FEM_Matrices.GlobalStiffnessCSparse(ref elements, numNodes, material, ref Logger);
+
+            //Delete after testing, output K matrix in gh
+            
+            LA.Matrix<double> kglobal = LA.Matrix<double>.Build.DenseOfArray(K_globalC);
+            info.Add(kglobal.ToString());
+
+            DA.SetDataList(8, info);
+
             watch.Stop();
             Logger.AddInfo($"Time used calculating global stiffness matrix: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
@@ -160,10 +216,8 @@ namespace SolidFEM.FiniteElementMethod
             CSD.DenseMatrix R_self = new CSD.DenseMatrix(numNodes * 3, 1, selfWeight.ToArray());
             CSD.DenseMatrix R_external = new CSD.DenseMatrix(numNodes * 3, 1);
             
-            //LA.Matrix<double> R = LA.Double.DenseMatrix.Build.Dense(numNodes * 3, 1);
             for (int i = 0; i < loads.Count; i++)
             {
-                //R[i, 0] = loads[i];
                 R_external[i,0] = loads[i];
             }
 
@@ -173,21 +227,16 @@ namespace SolidFEM.FiniteElementMethod
             Logger.AddInfo($"Time used to establish global load vector: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
             // 5. Fix BoundaryConditions
-            //boundaryConditions = FixBoundaryConditions(boundaryConditions, smartMesh.Nodes.Count);
             watch.Start();
             List<List<int>> boundaryConditions = FixBoundaryConditionsSverre(supports, nodePos);
             Logger.AddInfo($"Time used on boundary conditions: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
+            
+            
             // 6. Calculate displacement 
             watch.Start();
             CSD.DenseMatrix u_CSparse = FEM_Utility.CalculateDisplacementCSparse(K_globalC, R, boundaryConditions, ref Logger);
             Logger.AddInfo($"Time used on displacement calculations with CSparce: {watch.ElapsedMilliseconds} ms"); watch.Reset();
-
-            
-
-            watch.Start();
-            //LA.Matrix<double> u = CalculateDisplacement(K_global, R, boundaryConditions, ref infoList);
-            Logger.AddInfo($"Time used on regular displacement calculations: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
             // 7. Calculate stress
 

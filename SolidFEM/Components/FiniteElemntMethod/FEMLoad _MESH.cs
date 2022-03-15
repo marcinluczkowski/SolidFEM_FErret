@@ -73,6 +73,13 @@ namespace SolidFEM.FiniteElementMethod
             // clean the mesh and sort nodes
             var newMeshList = new List<Mesh>();
             int c = 0; // delete after testing
+
+            //Toggle Hex20 element (have to implement better)
+
+            //string eltype = "Hex20";
+            string eltype = "";
+
+
             foreach (Mesh mesh in meshList)
             {
                 if (mesh.Vertices.Count == 8)
@@ -111,6 +118,11 @@ namespace SolidFEM.FiniteElementMethod
             List<Point3d> nodePts = FEM_Utility.GetMeshNodes(newMeshList);
 
             int numNodes = nodePts.Count;
+
+            if (eltype == "Hex20")
+            {
+                numNodes = 20;
+            }
 
             double[] residualForces = new double[numNodes * 3]; // number of nodes times the three global directions
 
@@ -153,6 +165,8 @@ namespace SolidFEM.FiniteElementMethod
                     double xLoad = loadVectors[i].X;
                     double yLoad = loadVectors[i].Y;
                     double zLoad = loadVectors[i].Z;
+
+
 
                     // Construct residual force list
                     residualForces[nodeIndex * 3] += xLoad;

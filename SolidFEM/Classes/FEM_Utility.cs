@@ -35,13 +35,18 @@ namespace SolidFEM.Classes
                 List<int> connectivity = new List<int>();
 
                 // iterate through the vertices
-                var vertices = mEl.Vertices.ToPoint3dArray(); // an array of the vertices of each mesh element
+                var vertices_array = mEl.Vertices.ToPoint3dArray(); // an array of the vertices of each mesh element
 
+                List<Point3d> vertices = vertices_array.ToList();
                 // sort the vertices by a Graham 
                 //List<Point3d> sortedVertices = SortVerticesByGrahamScan(vertices.ToList());
+
+                // If element type is set to Hex20, add midside nodes
+
+
                
 
-                for (int i = 0; i < vertices.Length; i++)
+                for (int i = 0; i < vertices.Count; i++)
                 {
                     Point3d mPt = vertices[i]; // point to create node from
 
@@ -84,6 +89,10 @@ namespace SolidFEM.Classes
                 else if(elNodes.Count == 4)
                 {
                     el.Type = "Tet4";
+                }
+                else if(elNodes.Count == 20)
+                {
+                    el.Type = "Hex20";
                 }
 
                 elements.Add(el);
@@ -168,10 +177,16 @@ namespace SolidFEM.Classes
                 }
 
                 // get the matrix of natural coordinates in gauss points
-                int order = 2;  //Order for gauss integration
+                int order = 2;              //Order for gauss integration
+
+                if (el.Type == "Hex20")
+                {
+                    order = 3;          //Order for gauss integration
+                }
+                  
 
                 // Create from, CSparse
-                var gaussCoordinates = GetGaussPointMatrix(order, el.Type); // by defaul we have a 2x2x2 integration of Hex8 element
+                var gaussCoordinates = GetGaussPointMatrix(order, el.Type); // by defaul we have a 2x2x2 integration of Hex8 element and 3x3x3 for Hex20 element
 
                 // element force vector. Create from CSparse
                 LA.Vector<double> elForceVec = LA.Vector<double>.Build.Dense(el.Nodes.Count * 3);
@@ -200,7 +215,9 @@ namespace SolidFEM.Classes
                     var interpolationMatrix = DisplacementInterpolationMatrix(shapeFunctions, 3);
 
                     //Get weights for gauss integration // Can later change GetGaussPointMatrix() to also give the wheights as output
-
+                    double w_r = 1;
+                    double w_s = 1;
+                    double w_t = 1;
                     double alpha_ijk = 1.0;
                     if (el.Type == "Hex8")
                     {
@@ -210,10 +227,38 @@ namespace SolidFEM.Classes
                     {
                         alpha_ijk = 0.25;   // with a 4 point integration scheme the integration constant is 0.25 for all gauss points
                     }
+                    else if (el.Type == "Hex20") // with a 3x3x3 integration scheme, the constant is 5/9 for (r,s,t) = sqrt(0.6) and 8/9 for (r,s,t) = 0;
+                    {
+                        if (r == 0)
+                        {
+                            w_r = 0.888889;
+                        }
+                        else
+                        {
+                            w_r = 0.555556;
+                        }
+                        if (s == 0)
+                        {
+                            w_s = 0.888889;
+                        }
+                        else
+                        {
+                            w_s = 0.555556;
+                        }
+                        if (t == 0)
+                        {
+                            w_t = 0.888889;
+                        }
+                        else
+                        {
+                            w_t = 0.555556;
+                        }
+                    }
+
 
                     double t_ijk = 1.0; // not sure what this is yet
                     var gaussPointLoadVector = interpolationMatrix.TransposeThisAndMultiply(bodyLoadVector);
-                    gaussPointLoadVector = gaussPointLoadVector.Multiply( jacobianDeterminant * alpha_ijk * t_ijk );
+                    gaussPointLoadVector = gaussPointLoadVector.Multiply( jacobianDeterminant * alpha_ijk * t_ijk * w_r * w_s * w_t);
 
 
                     // add the vector from the gauss point to the element load vector
@@ -300,6 +345,69 @@ namespace SolidFEM.Classes
                 }
 
             }
+            else if (elType == "Hex20")
+            {
+                if (order == 3)
+                {
+                    double gp = 0.774597; // Numerical value of the +- natural coordinate to use in gauss point integration for 3 sampling point, in addition to 0. From Bathes book Table 5.6
+                    double[] gaussArray = new double[]
+                    {
+                        -gp, -gp, -gp,  //0
+                        gp, -gp, -gp,   //1   
+                        gp, gp, -gp,    //2
+                        -gp, gp, -gp,   //3
+                        -gp, -gp, gp,   //4
+                        gp, -gp, gp,    //5
+                        gp, gp, gp,     //6
+                        -gp, gp, gp,    //7
+                        0, -gp, -gp,    //8
+                        gp, 0, -gp,     //9
+                        0, gp, -gp,     //10
+                        -gp, 0, -gp,    //11
+                        0, -gp, gp,     //12
+                        gp, 0, gp,      //13
+                        0, gp, gp,      //14
+                        -gp, 0, gp,     //15
+                        -gp, -gp, 0,    //16
+                        gp, -gp, 0,     //17
+                        gp, gp, 0,      //18
+                        -gp, gp, 0,     //19
+                        0, 0, -gp,      //20
+                        0, -gp, 0,      //21
+                        gp, 0, 0,       //22
+                        0, gp, 0,       //23
+                        -gp, 0, 0,      //24
+                        0, 0, gp,       //25
+                        0, 0, 0,        //26
+
+                    };
+                    var naturalCoordinatesGauss = LA.Matrix<double>.Build.DenseOfRowMajor(27, 3, gaussArray);
+                    return naturalCoordinatesGauss;
+                }
+                else if (order == 2)
+                {
+                    double gaussPoint = 0.57735; // Numerical value of the +- natural coordinate to use in gauss point integration for 2 sampling point. From Bathes book Table 5.6
+                    double[] gaussArray = new double[]
+                    {
+                        -gaussPoint, -gaussPoint, -gaussPoint ,
+                        gaussPoint, -gaussPoint, -gaussPoint,
+                        gaussPoint, gaussPoint, -gaussPoint,
+                        -gaussPoint, gaussPoint, -gaussPoint,
+                        -gaussPoint, -gaussPoint, gaussPoint,
+                        gaussPoint, -gaussPoint, gaussPoint,
+                        gaussPoint, gaussPoint, gaussPoint,
+                        -gaussPoint, gaussPoint, gaussPoint
+
+                    };
+                    //var naturalCoordinatesGauss = new CSD.DenseMatrix(8, 3, gaussArray);
+                    var naturalCoordinatesGauss = LA.Matrix<double>.Build.DenseOfRowMajor(8, 3, gaussArray);
+                    return naturalCoordinatesGauss;
+                }
+                else
+                {
+                    throw new NotImplementedException("The integration type is not yet implemented.");
+                }
+            }
             else
             {
                 throw new NotImplementedException("This method is not yet implemented");
@@ -342,6 +450,72 @@ namespace SolidFEM.Classes
                 var shapeFunctions = CSD.DenseMatrix.OfColumnMajor(1, shapeArray.Length, shapeArray);
                 return shapeFunctions;
             }
+            else if(elType == "Hex20")
+            {
+                double a = 0.125; double b = 0.25;
+                var shapeVec = new CSD.DenseMatrix(1, 20);
+
+                var ind1 = new List<int>() { 0, 1, 2, 3, 4, 5, 6, 7 };
+                var ind2 = new List<int>() { 8, 10, 12, 14 };
+                var ind3 = new List<int>() { 9, 11, 13, 15 };
+                var ind4 = new List<int>() { 16, 17, 18, 19 };
+
+                int gp = 1;
+
+                double[] gaussArray = new double[]
+                    {
+                        -gp, -gp, -gp,
+                        gp, -gp, -gp,
+                        gp, gp, -gp,
+                        -gp, gp, -gp,
+                        -gp, -gp, gp,
+                        gp, -gp, gp,
+                        gp, gp, gp,
+                        -gp, gp, gp,
+                        0, -gp, -gp,
+                        gp, 0, -gp,
+                        0, gp, -gp,
+                        -gp, 0, -gp,
+                        0, -gp, gp,
+                        gp, 0, gp,
+                        0, gp, gp,
+                        -gp, 0, gp,
+                        -gp, -gp, 0,
+                        gp, -gp, 0,
+                        gp, gp, 0,
+                        -gp, gp, 0
+
+                    };
+                //var naturalCoordinatesGauss = new CSD.DenseMatrix(8, 3, gaussArray);
+                var naturalCoordinates = LA.Matrix<double>.Build.DenseOfRowMajor(20, 3, gaussArray);
+
+                for (int i = 0; i < naturalCoordinates.RowCount; i++)
+                {
+                    var natcor_r = naturalCoordinates[i, 0];
+                    var natcor_s = naturalCoordinates[i, 1];
+                    var natcor_t = naturalCoordinates[i, 2];
+
+                    if (ind1.Contains(i))
+                    {
+                        shapeVec[0, i] = a * (1 + natcor_r * r) * (1 + natcor_s * s) * (1 + natcor_t * t) * (natcor_r * r + natcor_s * s + natcor_t * t - 2);
+                    }
+                    else if (ind2.Contains(i))
+                    {
+                        shapeVec[0, i] = b * (1 - Math.Pow(r, 2)) * (1 + natcor_s * s) * (1 + natcor_t * t);
+                    }
+                    else if (ind3.Contains(i))
+                    {
+                        shapeVec[0, i] = b * (1 - Math.Pow(s, 2)) * (1 + natcor_r * r) * (1 + natcor_t * t);
+                    }
+                    else if (ind4.Contains(i))
+                    {
+                        shapeVec[0, i] = b * (1 - Math.Pow(t, 2)) * (1 + natcor_r * r) * (1 + natcor_s * s);
+                    }
+
+                }
+                return shapeVec;
+            }
+
             else
             {
                 throw new NotImplementedException("The selected element is not yet implemented.");
@@ -387,6 +561,82 @@ namespace SolidFEM.Classes
                 var derivativeMatrix = LA.Matrix<double>.Build.DenseOfArray(derivateArray);
                 //var derivativeMatrix = CSD.DenseMatrix.OfArray(derivateArray);
                 return derivativeMatrix;
+            }
+            else if (elType == "Hex20")
+            {
+              
+                    double a = 0.125; double b = 0.25; double c = 0.5;
+                    var derivativeMatrix = LA.Matrix<double>.Build.Dense(3, 20);
+
+                    var ind1 = new List<int>() { 0, 1, 2, 3, 4, 5, 6, 7 };
+                    var ind2 = new List<int>() { 8, 10, 12, 14 };
+                    var ind3 = new List<int>() { 9, 11, 13, 15 };
+                    var ind4 = new List<int>() { 16, 17, 18, 19 };
+
+                    int gp = 1;
+
+                    double[] gaussArray = new double[]
+                        {
+                        -gp, -gp, -gp,
+                        gp, -gp, -gp,
+                        gp, gp, -gp,
+                        -gp, gp, -gp,
+                        -gp, -gp, gp,
+                        gp, -gp, gp,
+                        gp, gp, gp,
+                        -gp, gp, gp,
+                        0, -gp, -gp,
+                        gp, 0, -gp,
+                        0, gp, -gp,
+                        -gp, 0, -gp,
+                        0, -gp, gp,
+                        gp, 0, gp,
+                        0, gp, gp,
+                        -gp, 0, gp,
+                        -gp, -gp, 0,
+                        gp, -gp, 0,
+                        gp, gp, 0,
+                        -gp, gp, 0
+
+                        };
+
+                    var naturalCoordinates = LA.Matrix<double>.Build.DenseOfRowMajor(20, 3, gaussArray);
+
+                    for (int i = 0; i < naturalCoordinates.RowCount; i++)
+                    {
+                        var natcor_r = naturalCoordinates[i, 0];
+                        var natcor_s = naturalCoordinates[i, 1];
+                        var natcor_t = naturalCoordinates[i, 2];
+
+                        if (ind1.Contains(i))
+                        {
+                            derivativeMatrix[0, i] = a * natcor_r * (1 + natcor_s * s) * (1 + natcor_t * t);
+                            derivativeMatrix[1, i] = a * natcor_s * (1 + natcor_r * r) * (1 + natcor_t * t);
+                            derivativeMatrix[2, i] = a * natcor_t * (1 + natcor_r * r) * (1 + natcor_s * s);
+                        }
+                        else if (ind2.Contains(i))
+                        {
+                            derivativeMatrix[0, i] = -c * r * (1 + natcor_s * s) * (1 + natcor_t * t);
+                            derivativeMatrix[1, i] = b * natcor_s * (1 - Math.Pow(r, 2)) * (1 + natcor_t * t);
+                            derivativeMatrix[2, i] = b * natcor_t * (1 - Math.Pow(r, 2)) * (1 + natcor_s * s);
+                        }
+                        else if (ind3.Contains(i))
+                        {
+                            derivativeMatrix[0, i] = b * natcor_r * (1 - Math.Pow(s, 2)) * (1 + natcor_t * t);
+                            derivativeMatrix[1, i] = -c * s * (1 + natcor_r * r) * (1 + natcor_t * t);
+                            derivativeMatrix[2, i] = b * natcor_t * (1 - Math.Pow(s, 2)) * (1 + natcor_r * r);
+                        }
+                        else if (ind4.Contains(i))
+                        {
+                            derivativeMatrix[0, i] = b * natcor_r * (1 - Math.Pow(t, 2)) * (1 + natcor_s * s);
+                            derivativeMatrix[1, i] = b * natcor_s * (1 - Math.Pow(t, 2)) * (1 + natcor_r * r);
+                            derivativeMatrix[2, i] = -c * t * (1 + natcor_r * r) * (1 + natcor_s * s);
+                        }
+
+                    }
+
+                    return derivativeMatrix;
+
             }
             else
             {
@@ -462,6 +712,10 @@ namespace SolidFEM.Classes
             timer.Stop();
             logger.AddInfo("Time to restrain boundary conditions global stiffness and load matrix: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
 
+            var K_mat = LA.Matrix<double>.Build.DenseOfArray(K_gl);
+
+            var K_inv = K_mat.Inverse();
+            var k_det = K_mat.Determinant();
 
             // to do: Time this function. Could be super slow. Better ways to get the array?
             /*
@@ -643,8 +897,6 @@ namespace SolidFEM.Classes
         {
             LA.Matrix<double> C = material.GetMaterialConstant();
 
-
-            //List<LA.Matrix<double>> B_local = FEM_Matrices.CalculateElementMatrices(element, material, ref logger).Item2; // this can be changed to save time.. No need to establish the stiffness matrix of an element for this
             List<LA.Matrix<double>> B_local = element.LocalB;
             LA.Matrix<double> elementGaussStrain = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
             LA.Matrix<double> elementGaussStress = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
@@ -698,6 +950,88 @@ namespace SolidFEM.Classes
                     }
                 }
             }
+            /*
+            else if (element.Type == "Hex20")
+            {
+                // get gauss strain and stress
+                for (int n = 0; n < B_local.Count; n++)
+                {
+                    // B-matrix is calculated from gauss points
+                    LA.Matrix<double> gaussStrain = B_local[n].Multiply(localDeformation);
+                    LA.Matrix<double> gaussStress = C.Multiply(gaussStrain);
+
+
+
+                    // Use add column here instead of a loop?
+                    for (int i = 0; i < B_local[0].RowCount; i++)
+                    {
+                        elementGaussStrain[i, n] = gaussStrain[i, 0]; // Should there not be += here? Right now they overwrite the Gauss Strainf for each nodal evaluation
+                        elementGaussStress[i, n] = gaussStress[i, 0];
+                    }
+                }
+
+                // get node strain and stress by extrapolation
+
+                double gp = 1/(Math.Sqrt(0.6));
+
+                double[] gaussArray = new double[]
+                    {
+                        -gp, -gp, -gp,
+                        gp, -gp, -gp,
+                        gp, gp, -gp,
+                        -gp, gp, -gp,
+                        -gp, -gp, gp,
+                        gp, -gp, gp,
+                        gp, gp, gp,
+                        -gp, gp, gp,
+                        0, -gp, -gp,
+                        gp, 0, -gp,
+                        0, gp, -gp,
+                        -gp, 0, -gp,
+                        0, -gp, gp,
+                        gp, 0, gp,
+                        0, gp, gp,
+                        -gp, 0, gp,
+                        -gp, -gp, 0,
+                        gp, -gp, 0,
+                        gp, gp, 0,
+                        -gp, gp, 0,
+                        0, 0, -gp,      
+                        0, -gp, 0,      
+                        gp, 0, 0,       
+                        0, gp, 0,    
+                        -gp, 0, 0,     
+                        0, 0, gp,      
+                        0, 0, 0,
+
+                    };
+
+                var extrapolationNodes = LA.Matrix<double>.Build.DenseOfRowMajor(20, 3, gaussArray);
+
+                for (int n = 0; n < B_local.Count; n++)
+                {
+                    // get stress and strain in nodes
+                    var r = extrapolationNodes.Row(n)[0];
+                    var s = extrapolationNodes.Row(n)[1];
+                    double t = extrapolationNodes.Row(n)[2];
+
+
+                    var shapefuncs = FEM_Utility.GetShapeFunctions(r, s, t, element.Type);
+
+                    double[] shape_vals = shapefuncs.Values;
+                    var shapefunctionValuesInNode = new LA.Double.DenseMatrix(shape_vals.Length, 1, shape_vals);
+
+
+                    var nodeStrain = elementGaussStrain.Multiply(shapefunctionValuesInNode);
+                    var nodeStress = elementGaussStress.Multiply(shapefunctionValuesInNode);
+                    for (int i = 0; i < B_local[0].RowCount; i++)
+                    {
+                        elementStrain[i, n] = nodeStrain[i,0];
+                        elementStress[i, n] = nodeStress[i,0];
+                    }
+                }
+            }
+            */
             else if (element.Type == "Tet4")    // no need for gauss strains because B-matrix is constant
             {
 

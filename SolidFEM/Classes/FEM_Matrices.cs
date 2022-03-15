@@ -27,6 +27,7 @@ namespace SolidFEM.Classes
         public static double[,] GlobalStiffnessCSparse(ref List<Element> elements, int numNode, Material material, ref FEMLogger logger)
         {
             Stopwatch timer = new Stopwatch();
+
             // Initiate empty matrix
             //CSD.DenseMatrix m = new CSD.DenseMatrix(numNode * 3, numNode * 3);
             //LA.Matrix<double> m = LA.Matrix<double>.Build.Dense(numNode * 3, numNode * 3);
@@ -35,16 +36,19 @@ namespace SolidFEM.Classes
             //CSD.SparseMatrix mS = new CSD.SparseMatrix(numNode * 3, numNode * 3);
 
             double[,] kArray = new double[numNode * 3, numNode * 3];
-            //CompressedColumnStorage<double> k = new CSD.SparseMatrix(numNode * 3, numNode * 3);
-           
-            
 
+
+            //CompressedColumnStorage<double> k = new CSD.SparseMatrix(numNode * 3, numNode * 3);
             // test the functionality: 
             //int[] testElInds = new int[] { 0, 21, 84, 105, 168, 189, 252, 273 };
             //List<LA.Matrix<double>> testElsMat = new List<LA.Matrix<double>>();
+
             List<Element> testEls = new List<Element>();
             int count = 0;
             // delete the above after finished test
+
+
+
             foreach (Element element in elements)
             {
                 List<int> con = element.Connectivity; // get the connectivity of each element
@@ -53,6 +57,7 @@ namespace SolidFEM.Classes
                 var kAndB = CalculateElementMatrices(element, material, ref logger);
                 LA.Matrix<double> K_local = kAndB.Item1;
                 element.LocalB = kAndB.Item2;
+
                 //elementSums.Add(K_local.AsColumnMajorArray().Sum(x => Math.Abs(x))); // the sum of each element
 
                 /*
@@ -118,9 +123,7 @@ namespace SolidFEM.Classes
 
             // Global coordinates of the (corner) nodes of the actual element
             LA.Matrix<double> globalCoordinates = LA.Matrix<double>.Build.Dense(numElementNodes, 3);
-            //var globalCoordinates = new CSD.DenseMatrix(numElementNodes, 3);
-            List<Point3d> localCoordinates = FEM_Utility.LocalCartesianCoordinates(element);
-            
+            List<Point3d> localCoordinates = FEM_Utility.LocalCartesianCoordinates(element);            
 
             for (int i = 0; i < numElementNodes; i++)
             {
@@ -262,6 +265,94 @@ namespace SolidFEM.Classes
                 var k_i = V * (B_i.Transpose()).Multiply(C.Multiply(B_i));
 
                 K_local.Add(k_i, K_local);
+            }
+            else if(element.Type == "Hex20")
+            {
+                //Numerical integration
+
+
+                var gaussCoordinates = FEM_Utility.GetGaussPointMatrix(3, element.Type); // by default we have a 3x3x3 integration of Hex20 element
+                List<double> pointJacobians = new List<double>(); // list to evaluate the pointwise jacobians
+                for (int n = 0; n < gaussCoordinates.RowCount; n++)  // loop gauss nodes
+                {
+                    // Substitute the natural coordinates into the symbolic expression
+                    var r = gaussCoordinates.Row(n)[0];
+                    var s = gaussCoordinates.Row(n)[1];
+                    var t = gaussCoordinates.Row(n)[2];
+
+                    // Partial derivatives of the shape functions
+                    var partialDerivatives = FEM_Utility.PartialDerivateShapeFunctions(r, s, t, element.Type);
+
+                    // Calculate Jacobian matrix
+                    var jacobianMatrix = partialDerivatives.Multiply(globalCoordinates);
+
+                    
+
+                    // round the jacobian
+                    /*
+                    var jColMajArr = jacobianMatrix.AsColumnMajorArray();
+                    for (int k = 0; k < jColMajArr.Length; k++)
+                    {
+                        jColMajArr[k] = Math.Round(jColMajArr[k], rpb);
+                    }
+                    
+                    jacobianMatrix = LA.Matrix<double>.Build.DenseOfColumnMajor(3, 3, jColMajArr);
+                    */
+
+                    // Calculate B - LA.Matrix
+
+                    LA.Matrix<double> shapeFuncDerivatedCartesian = (jacobianMatrix.Inverse()).Multiply(partialDerivatives);
+
+                    // calculate B with CSparse
+
+                    double jacobianDeterminant = jacobianMatrix.Determinant(); // To do: Find a way to evaluate this...
+                    pointJacobians.Add(jacobianDeterminant);
+                    
+                    if (jacobianDeterminant < 0) { logger.AddWarning("Negativ jacobian determeninant"); }
+                    int dimRowB = 6;
+
+
+                    // establish the B-matrix
+                    LA.Matrix<double> B_i = LA.Double.DenseMatrix.Build.Dense(dimRowB, 3 * numElementNodes);
+
+                    for (int i = 0; i < numElementNodes; i++)
+                    {
+                        // with the shape functions derivated with respect to the cartesian coordinates the rotated and unrotated element vectors are not the same... This is the correct one according to the formulas
+                        var B_i_sub = LA.Double.DenseMatrix.Build.DenseOfRowMajor(6, 3, new double[] {
+                            shapeFuncDerivatedCartesian.Row(0)[i], 0, 0,
+                            0, shapeFuncDerivatedCartesian.Row(1)[i], 0,
+                            0, 0, shapeFuncDerivatedCartesian.Row(2)[i],
+                            shapeFuncDerivatedCartesian.Row(1)[i], shapeFuncDerivatedCartesian.Row(0)[i], 0, 
+                            shapeFuncDerivatedCartesian.Row(2)[i], 0, shapeFuncDerivatedCartesian.Row(0)[i],
+                            0, shapeFuncDerivatedCartesian.Row(2)[i], shapeFuncDerivatedCartesian.Row(1)[i]
+                            });
+
+                        B_i.SetSubMatrix(0, i * 3, B_i_sub);
+                    }
+
+                    B_local.Add(B_i);
+                    
+                    //Weights for numerical integration
+                    double w_r = 0.555556; 
+                    double w_s = 0.555556; 
+                    double w_t = 0.555556;
+                    if (r == 0)
+                    {
+                        w_r = 0.888889;
+                    }
+                    if (s == 0)
+                    {
+                        w_s = 0.888889;
+                    }
+                    if (t == 0)
+                    {
+                        w_t = 0.888889;
+                    }
+
+                    var k_i = (B_i.Transpose()).Multiply(C.Multiply(B_i)).Multiply(jacobianDeterminant)*w_r*w_s*w_t;
+
+                    K_local.Add(k_i, K_local);
+                }
             }
             return Tuple.Create(K_local, B_local);
         }
