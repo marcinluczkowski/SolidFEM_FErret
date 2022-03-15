@@ -699,6 +699,7 @@ namespace SolidFEM.Classes
                         {
                             //K_gl.Row(i).SetValue(0, j);
                             K_gl[i, j] = 0;
+                            K_gl[j, i] = 0;
                         }
                         else
                         {
@@ -711,11 +712,6 @@ namespace SolidFEM.Classes
             }
             timer.Stop();
             logger.AddInfo("Time to restrain boundary conditions global stiffness and load matrix: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
-
-            var K_mat = LA.Matrix<double>.Build.DenseOfArray(K_gl);
-
-            var K_inv = K_mat.Inverse();
-            var k_det = K_mat.Determinant();
 
             // to do: Time this function. Could be super slow. Better ways to get the array?
             /*

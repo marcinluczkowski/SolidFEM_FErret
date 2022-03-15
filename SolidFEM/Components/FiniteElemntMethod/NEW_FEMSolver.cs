@@ -204,6 +204,11 @@ namespace SolidFEM.FiniteElementMethod
 
             DA.SetDataList(8, info);
 
+            var k_inv = kglobal.Inverse();
+            var k_det = kglobal.Determinant();
+            
+            
+
             watch.Stop();
             Logger.AddInfo($"Time used calculating global stiffness matrix: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
@@ -225,6 +230,17 @@ namespace SolidFEM.FiniteElementMethod
             
             watch.Stop();
             Logger.AddInfo($"Time used to establish global load vector: {watch.ElapsedMilliseconds} ms"); watch.Reset();
+
+
+            var k_mat = CSD.SparseMatrix.OfArray(K_globalC);
+            SparseLU CS_K_global = SparseLU.Create(k_mat, ColumnOrdering.MinimumDegreeAtPlusA, 0.0);
+
+            
+            double[] CS_u = CSD.Vector.Create(60, 0.0);
+
+            double[] CS_R = R.Column(0).ToArray();
+
+            CS_K_global.Solve(CS_R, CS_u);
 
             // 5. Fix BoundaryConditions
             watch.Start();
