@@ -434,7 +434,7 @@ namespace SolidFEM.Classes
                 }
             }
             timer.Stop();
-            logger.AddInfo("Time to add Boundary conditions: " + timer.ElapsedMilliseconds + " ms");timer.Reset();
+            logger.AddInfo("Time to add Boundary conditions: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
 
 
             // Apply boundary conditions to movement
@@ -449,6 +449,7 @@ namespace SolidFEM.Classes
                         {
                             //K_gl.Row(i).SetValue(0, j);
                             K_gl[i, j] = 0;
+                            K_gl[j, i] = 0;
                         }
                         else
                         {
