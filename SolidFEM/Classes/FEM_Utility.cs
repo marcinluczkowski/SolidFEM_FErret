@@ -166,7 +166,7 @@ namespace SolidFEM.Classes
 
                 // first, get the global coordinates
                 LA.Matrix<double> globalElementCoordinates = LA.Matrix<double>.Build.Dense(el.Nodes.Count, 3);
-                LA.Matrix<double> globalElementCoordinate = LA.Matrix<double>.Build.Dense(el.Nodes.Count, 3);
+
                 //CSD.DenseMatrix globalElementCoordinate = new CSD.DenseMatrix(el.Nodes.Count, 3); // one column for x,y, and z coordinate
                 for (int j = 0; j < el.Nodes.Count; j++)
                 {
@@ -229,29 +229,19 @@ namespace SolidFEM.Classes
                     }
                     else if (el.Type == "Hex20") // with a 3x3x3 integration scheme, the constant is 5/9 for (r,s,t) = sqrt(0.6) and 8/9 for (r,s,t) = 0;
                     {
+                        w_r = 0.555556; w_s = 0.555556; w_t = 0.555556;
+
                         if (r == 0)
                         {
                             w_r = 0.888889;
-                        }
-                        else
-                        {
-                            w_r = 0.555556;
                         }
                         if (s == 0)
                         {
                             w_s = 0.888889;
                         }
-                        else
-                        {
-                            w_s = 0.555556;
-                        }
                         if (t == 0)
                         {
                             w_t = 0.888889;
-                        }
-                        else
-                        {
-                            w_t = 0.555556;
                         }
                     }
 
@@ -610,9 +600,9 @@ namespace SolidFEM.Classes
 
                         if (ind1.Contains(i))
                         {
-                            derivativeMatrix[0, i] = a * natcor_r * (1 + natcor_s * s) * (1 + natcor_t * t);
-                            derivativeMatrix[1, i] = a * natcor_s * (1 + natcor_r * r) * (1 + natcor_t * t);
-                            derivativeMatrix[2, i] = a * natcor_t * (1 + natcor_r * r) * (1 + natcor_s * s);
+                            derivativeMatrix[0, i] = a * natcor_r * (1 + natcor_s * s) * (1 + natcor_t * t) * (2 * natcor_r * r + natcor_s * s + natcor_t * t - 1);
+                            derivativeMatrix[1, i] = a * natcor_s * (1 + natcor_r * r) * (1 + natcor_t * t) * (natcor_r * r + 2 * natcor_s * s + natcor_t * t - 1);
+                            derivativeMatrix[2, i] = a * natcor_t * (1 + natcor_r * r) * (1 + natcor_s * s) * (natcor_r * r + natcor_s * s + 2 * natcor_t * t - 1);
                         }
                         else if (ind2.Contains(i))
                         {

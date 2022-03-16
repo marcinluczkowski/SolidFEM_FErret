@@ -317,6 +317,7 @@ namespace SolidFEM.Classes
 
                     for (int i = 0; i < numElementNodes; i++)
                     {
+                        
                         // with the shape functions derivated with respect to the cartesian coordinates the rotated and unrotated element vectors are not the same... This is the correct one according to the formulas
                         var B_i_sub = LA.Double.DenseMatrix.Build.DenseOfRowMajor(6, 3, new double[] {
                             shapeFuncDerivatedCartesian.Row(0)[i], 0, 0,
