@@ -108,8 +108,6 @@ namespace SolidFEM.FiniteElementMethod
             // clean the mesh and sort nodes
             var newMeshList = new List<Mesh>();
             int c = 0; // delete after testing
-
-            //Toggle Hex20 elems on/off
             
             
 

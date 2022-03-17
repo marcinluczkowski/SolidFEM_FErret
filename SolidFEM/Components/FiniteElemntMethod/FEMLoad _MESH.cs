@@ -76,8 +76,9 @@ namespace SolidFEM.FiniteElementMethod
 
             //Toggle Hex20 element (have to implement better)
 
-            //string eltype = "Hex20";
-            string eltype = "";
+            string eltype = "Hex20";
+            
+            //string eltype = "";
 
 
             foreach (Mesh mesh in meshList)
@@ -88,9 +89,50 @@ namespace SolidFEM.FiniteElementMethod
 
                     if (nM.IsValid)
                     {
+                        var vertices = nM.Vertices.ToPoint3dArray(); // an array of the vertices of each mesh element
+
+                        //List<Point3d> vertices = vertices_array.ToList();
+
+                        if (eltype == "Hex20")
+                        {
+                            nM.Vertices.Add((vertices[0] + vertices[1]) / 2);
+                            nM.Vertices.Add((vertices[1] + vertices[2]) / 2);
+                            nM.Vertices.Add((vertices[2] + vertices[3]) / 2);
+                            nM.Vertices.Add((vertices[3] + vertices[0]) / 2);
+                            nM.Vertices.Add((vertices[4] + vertices[5]) / 2);
+                            nM.Vertices.Add((vertices[5] + vertices[6]) / 2);
+                            nM.Vertices.Add((vertices[6] + vertices[7]) / 2);
+                            nM.Vertices.Add((vertices[7] + vertices[4]) / 2);
+                            nM.Vertices.Add((vertices[0] + vertices[4]) / 2);
+                            nM.Vertices.Add((vertices[1] + vertices[5]) / 2);
+                            nM.Vertices.Add((vertices[2] + vertices[6]) / 2);
+                            nM.Vertices.Add((vertices[3] + vertices[7]) / 2);
+                        }
                         newMeshList.Add(nM);
                     }
-                    else newMeshList.Add(mesh);
+                    else
+                    {
+                        var vertices = mesh.Vertices.ToPoint3dArray(); // an array of the vertices of each mesh element
+
+                        //List<Point3d> vertices = vertices_array.ToList();
+
+                        if (eltype == "Hex20")
+                        {
+                            mesh.Vertices.Add((vertices[0] + vertices[1]) / 2);
+                            mesh.Vertices.Add((vertices[1] + vertices[2]) / 2);
+                            mesh.Vertices.Add((vertices[2] + vertices[3]) / 2);
+                            mesh.Vertices.Add((vertices[3] + vertices[0]) / 2);
+                            mesh.Vertices.Add((vertices[4] + vertices[5]) / 2);
+                            mesh.Vertices.Add((vertices[5] + vertices[6]) / 2);
+                            mesh.Vertices.Add((vertices[6] + vertices[7]) / 2);
+                            mesh.Vertices.Add((vertices[7] + vertices[4]) / 2);
+                            mesh.Vertices.Add((vertices[0] + vertices[4]) / 2);
+                            mesh.Vertices.Add((vertices[1] + vertices[5]) / 2);
+                            mesh.Vertices.Add((vertices[2] + vertices[6]) / 2);
+                            mesh.Vertices.Add((vertices[3] + vertices[7]) / 2);
+                        }
+                        newMeshList.Add(mesh);
+                    }
                     c++;
                 }
                 else
@@ -119,15 +161,7 @@ namespace SolidFEM.FiniteElementMethod
 
             int numNodes = nodePts.Count;
 
-            if (eltype == "Hex20")
-            {
-                numNodes = 20;
-            }
-
             double[] residualForces = new double[numNodes * 3]; // number of nodes times the three global directions
-
-
-
 
             // Assign external load
             if (loadType == 1) // point load

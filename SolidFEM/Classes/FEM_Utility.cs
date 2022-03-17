@@ -732,6 +732,8 @@ namespace SolidFEM.Classes
 
             timer.Start();
             SparseLU CS_K_global = SparseLU.Create(CCS, ColumnOrdering.MinimumDegreeAtPlusA, 0.0);
+
+
             //SparseLDL CS_K_global = SparseLDL.Create(CCS, ColumnOrdering.MinimumDegreeAtPlusA); // Try an LDL system instead to test the speed
             timer.Stop();
             logger.AddInfo("Create LU decomposition of stiffness matrix: " + timer.ElapsedMilliseconds + " ms"); timer.Reset();
