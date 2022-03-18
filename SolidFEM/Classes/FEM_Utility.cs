@@ -789,7 +789,7 @@ namespace SolidFEM.Classes
             LA.Vector<double> elementMises = LA.Double.DenseVector.Build.Dense(elements.Count);
             for (int i = 0; i < elementStressList.Count; i++)
             {
-                for (int j = 0; j < elements[0].Nodes.Count; j++)
+                for (int j = 0; j < elements[i].Nodes.Count; j++)
                 {
                     LA.Vector<double> nodeStress = elementStressList[i].Column(j);
                     double Sxx = nodeStress[0];
@@ -798,9 +798,9 @@ namespace SolidFEM.Classes
                     double Sxy = nodeStress[3];
                     double Sxz = nodeStress[4];
                     double Syz = nodeStress[5];
-                    elementMises[i] += Math.Sqrt(0.5 * (Math.Pow(Sxx - Syy, 2) + Math.Pow(Syy - Szz, 2) + Math.Pow(Szz - Sxx, 2)) + 3 * (Math.Pow(Sxy, 2) + Math.Pow(Sxz, 2) + Math.Pow(Syz, 2)));
+                    elementMises[i] += Math.Sqrt(0.5 * (Math.Pow(Sxx - Syy, 2) + Math.Pow(Syy - Szz, 2) + Math.Pow(Szz - Sxx, 2)) + 3 * (Math.Pow(Sxy, 2) + Math.Pow(Sxz, 2) + Math.Pow(Syz, 2))) / elements[i].Nodes.Count;
                 }
-                elementMises[i] = elementMises[i] / (double)8; // get average of nodal mises
+                // elementMises[i] = elementMises[i] / elements[i].Nodes.Count; // get average of nodal mises
             }
 
 
