@@ -11,12 +11,36 @@ using CSparse.Storage;
 using Grasshopper;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using Rhino.Geometry.Collections;
 
 
 namespace SolidFEM.Classes
 {
     static class FEM_Utility
     {
+        public static Mesh AddMidEdgeNodes(Mesh mesh)
+        {
+            for (int i = 0; i < mesh.TopologyEdges.Count; i++)
+            {
+                Line meshEdge = mesh.TopologyEdges.EdgeLine(i);
+                double spX = meshEdge.FromX;
+                double spY = meshEdge.FromY;
+                double spZ = meshEdge.FromZ;
+                double epX = meshEdge.ToX;
+                double epY = meshEdge.ToY;
+                double epZ = meshEdge.ToZ;
+
+                Point3d midPoint = new Point3d((spX + epX)/2, (spY + epY)/2, (spZ + epZ)/2);
+                mesh.Vertices.Add(midPoint);
+            }
+
+            return mesh;
+        }
+
+
+
+
+
         public static void ElementsFromMeshList(List<Mesh> mList, List<Point3d> globalNodePts,out List<Element> femElements)
         {
             List<Element> elements = new List<Element>(); // all the elements of the mesh
@@ -84,6 +108,10 @@ namespace SolidFEM.Classes
                 else if(elNodes.Count == 4)
                 {
                     el.Type = "Tet4";
+                }
+                else if (elNodes.Count == 10)
+                {
+                    el.Type = "Tet10";
                 }
 
                 elements.Add(el);

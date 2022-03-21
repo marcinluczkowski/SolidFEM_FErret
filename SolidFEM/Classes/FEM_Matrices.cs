@@ -119,7 +119,7 @@ namespace SolidFEM.Classes
             // Global coordinates of the (corner) nodes of the actual element
             LA.Matrix<double> globalCoordinates = LA.Matrix<double>.Build.Dense(numElementNodes, 3);
             //var globalCoordinates = new CSD.DenseMatrix(numElementNodes, 3);
-            List<Point3d> localCoordinates = FEM_Utility.LocalCartesianCoordinates(element);
+            List<Point3d> localCoordinates = FEM_Utility.LocalCartesianCoordinates(element);    // Not in use. Delete?
             
 
             for (int i = 0; i < numElementNodes; i++)
@@ -135,7 +135,7 @@ namespace SolidFEM.Classes
             {
                 //Numerical integration
                 //LA.Matrix<double> gaussNodes = FEM.GetNaturalCoordinate((double)Math.Sqrt((double)1 / (double)3), 3);
-                var gaussCoordinates = FEM_Utility.GetGaussPointMatrix(2, element.Type); // by defaul we have a 2x2x2 integration of Hex8 element
+                var gaussCoordinates = FEM_Utility.GetGaussPointMatrix(2, element.Type); // by default we have a 2x2x2 integration of Hex8 element
                 List<double> pointJacobians = new List<double>(); // list to evaluate the pointwise jacobians
                 for (int n = 0; n < gaussCoordinates.RowCount; n++)  // loop gauss nodes
                 {
@@ -175,7 +175,7 @@ namespace SolidFEM.Classes
                     pointJacobians.Add(jacobianDeterminant);
                     //double jacobianDeterminant = FEM_Matrices.GetDeterminantJacobi(jacobianMatrix, logger);
                     //if (jacobianDeterminant < 0) { AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Negativ jac det"); }
-                    if (jacobianDeterminant < 0) { logger.AddWarning("Negativ jacobian determeninant"); }
+                    if (jacobianDeterminant < 0) { logger.AddWarning("Negative jacobian determinant"); }
                     int dimRowB = 6;
 
                     // establish the B-matrix
@@ -247,15 +247,6 @@ namespace SolidFEM.Classes
                 }
                 B_local.Add(B_i);
                 // Get volume of Tetrahedra
-                /*Brep triangle1 = Brep.CreateFromCornerPoints(element.TopologyVertices[0], element.TopologyVertices[1], element.TopologyVertices[2], 0.0001);
-                Brep triangle2 = Brep.CreateFromCornerPoints(element.TopologyVertices[0], element.TopologyVertices[1], element.TopologyVertices[3], 0.0001);
-                Brep triangle3 = Brep.CreateFromCornerPoints(element.TopologyVertices[0], element.TopologyVertices[2], element.TopologyVertices[3], 0.0001);
-                Brep triangle4 = Brep.CreateFromCornerPoints(element.TopologyVertices[1], element.TopologyVertices[2], element.TopologyVertices[3], 0.0001);
-
-                List<Brep> triangles = new List<Brep> { triangle1, triangle2, triangle3, triangle4 };
-
-                Brep[] tetra = Brep.CreateSolid(triangles, 0.0001);*/
-
                 VolumeMassProperties vmp = VolumeMassProperties.Compute(element.ElementMesh);
                 double V = vmp.Volume;
 
