@@ -1,4 +1,5 @@
 ﻿using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
@@ -28,6 +29,7 @@ namespace SolidFEM.FiniteElementMethod
             pManager.AddBooleanParameter("Tx", "", "", GH_ParamAccess.item, true); // 2
             pManager.AddBooleanParameter("Ty", "", "", GH_ParamAccess.item, true); // 3
             pManager.AddBooleanParameter("Ty", "", "", GH_ParamAccess.item, true); // 4
+            pManager.AddSurfaceParameter("SupportSurface", "Surf", "", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -51,6 +53,7 @@ namespace SolidFEM.FiniteElementMethod
             List<Mesh> meshList = new List<Mesh>(); // 0
             //SmartMesh sMesh = new SmartMesh(); // 0
             List<Point3d> positions = new List<Point3d>(); // 1
+            Brep supSurf = new Brep();
 
             // - input --
 
@@ -59,6 +62,11 @@ namespace SolidFEM.FiniteElementMethod
             DA.GetData(2, ref tx);
             DA.GetData(3, ref ty);
             DA.GetData(4, ref tz);
+            DA.GetData(5, ref supSurf);
+
+
+            string eltype = "Hex20";
+            //string eltype = "";
 
 
             // -- method --
@@ -73,9 +81,49 @@ namespace SolidFEM.FiniteElementMethod
 
                     if (nM.IsValid)
                     {
+                        var vertices = nM.Vertices.ToPoint3dArray(); // an array of the vertices of each mesh element
+
+
+                        if (eltype == "Hex20")
+                        {
+                            nM.Vertices.Add((vertices[0] + vertices[1]) / 2);
+                            nM.Vertices.Add((vertices[1] + vertices[2]) / 2);
+                            nM.Vertices.Add((vertices[2] + vertices[3]) / 2);
+                            nM.Vertices.Add((vertices[3] + vertices[0]) / 2);
+                            nM.Vertices.Add((vertices[4] + vertices[5]) / 2);
+                            nM.Vertices.Add((vertices[5] + vertices[6]) / 2);
+                            nM.Vertices.Add((vertices[6] + vertices[7]) / 2);
+                            nM.Vertices.Add((vertices[7] + vertices[4]) / 2);
+                            nM.Vertices.Add((vertices[0] + vertices[4]) / 2);
+                            nM.Vertices.Add((vertices[1] + vertices[5]) / 2);
+                            nM.Vertices.Add((vertices[2] + vertices[6]) / 2);
+                            nM.Vertices.Add((vertices[3] + vertices[7]) / 2);
+                        }
                         newMeshList.Add(nM);
                     }
-                    else newMeshList.Add(mesh);
+                    else
+                    {
+                        var vertices = nM.Vertices.ToPoint3dArray(); // an array of the vertices of each mesh element
+
+
+                        if (eltype == "Hex20")
+                        {
+                            nM.Vertices.Add((vertices[0] + vertices[1]) / 2);
+                            nM.Vertices.Add((vertices[1] + vertices[2]) / 2);
+                            nM.Vertices.Add((vertices[2] + vertices[3]) / 2);
+                            nM.Vertices.Add((vertices[3] + vertices[0]) / 2);
+                            nM.Vertices.Add((vertices[4] + vertices[5]) / 2);
+                            nM.Vertices.Add((vertices[5] + vertices[6]) / 2);
+                            nM.Vertices.Add((vertices[6] + vertices[7]) / 2);
+                            nM.Vertices.Add((vertices[7] + vertices[4]) / 2);
+                            nM.Vertices.Add((vertices[0] + vertices[4]) / 2);
+                            nM.Vertices.Add((vertices[1] + vertices[5]) / 2);
+                            nM.Vertices.Add((vertices[2] + vertices[6]) / 2);
+                            nM.Vertices.Add((vertices[3] + vertices[7]) / 2);
+                        }
+
+                        newMeshList.Add(mesh);
+                    }
                     c++;
                 }
                 else
@@ -101,18 +149,45 @@ namespace SolidFEM.FiniteElementMethod
 
             List<Point3d> nodePts = FEM_Utility.GetMeshNodes(newMeshList);
             List<Support> supportList = new List<Support>();
-            foreach (var pt in positions)
+
+            Surface supSurface = supSurf.Surfaces[0];
+
+            if (eltype == "Hex20")
             {
-                int nodeIndex = GetClosestNodeIndex(nodePts, pt);
-                if (nodeIndex != -1)
+                for (int i = 0; i < nodePts.Count; i++)
                 {
-                    Support sup = new Support(nodePts[nodeIndex], tx, ty, tz);
-                    supportList.Add(sup);
+                    Point3d point = nodePts[i];
+                    double u = new double();
+                    double v = new double();
+                    supSurface.ClosestPoint(point, out u, out v);
+
+                    Point3d surfPt = supSurface.PointAt(u, v);
+
+                    double tol = 0.001;
+
+                    if (surfPt.DistanceTo(point) < tol)
+                    {
+                        Support sup = new Support(point, tx, ty, tz);
+                        supportList.Add(sup);
+                    }
                 }
-                
+            }
+            else
+            {
+                foreach (var pt in positions)
+                {
+                    int nodeIndex = GetClosestNodeIndex(nodePts, pt);
+                    if (nodeIndex != -1)
+                    {
+                        Support sup = new Support(nodePts[nodeIndex], tx, ty, tz);
+                        supportList.Add(sup);
+                    }
+
+                }
             }
             
-
+            
+            
 
             // -- output --
             DA.SetDataList(0, supportList);

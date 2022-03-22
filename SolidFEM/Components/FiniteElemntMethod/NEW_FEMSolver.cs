@@ -220,8 +220,8 @@ namespace SolidFEM.FiniteElementMethod
                 R_external[i,0] = loads[i];
             }
 
-            //CSD.DenseMatrix R = (CSD.DenseMatrix)R_self.Add(R_external);
-            CSD.DenseMatrix R = R_external;
+            CSD.DenseMatrix R = (CSD.DenseMatrix)R_self.Add(R_external);
+            //CSD.DenseMatrix R = R_external;
 
             watch.Stop();
             Logger.AddInfo($"Time used to establish global load vector: {watch.ElapsedMilliseconds} ms"); watch.Reset();
@@ -229,6 +229,8 @@ namespace SolidFEM.FiniteElementMethod
             // 5. Fix BoundaryConditions
             watch.Start();
             List<List<int>> boundaryConditions = FixBoundaryConditionsSverre(supports, nodePos);
+
+
             Logger.AddInfo($"Time used on boundary conditions: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
             

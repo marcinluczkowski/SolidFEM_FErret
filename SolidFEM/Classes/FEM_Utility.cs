@@ -885,11 +885,13 @@ namespace SolidFEM.Classes
         {
             LA.Matrix<double> C = material.GetMaterialConstant();
 
-            List<LA.Matrix<double>> B_local = element.LocalB;
-            LA.Matrix<double> elementGaussStrain = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
-            LA.Matrix<double> elementGaussStress = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
+            List<LA.Matrix<double>> B_local = FEM_Matrices.CalculateElementMatrices(element, material, ref logger, "Reduced").Item2;
+
+            LA.Matrix<double> elementGaussStrain = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, B_local.Count);
+            LA.Matrix<double> elementGaussStress = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, B_local.Count);
             LA.Matrix<double> elementStrain = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
             LA.Matrix<double> elementStress = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
+
             LA.Matrix<double> localDeformation = LA.Double.DenseMatrix.Build.Dense(3 * element.Nodes.Count, 1); // Could this be attached to the FE_Element class as well?
 
             // get deformation of nodes connected to element
@@ -938,13 +940,14 @@ namespace SolidFEM.Classes
                     }
                 }
             }
-            /*
+            
             else if (element.Type == "Hex20")
             {
                 // get gauss strain and stress
                 for (int n = 0; n < B_local.Count; n++)
                 {
-                    // B-matrix is calculated from gauss points
+                    // B-matrix is calculated from gauss points, the optimal points corresponds to reduced integration for the 20-node element (2x2x2)
+
                     LA.Matrix<double> gaussStrain = B_local[n].Multiply(localDeformation);
                     LA.Matrix<double> gaussStress = C.Multiply(gaussStrain);
 
@@ -960,7 +963,7 @@ namespace SolidFEM.Classes
 
                 // get node strain and stress by extrapolation
 
-                double gp = 1/(Math.Sqrt(0.6));
+                double gp = Math.Sqrt(3);
 
                 double[] gaussArray = new double[]
                     {
@@ -984,19 +987,11 @@ namespace SolidFEM.Classes
                         gp, -gp, 0,
                         gp, gp, 0,
                         -gp, gp, 0,
-                        0, 0, -gp,      
-                        0, -gp, 0,      
-                        gp, 0, 0,       
-                        0, gp, 0,    
-                        -gp, 0, 0,     
-                        0, 0, gp,      
-                        0, 0, 0,
-
                     };
 
                 var extrapolationNodes = LA.Matrix<double>.Build.DenseOfRowMajor(20, 3, gaussArray);
 
-                for (int n = 0; n < B_local.Count; n++)
+                for (int n = 0; n < extrapolationNodes.RowCount; n++)
                 {
                     // get stress and strain in nodes
                     var r = extrapolationNodes.Row(n)[0];
@@ -1004,7 +999,7 @@ namespace SolidFEM.Classes
                     double t = extrapolationNodes.Row(n)[2];
 
 
-                    var shapefuncs = FEM_Utility.GetShapeFunctions(r, s, t, element.Type);
+                    var shapefuncs = FEM_Utility.GetShapeFunctions(r, s, t, "Hex8");
 
                     double[] shape_vals = shapefuncs.Values;
                     var shapefunctionValuesInNode = new LA.Double.DenseMatrix(shape_vals.Length, 1, shape_vals);
@@ -1018,8 +1013,9 @@ namespace SolidFEM.Classes
                         elementStress[i, n] = nodeStress[i,0];
                     }
                 }
+                
             }
-            */
+            
             else if (element.Type == "Tet4")    // no need for gauss strains because B-matrix is constant
             {
 
@@ -1121,7 +1117,7 @@ namespace SolidFEM.Classes
                     double Syz = nodeStress[5];
                     elementMises[i] += Math.Sqrt(0.5 * (Math.Pow(Sxx - Syy, 2) + Math.Pow(Syy - Szz, 2) + Math.Pow(Szz - Sxx, 2)) + 3 * (Math.Pow(Sxy, 2) + Math.Pow(Sxz, 2) + Math.Pow(Syz, 2)));
                 }
-                elementMises[i] = elementMises[i] / (double)8; // get average of nodal mises
+                elementMises[i] = elementMises[i] / (double)elements[0].Nodes.Count; // get average of nodal mises
             }
 
 
@@ -1155,7 +1151,7 @@ namespace SolidFEM.Classes
                 else if (mises[i] < minValue + 12 * range) color = Color.OrangeRed;
                 else color = Color.Red;
 
-                //mesh.Mesh.VertexColors.Add(color);
+                mesh.Mesh.VertexColors.Add(color);
             }
         }
 

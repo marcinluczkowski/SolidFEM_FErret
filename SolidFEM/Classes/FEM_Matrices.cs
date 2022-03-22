@@ -36,6 +36,8 @@ namespace SolidFEM.Classes
             //CSD.SparseMatrix mS = new CSD.SparseMatrix(numNode * 3, numNode * 3);
 
             double[,] kArray = new double[numNode * 3, numNode * 3];
+
+
             //LA.Matrix<double> K = LA.Matrix<double>.Build.Dense(numNode * 3, numNode * 3);
 
 
@@ -55,7 +57,7 @@ namespace SolidFEM.Classes
                 List<int> con = element.Connectivity; // get the connectivity of each element
 
                 // iterate over the connectivity indices
-                var kAndB = CalculateElementMatrices(element, material, ref logger);
+                var kAndB = CalculateElementMatrices(element, material, ref logger, "Full");
                 LA.Matrix<double> K_local = kAndB.Item1;
                 element.LocalB = kAndB.Item2;
 
@@ -118,7 +120,7 @@ namespace SolidFEM.Classes
         /// Calculate element stifness matrix and element strain matrix.
         /// </summary>
         /// <returns> Element stiffness and strain matrix.</returns>
-        public static Tuple<LA.Matrix<double>, List<LA.Matrix<double>>> CalculateElementMatrices(Element element, Material material, ref FEMLogger logger)
+        public static Tuple<LA.Matrix<double>, List<LA.Matrix<double>>> CalculateElementMatrices(Element element, Material material, ref FEMLogger logger, String intType)
         {
             // summary: calculate local K and B matrix
             int roundrecisionBMatrix = 6;
@@ -136,7 +138,7 @@ namespace SolidFEM.Classes
 
             // Global coordinates of the (corner) nodes of the actual element
             LA.Matrix<double> globalCoordinates = LA.Matrix<double>.Build.Dense(numElementNodes, 3);
-            List<Point3d> localCoordinates = FEM_Utility.LocalCartesianCoordinates(element);            
+            List<Point3d> localCoordinates = FEM_Utility.LocalCartesianCoordinates(element);
 
             for (int i = 0; i < numElementNodes; i++)
             {
@@ -146,7 +148,7 @@ namespace SolidFEM.Classes
             }
 
             // Different methods for Hex8 and Tet4. Tet4 doesn't need gauss integration because B and Jacobian are constant!
-            
+
             if (element.Type == "Hex8")
             {
                 //Numerical integration
@@ -179,13 +181,13 @@ namespace SolidFEM.Classes
                     // Calculate B - LA.Matrix
 
 
-                    
+
                     LA.Matrix<double> shapeFuncDerivatedCartesian = (jacobianMatrix.Inverse()).Multiply(partialDerivatives);
 
                     // calculate B with CSparse
-                    
-                    
-                    
+
+
+
 
                     double jacobianDeterminant = jacobianMatrix.Determinant(); // To do: Find a way to evaluate this...
                     pointJacobians.Add(jacobianDeterminant);
@@ -279,80 +281,77 @@ namespace SolidFEM.Classes
 
                 K_local.Add(k_i, K_local);
             }
-            else if(element.Type == "Hex20")
+            else if (element.Type == "Hex20")
             {
-                //Numerical integration
-
-                int order = 3;
-                var gaussCoordinates = FEM_Utility.GetGaussPointMatrix(order, element.Type); // by default we have a 3x3x3 integration of Hex20 element
-                List<double> pointJacobians = new List<double>();           // list to evaluate the pointwise jacobians
-                for (int n = 0; n < gaussCoordinates.RowCount; n++)     // loop gauss nodes
+                if (intType == "Full")
                 {
-                    // Substitute the natural coordinates into the symbolic expression
-                    var r = gaussCoordinates.Row(n)[0];
-                    var s = gaussCoordinates.Row(n)[1];
-                    var t = gaussCoordinates.Row(n)[2];
+                    //Numerical integration
 
-                    // Partial derivatives of the shape functions
-                    var partialDerivatives = FEM_Utility.PartialDerivateShapeFunctions(r, s, t, element.Type);
-
-                    // Calculate Jacobian matrix
-                    var jacobianMatrix = partialDerivatives.Multiply(globalCoordinates);
-
-                    
-                    // round the jacobian
-                    /*
-                    var jColMajArr = jacobianMatrix.AsColumnMajorArray();
-                    for (int k = 0; k < jColMajArr.Length; k++)
+                    int order = 3;
+                    var gaussCoordinates = FEM_Utility.GetGaussPointMatrix(order, element.Type); // by default we have a 3x3x3 integration of Hex20 element
+                    List<double> pointJacobians = new List<double>();           // list to evaluate the pointwise jacobians
+                    for (int n = 0; n < gaussCoordinates.RowCount; n++)     // loop gauss nodes
                     {
-                        jColMajArr[k] = Math.Round(jColMajArr[k], rpb);
-                    }
-                    
-                    jacobianMatrix = LA.Matrix<double>.Build.DenseOfColumnMajor(3, 3, jColMajArr);
-                    */
+                        // Substitute the natural coordinates into the symbolic expression
+                        var r = gaussCoordinates.Row(n)[0];
+                        var s = gaussCoordinates.Row(n)[1];
+                        var t = gaussCoordinates.Row(n)[2];
 
-                    // Calculate B - LA.Matrix
+                        // Partial derivatives of the shape functions
+                        var partialDerivatives = FEM_Utility.PartialDerivateShapeFunctions(r, s, t, element.Type);
 
-                    LA.Matrix<double> shapeFuncDerivatedCartesian = (jacobianMatrix.Inverse()).Multiply(partialDerivatives);
-
-                    // calculate B with CSparse
-
-                    double jacobianDeterminant = jacobianMatrix.Determinant(); // To do: Find a way to evaluate this...
-                    pointJacobians.Add(jacobianDeterminant);
-                    
-                    if (jacobianDeterminant < 0) { logger.AddWarning("Negativ jacobian determeninant"); }
-                    int dimRowB = 6;
+                        // Calculate Jacobian matrix
+                        var jacobianMatrix = partialDerivatives.Multiply(globalCoordinates);
 
 
-                    // establish the B-matrix
-                    LA.Matrix<double> B_i = LA.Double.DenseMatrix.Build.Dense(dimRowB, 3 * numElementNodes);
+                        // round the jacobian
+                        /*
+                        var jColMajArr = jacobianMatrix.AsColumnMajorArray();
+                        for (int k = 0; k < jColMajArr.Length; k++)
+                        {
+                            jColMajArr[k] = Math.Round(jColMajArr[k], rpb);
+                        }
 
-                    for (int i = 0; i < numElementNodes; i++)
-                    {
-                        
-                        // with the shape functions derivated with respect to the cartesian coordinates the rotated and unrotated element vectors are not the same... This is the correct one according to the formulas
-                        var B_i_sub = LA.Double.DenseMatrix.Build.DenseOfRowMajor(6, 3, new double[] {
+                        jacobianMatrix = LA.Matrix<double>.Build.DenseOfColumnMajor(3, 3, jColMajArr);
+                        */
+
+                        // Calculate B - LA.Matrix
+
+                        LA.Matrix<double> shapeFuncDerivatedCartesian = (jacobianMatrix.Inverse()).Multiply(partialDerivatives);
+
+                        // calculate B with CSparse
+
+                        double jacobianDeterminant = jacobianMatrix.Determinant(); // To do: Find a way to evaluate this...
+                        pointJacobians.Add(jacobianDeterminant);
+
+                        if (jacobianDeterminant < 0) { logger.AddWarning("Negativ jacobian determeninant"); }
+                        int dimRowB = 6;
+
+
+                        // establish the B-matrix
+                        LA.Matrix<double> B_i = LA.Double.DenseMatrix.Build.Dense(dimRowB, 3 * numElementNodes);
+
+                        for (int i = 0; i < numElementNodes; i++)
+                        {
+
+                            // with the shape functions derivated with respect to the cartesian coordinates the rotated and unrotated element vectors are not the same... This is the correct one according to the formulas
+                            var B_i_sub = LA.Double.DenseMatrix.Build.DenseOfRowMajor(6, 3, new double[] {
                             shapeFuncDerivatedCartesian.Row(0)[i], 0, 0,
                             0, shapeFuncDerivatedCartesian.Row(1)[i], 0,
                             0, 0, shapeFuncDerivatedCartesian.Row(2)[i],
-                            shapeFuncDerivatedCartesian.Row(1)[i], shapeFuncDerivatedCartesian.Row(0)[i], 0, 
+                            shapeFuncDerivatedCartesian.Row(1)[i], shapeFuncDerivatedCartesian.Row(0)[i], 0,
                             shapeFuncDerivatedCartesian.Row(2)[i], 0, shapeFuncDerivatedCartesian.Row(0)[i],
                             0, shapeFuncDerivatedCartesian.Row(2)[i], shapeFuncDerivatedCartesian.Row(1)[i]
                             });
-                        B_i.SetSubMatrix(0, i * 3, B_i_sub);
-                    }
+                            B_i.SetSubMatrix(0, i * 3, B_i_sub);
+                        }
 
-                    B_local.Add(B_i);
+                        B_local.Add(B_i);
 
-                    //Weights for numerical integration
+                        //Weights for numerical integration
 
-                    double w_r = 1; double w_s = 1; double w_t = 1;
+                        double w_r = 0.555556; double w_s = 0.5555556; double w_t = 0.555556;
 
-                    if (order == 3)
-                    {
-                        w_r = 0.555556;
-                        w_s = 0.555556;
-                        w_t = 0.555556;
                         if (r == 0)
                         {
                             w_r = 0.888889;
@@ -365,16 +364,74 @@ namespace SolidFEM.Classes
                         {
                             w_t = 0.888889;
                         }
-                    }
-                    else if (order== 2)
-                    {
-                        w_r = 1; w_s = 1; w_t = 1;
+
+                        var k_i = (B_i.Transpose()).Multiply(C.Multiply(B_i)).Multiply(jacobianDeterminant) * w_r * w_s * w_t;
+
+                        K_local.Add(k_i, K_local);
                     }
                     
+                }
+                else if (intType == "Reduced")
+                {
+                    //Numerical integration
 
-                    var k_i = (B_i.Transpose()).Multiply(C.Multiply(B_i)).Multiply(jacobianDeterminant)*w_r*w_s*w_t;
+                    int order = 2;
+                    var gaussCoordinates = FEM_Utility.GetGaussPointMatrix(order, element.Type); // with reduced integration we have a 2x2x2 integration of Hex20 element 
+                    List<double> pointJacobians = new List<double>();           // list to evaluate the pointwise jacobians
+                    for (int n = 0; n < gaussCoordinates.RowCount; n++)     // loop gauss nodes
+                    {
+                        // Substitute the natural coordinates into the symbolic expression
+                        var r = gaussCoordinates.Row(n)[0];
+                        var s = gaussCoordinates.Row(n)[1];
+                        var t = gaussCoordinates.Row(n)[2];
 
-                    K_local.Add(k_i, K_local);
+                        // Partial derivatives of the shape functions
+                        var partialDerivatives = FEM_Utility.PartialDerivateShapeFunctions(r, s, t, element.Type);
+
+                        // Calculate Jacobian matrix
+                        var jacobianMatrix = partialDerivatives.Multiply(globalCoordinates);
+
+                        // Calculate B - LA.Matrix
+
+                        LA.Matrix<double> shapeFuncDerivatedCartesian = (jacobianMatrix.Inverse()).Multiply(partialDerivatives);
+
+                        // calculate B with CSparse
+
+                        double jacobianDeterminant = jacobianMatrix.Determinant(); // To do: Find a way to evaluate this...
+                        pointJacobians.Add(jacobianDeterminant);
+
+                        if (jacobianDeterminant < 0) { logger.AddWarning("Negativ jacobian determeninant"); }
+                        int dimRowB = 6;
+
+
+                        // establish the B-matrix
+                        LA.Matrix<double> B_i = LA.Double.DenseMatrix.Build.Dense(dimRowB, 3 * numElementNodes);
+
+                        for (int i = 0; i < numElementNodes; i++)
+                        {
+
+                            // with the shape functions derivated with respect to the cartesian coordinates the rotated and unrotated element vectors are not the same... This is the correct one according to the formulas
+                            var B_i_sub = LA.Double.DenseMatrix.Build.DenseOfRowMajor(6, 3, new double[] {
+                            shapeFuncDerivatedCartesian.Row(0)[i], 0, 0,
+                            0, shapeFuncDerivatedCartesian.Row(1)[i], 0,
+                            0, 0, shapeFuncDerivatedCartesian.Row(2)[i],
+                            shapeFuncDerivatedCartesian.Row(1)[i], shapeFuncDerivatedCartesian.Row(0)[i], 0,
+                            shapeFuncDerivatedCartesian.Row(2)[i], 0, shapeFuncDerivatedCartesian.Row(0)[i],
+                            0, shapeFuncDerivatedCartesian.Row(2)[i], shapeFuncDerivatedCartesian.Row(1)[i]
+                            });
+                            B_i.SetSubMatrix(0, i * 3, B_i_sub);
+                        }
+
+                        B_local.Add(B_i);
+
+                        //Weights for numerical integration
+
+                        double w_r = 1; double w_s = 1; double w_t = 1;
+
+                        var k_i = (B_i.Transpose()).Multiply(C.Multiply(B_i)).Multiply(jacobianDeterminant) * w_r * w_s * w_t;
+
+                        K_local.Add(k_i, K_local);
+                    }
                 }
             }
             return Tuple.Create(K_local, B_local);
@@ -391,7 +448,7 @@ namespace SolidFEM.Classes
                 List<int> con = element.Connectivity;
 
 
-                LA.Matrix<double> K_local = FEM_Matrices.CalculateElementMatrices(element, material, ref logger).Item1;
+                LA.Matrix<double> K_local = FEM_Matrices.CalculateElementMatrices(element, material, ref logger, "Full").Item1;
 
                 // loop nodes of elements
                 for (int i = 0; i < con.Count; i++)
