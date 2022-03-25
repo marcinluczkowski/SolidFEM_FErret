@@ -126,17 +126,17 @@ namespace SolidFEM.Classes
             {
                 globalCoordinates[i, 0] = Math.Round(element.Nodes[i].Coordinate.X, rpb); // column of x coordinates
                 globalCoordinates[i, 1] = Math.Round(element.Nodes[i].Coordinate.Y, rpb); // column of y coordinates
-                globalCoordinates[i, 2] = Math.Round(element.Nodes[i].Coordinate.Z, rpb); // colum of z coordinates
+                globalCoordinates[i, 2] = Math.Round(element.Nodes[i].Coordinate.Z, rpb); // column of z coordinates
             }
 
             // Different methods for Hex8 and Tet4. Tet4 doesn't need gauss integration because B and Jacobian are constant!
             
-            if (element.Type == "Hex8")
+            if (element.Type == "Hex8" || element.Type == "Tet10")
             {
                 //Numerical integration
                 //LA.Matrix<double> gaussNodes = FEM.GetNaturalCoordinate((double)Math.Sqrt((double)1 / (double)3), 3);
                 var gaussCoordinates = FEM_Utility.GetGaussPointMatrix(2, element.Type); // by default we have a 2x2x2 integration of Hex8 element
-                List<double> pointJacobians = new List<double>(); // list to evaluate the pointwise jacobians
+                List<double> pointJacobians = new List<double>(); // list to evaluate the pointwise jacobians   // Not in use, delete?
                 for (int n = 0; n < gaussCoordinates.RowCount; n++)  // loop gauss nodes
                 {
                     // Substitute the natural coordinates into the symbolic expression
@@ -167,9 +167,7 @@ namespace SolidFEM.Classes
                     LA.Matrix<double> shapeFuncDerivatedCartesian = (jacobianMatrix.Inverse()).Multiply(partialDerivatives);
 
                     // calculate B with CSparse
-                    
-                    
-                    
+
 
                     double jacobianDeterminant = jacobianMatrix.Determinant(); // To do: Find a way to evaluate this...
                     pointJacobians.Add(jacobianDeterminant);
@@ -197,10 +195,18 @@ namespace SolidFEM.Classes
                         B_i.SetSubMatrix(0, i * 3, B_i_sub);
 
                     }
+                    // Get correct weight for gauss integration
+                    double alpha = 1;   // Default weight for HEX8
+                    if (element.Type == "Tet10")
+                    {
+                        alpha = 0.25;
+                    }
 
                     B_local.Add(B_i);
                     //K_local += ((B_i.Transpose()).Multiply(C).Multiply(B_i)).Multiply(jacobianDeterminant);
-                    var k_i = (B_i.Transpose()).Multiply(C.Multiply(B_i)).Multiply(jacobianDeterminant);
+                    var k_i = alpha * (B_i.Transpose()).Multiply(C.Multiply(B_i)).Multiply(jacobianDeterminant);
+                    
+                    
 
                     K_local.Add(k_i, K_local);
                 }
@@ -212,6 +218,7 @@ namespace SolidFEM.Classes
                 // Calculate Jacobian matrix
                 var jacobianMatrix = partialDerivatives.Multiply(globalCoordinates);
 
+                double jacobianDeterminant = jacobianMatrix.Determinant();
                 /*
                 // round the jacobian
                 var jColMajArr = jacobianMatrix.AsColumnMajorArray();

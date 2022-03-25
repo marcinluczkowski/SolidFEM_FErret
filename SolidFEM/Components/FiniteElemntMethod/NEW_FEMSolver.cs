@@ -103,7 +103,7 @@ namespace SolidFEM.FiniteElementMethod
             // clean the mesh and sort nodes
             var newMeshList = new List<Mesh>();
             int c = 0; // delete after testing
-            string elementType = "Tet4";
+            string elementType = "Tet10";
 
             foreach (Mesh mesh in meshList)
             {
@@ -118,18 +118,16 @@ namespace SolidFEM.FiniteElementMethod
                     else newMeshList.Add(mesh);
                     c++;
                 }
-                else
+                else if (elementType == "Tet10")
                 {
-                    if (elementType == "Tet10")
-                    {
                         Mesh nM = FEM_Utility.AddMidEdgeNodes(mesh);
                         newMeshList.Add(nM);
-                    }
-                    else
-                    {
-                        newMeshList.Add(mesh);
-                    }
                 }
+                else
+                {
+                    newMeshList.Add(mesh);
+                }
+                
             }
 
             List<Element> elements;
@@ -292,7 +290,8 @@ namespace SolidFEM.FiniteElementMethod
             }
             return totalBC;
         }
-        private List<List<int>> FixBoundaryConditionsSverre(List<Support> sups, List<Point3d> nodesPos)
+        private List<List<int>> 
+            FixBoundaryConditionsSverre(List<Support> sups, List<Point3d> nodesPos)
         {
             List<List<int>> totalBC = new List<List<int>>(); // just using the names from the above function
 
