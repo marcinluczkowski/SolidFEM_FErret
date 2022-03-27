@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using SolidFEM.Classes;
 using MathNet.Numerics.LinearAlgebra.Double;
 using System.Linq;
+using ClosedXML.Excel;
 
 // Csparse
 using LA = MathNet.Numerics.LinearAlgebra;
@@ -92,7 +93,7 @@ namespace SolidFEM.FiniteElementMethod
             DA.GetDataList(2, supports);
             DA.GetData(3, ref material);
 
-            
+
 
             // 0. Initial step
 
@@ -102,6 +103,8 @@ namespace SolidFEM.FiniteElementMethod
             // clean the mesh and sort nodes
             var newMeshList = new List<Mesh>();
             int c = 0; // delete after testing
+            string elementType = "Tet10";
+
             foreach (Mesh mesh in meshList)
             {
                 if (mesh.Vertices.Count == 8)
@@ -115,13 +118,17 @@ namespace SolidFEM.FiniteElementMethod
                     else newMeshList.Add(mesh);
                     c++;
                 }
+                else if (elementType == "Tet10")
+                {
+                        Mesh nM = FEM_Utility.AddMidEdgeNodes(mesh);
+                        newMeshList.Add(nM);
+                }
                 else
                 {
                     newMeshList.Add(mesh);
                 }
+                
             }
-
-
 
             List<Element> elements;
             List<Node> femNodes = new List<Node>();
@@ -283,7 +290,8 @@ namespace SolidFEM.FiniteElementMethod
             }
             return totalBC;
         }
-        private List<List<int>> FixBoundaryConditionsSverre(List<Support> sups, List<Point3d> nodesPos)
+        private List<List<int>> 
+            FixBoundaryConditionsSverre(List<Support> sups, List<Point3d> nodesPos)
         {
             List<List<int>> totalBC = new List<List<int>>(); // just using the names from the above function
 
