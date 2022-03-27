@@ -41,4 +41,3 @@ C:\Users\Markus\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CoreCom
 C:\Users\Markus\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CopyComplete
 C:\Users\Markus\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.dll
 C:\Users\Markus\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.pdb
-C:\Program Files\Rhino 7\Plug-ins\SolidFEM\packages.config
