@@ -1,19 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Rhino.Geometry;
-using LA = MathNet.Numerics.LinearAlgebra;
-using System.Drawing;
-using CSparse;
-using CSD = CSparse.Double;
+﻿using CSparse;
 using CSparse.Double.Factorization;
 using CSparse.Storage;
-using Grasshopper;
-using Grasshopper.Kernel.Data;
-using Grasshopper.Kernel.Types;
-using Rhino.Geometry.Collections;
+using Rhino.Geometry;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using CSD = CSparse.Double;
+using LA = MathNet.Numerics.LinearAlgebra;
 using Matrix = Accord.Math.Matrix;
-using Point = Rhino.Geometry.Point;
 
 
 namespace SolidFEM.Classes
