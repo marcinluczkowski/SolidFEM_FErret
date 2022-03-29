@@ -199,7 +199,7 @@ namespace SolidFEM.Classes
                     double alpha = 1;   // Default weight for HEX8
                     if (element.Type == "Tet10")
                     {
-                        alpha = 0.25;
+                        alpha = 0.25/6;
                     }
 
                     B_local.Add(B_i);
