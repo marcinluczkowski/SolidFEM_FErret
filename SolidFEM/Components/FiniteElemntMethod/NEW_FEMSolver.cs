@@ -48,7 +48,6 @@ namespace SolidFEM.FiniteElementMethod
             pManager.AddGenericParameter("Loads", "load", "Load vector from FEM Load.", GH_ParamAccess.list); // 1
             pManager.AddGenericParameter("Boundary Conditions", "BC", "Boundary conditions from FEM Boundary Condtion.", GH_ParamAccess.list); // 2
             pManager.AddGenericParameter("Material", "material", "Material from FEM Material.", GH_ParamAccess.item); // 3
-            pManager.AddTextParameter("Element type", "elemType", "Element type to be used in analysis Hex8 og Hex20", GH_ParamAccess.item); //4
         }
 
         /// <summary>
@@ -88,13 +87,11 @@ namespace SolidFEM.FiniteElementMethod
             //List<List<int>> boundaryConditions = new List<List<int>>();
             List<Support> supports = new List<Support>();
             Material material = new Material();
-            string elemType = "Hex8";
 
             DA.GetDataList(0, meshList);
             DA.GetDataList(1, loads);
             DA.GetDataList(2, supports);
             DA.GetData(3, ref material);
-            DA.GetData(4, ref elemType);
 
 
             List<string> info = new List<string>();
@@ -118,52 +115,18 @@ namespace SolidFEM.FiniteElementMethod
                     Mesh nM = GrahamScan.DoGrahamScan(mesh);
 
                     if (nM.IsValid)
-                    {
-                        var vertices_array = nM.Vertices.ToPoint3dArray(); // an array of the vertices of each mesh element
-
-                        List<Point3d> vertices = vertices_array.ToList();
-
-                        if (elemType == "Hex20")
-                        {
-                            nM.Vertices.Add((vertices[0] + vertices[1]) / 2);
-                            nM.Vertices.Add((vertices[1] + vertices[2]) / 2);
-                            nM.Vertices.Add((vertices[2] + vertices[3]) / 2);
-                            nM.Vertices.Add((vertices[3] + vertices[0]) / 2);
-                            nM.Vertices.Add((vertices[4] + vertices[5]) / 2);
-                            nM.Vertices.Add((vertices[5] + vertices[6]) / 2);
-                            nM.Vertices.Add((vertices[6] + vertices[7]) / 2);
-                            nM.Vertices.Add((vertices[7] + vertices[4]) / 2);
-                            nM.Vertices.Add((vertices[0] + vertices[4]) / 2);
-                            nM.Vertices.Add((vertices[1] + vertices[5]) / 2);
-                            nM.Vertices.Add((vertices[2] + vertices[6]) / 2);
-                            nM.Vertices.Add((vertices[3] + vertices[7]) / 2);
-                        }
+                    {   
                         newMeshList.Add(nM);
                     }
                     else
                     {
-                        var vertices_array = mesh.Vertices.ToPoint3dArray(); // an array of the vertices of each mesh element
-
-                        List<Point3d> vertices = vertices_array.ToList();
-
-                        if (elemType == "Hex20")
-                        {
-                            mesh.Vertices.Add((vertices[0] + vertices[1]) / 2);
-                            mesh.Vertices.Add((vertices[1] + vertices[2]) / 2);
-                            mesh.Vertices.Add((vertices[2] + vertices[3]) / 2);
-                            mesh.Vertices.Add((vertices[3] + vertices[0]) / 2);
-                            mesh.Vertices.Add((vertices[4] + vertices[5]) / 2);
-                            mesh.Vertices.Add((vertices[5] + vertices[6]) / 2);
-                            mesh.Vertices.Add((vertices[6] + vertices[7]) / 2);
-                            mesh.Vertices.Add((vertices[7] + vertices[4]) / 2);
-                            mesh.Vertices.Add((vertices[0] + vertices[4]) / 2);
-                            mesh.Vertices.Add((vertices[1] + vertices[5]) / 2);
-                            mesh.Vertices.Add((vertices[2] + vertices[6]) / 2);
-                            mesh.Vertices.Add((vertices[3] + vertices[7]) / 2);
-                        }
                         newMeshList.Add(mesh);
                     }
                     c++;
+                }
+                else if (mesh.Vertices.Count == 20)
+                {
+                    newMeshList.Add(mesh);
                 }
                 else
                 {
@@ -212,6 +175,15 @@ namespace SolidFEM.FiniteElementMethod
             
             // self weight
             var selfWeight = FEM_Utility.GetBodyForceVector(material, elements, numNodes, Logger);
+
+            double weight = 0;
+
+            for (int i = 0; i < selfWeight.Count; i++)
+            {
+                weight += selfWeight[i];
+            }
+
+
             CSD.DenseMatrix R_self = new CSD.DenseMatrix(numNodes * 3, 1, selfWeight.ToArray());
             CSD.DenseMatrix R_external = new CSD.DenseMatrix(numNodes * 3, 1);
             

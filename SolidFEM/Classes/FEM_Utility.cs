@@ -398,6 +398,28 @@ namespace SolidFEM.Classes
                     throw new NotImplementedException("The integration type is not yet implemented.");
                 }
             }
+            else if (elType == "Q8")
+            {
+                if (order == 2)
+                {
+                    double gaussPoint = 0.57735; // Numerical value of the +- natural coordinate to use in gauss point integration for 2 sampling point. From Bathes book Table 5.6
+                    double[] gaussArray = new double[]
+                    {
+                        -gaussPoint, -gaussPoint,
+                        gaussPoint, -gaussPoint,
+                        gaussPoint, gaussPoint,
+                        -gaussPoint, gaussPoint,
+                    };
+                    //var naturalCoordinatesGauss = new CSD.DenseMatrix(8, 3, gaussArray);
+                    var naturalCoordinatesGauss = LA.Matrix<double>.Build.DenseOfRowMajor(4, 2, gaussArray);
+                    return naturalCoordinatesGauss;
+
+                }
+                else
+                {
+                    throw new NotImplementedException("The integration type is not yet implemented.");
+                }
+            }
             else
             {
                 throw new NotImplementedException("This method is not yet implemented");

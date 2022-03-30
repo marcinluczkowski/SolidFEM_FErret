@@ -26,10 +26,15 @@ namespace SolidFEM.FiniteElementMethod
         {
             pManager.AddGenericParameter("Mesh", "mesh", "The mesh to apply boundary conditions on", GH_ParamAccess.list); // 0
             pManager.AddPointParameter("SupportPoints", "pt", "Position to place boundary points", GH_ParamAccess.list); // 1
-            pManager.AddBooleanParameter("Tx", "", "", GH_ParamAccess.item, true); // 2
-            pManager.AddBooleanParameter("Ty", "", "", GH_ParamAccess.item, true); // 3
-            pManager.AddBooleanParameter("Ty", "", "", GH_ParamAccess.item, true); // 4
-            pManager.AddSurfaceParameter("SupportSurface", "Surf", "", GH_ParamAccess.item);
+            pManager.AddSurfaceParameter("SupportSurface", "Surf", "", GH_ParamAccess.list); //2
+            pManager.AddIntegerParameter("Type of support", "T", "Type of support (1 = points, 2 = surface)", GH_ParamAccess.item, 1); //3
+            pManager.AddBooleanParameter("Tx", "", "", GH_ParamAccess.item, true); // 4
+            pManager.AddBooleanParameter("Ty", "", "", GH_ParamAccess.item, true); // 5
+            pManager.AddBooleanParameter("Ty", "", "", GH_ParamAccess.item, true); // 6
+            
+
+            pManager[1].Optional = true;
+            pManager[2].Optional = true;
         }
 
         /// <summary>
@@ -53,24 +58,25 @@ namespace SolidFEM.FiniteElementMethod
             List<Mesh> meshList = new List<Mesh>(); // 0
             //SmartMesh sMesh = new SmartMesh(); // 0
             List<Point3d> positions = new List<Point3d>(); // 1
-            Brep supSurf = new Brep();
+            List<Brep> supSurf = new List<Brep>();
+            int type = 1;
+
 
             // - input --
 
-            if (!DA.GetDataList(0, meshList)) return;
-            if (!DA.GetDataList(1, positions)) return;
-            DA.GetData(2, ref tx);
-            DA.GetData(3, ref ty);
-            DA.GetData(4, ref tz);
-            DA.GetData(5, ref supSurf);
-
-
-            string eltype = "Hex20";
-            //string eltype = "";
+            //if (!DA.GetDataList(0, meshList)) return;
+            DA.GetDataList(0, meshList);
+            DA.GetDataList(1, positions);
+            DA.GetDataList(2, supSurf);
+            DA.GetData(3, ref type);
+            DA.GetData(4, ref tx);
+            DA.GetData(5, ref ty);
+            DA.GetData(6, ref tz);
+            
 
 
             // -- method --
-            // clean the mesh and sort nodes
+            // clean the mesh and sort nodes, if Hex20 add midside nodes
             var newMeshList = new List<Mesh>();
             int c = 0; // delete after testing
             foreach (Mesh mesh in meshList)
@@ -81,99 +87,32 @@ namespace SolidFEM.FiniteElementMethod
 
                     if (nM.IsValid)
                     {
-                        var vertices = nM.Vertices.ToPoint3dArray(); // an array of the vertices of each mesh element
-
-
-                        if (eltype == "Hex20")
-                        {
-                            nM.Vertices.Add((vertices[0] + vertices[1]) / 2);
-                            nM.Vertices.Add((vertices[1] + vertices[2]) / 2);
-                            nM.Vertices.Add((vertices[2] + vertices[3]) / 2);
-                            nM.Vertices.Add((vertices[3] + vertices[0]) / 2);
-                            nM.Vertices.Add((vertices[4] + vertices[5]) / 2);
-                            nM.Vertices.Add((vertices[5] + vertices[6]) / 2);
-                            nM.Vertices.Add((vertices[6] + vertices[7]) / 2);
-                            nM.Vertices.Add((vertices[7] + vertices[4]) / 2);
-                            nM.Vertices.Add((vertices[0] + vertices[4]) / 2);
-                            nM.Vertices.Add((vertices[1] + vertices[5]) / 2);
-                            nM.Vertices.Add((vertices[2] + vertices[6]) / 2);
-                            nM.Vertices.Add((vertices[3] + vertices[7]) / 2);
-                        }
                         newMeshList.Add(nM);
                     }
                     else
                     {
-                        var vertices = nM.Vertices.ToPoint3dArray(); // an array of the vertices of each mesh element
-
-
-                        if (eltype == "Hex20")
-                        {
-                            nM.Vertices.Add((vertices[0] + vertices[1]) / 2);
-                            nM.Vertices.Add((vertices[1] + vertices[2]) / 2);
-                            nM.Vertices.Add((vertices[2] + vertices[3]) / 2);
-                            nM.Vertices.Add((vertices[3] + vertices[0]) / 2);
-                            nM.Vertices.Add((vertices[4] + vertices[5]) / 2);
-                            nM.Vertices.Add((vertices[5] + vertices[6]) / 2);
-                            nM.Vertices.Add((vertices[6] + vertices[7]) / 2);
-                            nM.Vertices.Add((vertices[7] + vertices[4]) / 2);
-                            nM.Vertices.Add((vertices[0] + vertices[4]) / 2);
-                            nM.Vertices.Add((vertices[1] + vertices[5]) / 2);
-                            nM.Vertices.Add((vertices[2] + vertices[6]) / 2);
-                            nM.Vertices.Add((vertices[3] + vertices[7]) / 2);
-                        }
-
                         newMeshList.Add(mesh);
                     }
                     c++;
+                }
+                else if(mesh.Vertices.Count == 20)
+                {
+                        newMeshList.Add(mesh);
                 }
                 else
                 {
                     newMeshList.Add(mesh);
                 }
+
+
             }
-
-
-            /* Delete if OK
-            var newMeshList = new List<Mesh>();
-            foreach (Mesh mesh in meshList)
-            {
-                Mesh nM = GrahamScan.DoGrahamScan(mesh);
-
-                if (nM.IsValid)
-                {
-                    newMeshList.Add(nM);
-                }
-                else newMeshList.Add(mesh);
-            }*/
-
 
             List<Point3d> nodePts = FEM_Utility.GetMeshNodes(newMeshList);
             List<Support> supportList = new List<Support>();
 
-            Surface supSurface = supSurf.Surfaces[0];
-
-            if (eltype == "Hex20")
+            if (type == 1)
             {
-                for (int i = 0; i < nodePts.Count; i++)
-                {
-                    Point3d point = nodePts[i];
-                    double u = new double();
-                    double v = new double();
-                    supSurface.ClosestPoint(point, out u, out v);
 
-                    Point3d surfPt = supSurface.PointAt(u, v);
-
-                    double tol = 0.001;
-
-                    if (surfPt.DistanceTo(point) < tol)
-                    {
-                        Support sup = new Support(point, tx, ty, tz);
-                        supportList.Add(sup);
-                    }
-                }
-            }
-            else
-            {
                 foreach (var pt in positions)
                 {
                     int nodeIndex = GetClosestNodeIndex(nodePts, pt);
@@ -183,6 +122,31 @@ namespace SolidFEM.FiniteElementMethod
                         supportList.Add(sup);
                     }
 
+                }
+                
+            }
+            else if (type == 2)
+            {
+                foreach (Brep surf in supSurf)
+                {
+                    Surface supSurface = surf.Surfaces[0];
+                    for (int i = 0; i < nodePts.Count; i++)
+                    {
+                        Point3d point = nodePts[i];
+                        double u = new double();
+                        double v = new double();
+                        supSurface.ClosestPoint(point, out u, out v);
+
+                        Point3d surfPt = supSurface.PointAt(u, v);
+
+                        double tol = 0.001;
+
+                        if (surfPt.DistanceTo(point) < tol)
+                        {
+                            Support sup = new Support(point, tx, ty, tz);
+                            supportList.Add(sup);
+                        }
+                    }
                 }
             }
             
