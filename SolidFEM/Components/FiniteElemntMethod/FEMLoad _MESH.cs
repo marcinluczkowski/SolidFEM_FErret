@@ -260,7 +260,7 @@ namespace SolidFEM.FiniteElementMethod
                         }
                         else if (mesh.Vertices.Count == 20)
                         {
-                            int method = 2;
+                            int method = 3;
                             List<Point3d> pts = new List<Point3d>();
                             foreach (Point3d pt in mesh.Vertices)
                             {
@@ -614,7 +614,7 @@ namespace SolidFEM.FiniteElementMethod
                                     cnt++;
                                 }
                             }
-                            else if (pts.Count > 0 && method == 3)
+                            else if (pts.Count > 4 && method == 3)
                             {
                                 NurbsSurface meshSrf = NurbsSurface.CreateFromCorners(pts[0], pts[1], pts[2], pts[3]);  // may need to do a graham scan on meshSrf
                                 AreaMassProperties amp = AreaMassProperties.Compute(meshSrf);
@@ -629,7 +629,7 @@ namespace SolidFEM.FiniteElementMethod
                                     double yLoad = 0;
                                     double zLoad = 0;
 
-                                    Vector3d nodalForce = -A * loadVectors[i] / 8;
+                                    Vector3d nodalForce = A * loadVectors[i] / 8;
 
                                     // Deconstruct load vector
                                     xLoad = nodalForce.X;
