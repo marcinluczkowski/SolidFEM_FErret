@@ -144,7 +144,7 @@ namespace SolidFEM.Classes
             {
                 globalCoordinates[i, 0] = Math.Round(element.Nodes[i].Coordinate.X, rpb); // column of x coordinates
                 globalCoordinates[i, 1] = Math.Round(element.Nodes[i].Coordinate.Y, rpb); // column of y coordinates
-                globalCoordinates[i, 2] = Math.Round(element.Nodes[i].Coordinate.Z, rpb); // colum of z coordinates
+                globalCoordinates[i, 2] = Math.Round(element.Nodes[i].Coordinate.Z, rpb); // column of z coordinates
             }
 
             // Different methods for Hex8 and Tet4. Tet4 doesn't need gauss integration because B and Jacobian are constant!
@@ -324,7 +324,8 @@ namespace SolidFEM.Classes
                         double jacobianDeterminant = jacobianMatrix.Determinant(); // To do: Find a way to evaluate this...
                         pointJacobians.Add(jacobianDeterminant);
 
-                        if (jacobianDeterminant < 0) { logger.AddWarning("Negativ jacobian determeninant"); }
+                        if (jacobianDeterminant < 0) 
+                        { logger.AddWarning("Negativ jacobian determeninant"); }
                         int dimRowB = 6;
 
 

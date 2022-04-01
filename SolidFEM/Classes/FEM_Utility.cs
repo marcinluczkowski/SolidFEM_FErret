@@ -41,11 +41,6 @@ namespace SolidFEM.Classes
                 // sort the vertices by a Graham 
                 //List<Point3d> sortedVertices = SortVerticesByGrahamScan(vertices.ToList());
 
-                // If element type is set to Hex20, add midside nodes
-
-
-               
-
                 for (int i = 0; i < vertices.Count; i++)
                 {
                     Point3d mPt = vertices[i]; // point to create node from
@@ -57,7 +52,7 @@ namespace SolidFEM.Classes
                     for (int j = 0; j < globalNodePts.Count; j++)
                     {
                         double dist = globalNodePts[j].DistanceToSquared(mPt);
-                        if (dist < 0.01) // random tolerance
+                        if (dist < 0.0001) // random tolerance
                         {
                             globalInd = j;
                         }

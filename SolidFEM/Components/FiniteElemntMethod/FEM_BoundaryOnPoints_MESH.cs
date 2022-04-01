@@ -30,7 +30,7 @@ namespace SolidFEM.FiniteElementMethod
             pManager.AddIntegerParameter("Type of support", "T", "Type of support (1 = points, 2 = surface)", GH_ParamAccess.item, 1); //3
             pManager.AddBooleanParameter("Tx", "", "", GH_ParamAccess.item, true); // 4
             pManager.AddBooleanParameter("Ty", "", "", GH_ParamAccess.item, true); // 5
-            pManager.AddBooleanParameter("Ty", "", "", GH_ParamAccess.item, true); // 6
+            pManager.AddBooleanParameter("Tz", "", "", GH_ParamAccess.item, true); // 6
             
 
             pManager[1].Optional = true;

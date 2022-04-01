@@ -64,10 +64,10 @@ namespace SolidFEM
             {
                 if (mesh.Vertices.Count == 8)
                 {
-                    //Mesh nM = GrahamScan.DoGrahamScan(mesh);
-                    Mesh nM = mesh;
-                    //if (nM.IsValid)
-                    //{
+                    Mesh nM = GrahamScan.DoGrahamScan(mesh);
+                    //Mesh nM = mesh;
+                    if (nM.IsValid)
+                    {
 
                         var vertices_array = nM.Vertices.ToPoint3dArray(); // an array of the vertices of each mesh element
 
@@ -89,8 +89,8 @@ namespace SolidFEM
 
 
                         newMesh.Add(nM);
-                    //}
-                    /*
+                    }
+                    
                     else
                     {
 
@@ -115,7 +115,7 @@ namespace SolidFEM
 
                         newMesh.Add(mesh);
                     }
-                    */
+                    
                 }
             }
 

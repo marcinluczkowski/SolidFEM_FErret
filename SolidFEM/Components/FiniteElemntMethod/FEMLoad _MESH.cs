@@ -182,7 +182,7 @@ namespace SolidFEM.FiniteElementMethod
                                 double u = 0;
                                 double v = 0;
                                 surfaces[i].ClosestPoint(pt, out u, out v);
-                                if (pt.DistanceTo(surfaces[i].PointAt(u, v)) < 0.001)   // if closer than a tolerance add it to meshpoints
+                                if (pt.DistanceTo(surfaces[i].PointAt(u, v)) < 0.0001)   // if closer than a tolerance add it to meshpoints
                                 {
                                     pts.Add(pt);
                                 }
