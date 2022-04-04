@@ -10,7 +10,7 @@ namespace SolidFEM.Classes
     public class TempFE_Mesh
     {
         // -- parameters --
-        public List<Mesh> MeshList { get; set; }
+        public List<Mesh> MeshList { get; set; } // Remove
         public List<Node> MeshNodes { get; set; }
         public List<Element> MeshElements { get; set; }
 
@@ -20,8 +20,8 @@ namespace SolidFEM.Classes
         public List<double> Sigma_xy { get; private set; }
         public List<double> Sigma_xz { get; private set; }
         public List<double> Sigma_yz { get; private set; }
-        public List<double> NodelMisesStresses { get; private set; }
-        public List<double> MisesStress { get; private set; } // should not be able to modify after the analysis is done
+        public List<double> NodelMisesStresses { get; protected set; }
+        public List<double> MisesStress { get; protected set; } // should not be able to modify after the analysis is done
         public List<double> dU { get; private set; }
         public List<double> dV { get; private set; }
         public List<double> dW { get; private set; }
@@ -34,9 +34,13 @@ namespace SolidFEM.Classes
             // empty
         }
 
-        public TempFE_Mesh(List<Mesh> meshLst)
+        /// <summary>
+        /// Instantiate a FE Mesh from the list of meshes
+        /// </summary>
+        /// <param name="meshList">List of Rhino mesh.</param>
+        public TempFE_Mesh(List<Mesh> meshList)
         {
-            MeshList = meshLst;
+            MeshList = meshList;
         }
 
         public TempFE_Mesh(List<Mesh> meshLst, List<Node> nodes, List<Element> meshEls, List<double> mises, List<double> nodalMises, List<double> du, List<double> dv, List<double> dw, Material material,
