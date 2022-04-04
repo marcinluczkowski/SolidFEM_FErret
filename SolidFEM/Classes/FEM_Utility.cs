@@ -11,12 +11,62 @@ using CSparse.Storage;
 using Grasshopper;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using Rhino.Geometry.Collections;
+using Matrix = Accord.Math.Matrix;
+using Point = Rhino.Geometry.Point;
 
 
 namespace SolidFEM.Classes
 {
     static class FEM_Utility
     {
+        public static Mesh AddMidEdgeNodes(Mesh mesh)
+        {
+            /*for (int i = 0; i < mesh.TopologyEdges.Count; i++)
+            {
+                Line meshEdge = mesh.TopologyEdges.EdgeLine(i);
+                double spX = meshEdge.FromX;
+                double spY = meshEdge.FromY;
+                double spZ = meshEdge.FromZ;
+                double epX = meshEdge.ToX;
+                double epY = meshEdge.ToY;
+                double epZ = meshEdge.ToZ;
+
+                Point3d midPoint = new Point3d((spX + epX)/2, (spY + epY)/2, (spZ + epZ)/2);
+                mesh.Vertices.Add(midPoint);
+            }*/
+            var meshPts = mesh.TopologyVertices;
+            int[,] midNodeIndices = new int[,]  //Array for getting the correct ordering of midside nodes
+            {
+                {0,1},  // node 5 is between node 1 and 2
+                {0,2},  // node 6 is between node 1 and 3
+                {0,3},  // node 7 and so on ...
+                {1,2},  // node 8...
+                {2, 3}, // node 9...
+                {1,3}   // node 10...
+            };
+
+            for (int i = 0; i < Matrix.Rows(midNodeIndices); i++)
+            {
+                Point3d pt1 = mesh.TopologyVertices[midNodeIndices[i, 0]];
+                Point3d pt2 = mesh.TopologyVertices[midNodeIndices[i, 1]];
+                double x1 = pt1.X;
+                double x2 = pt2.X;
+                double y1 = pt1.Y;
+                double y2 = pt2.Y;
+                double z1 = pt1.Z;
+                double z2 = pt2.Z;
+
+                Point3d midPoint = new Point3d((x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2);
+                mesh.Vertices.Add(midPoint);
+            }
+            return mesh;
+        }
+
+
+
+
+
         public static void ElementsFromMeshList(List<Mesh> mList, List<Point3d> globalNodePts,out List<Element> femElements)
         {
             List<Element> elements = new List<Element>(); // all the elements of the mesh
@@ -84,6 +134,10 @@ namespace SolidFEM.Classes
                 else if(elNodes.Count == 4)
                 {
                     el.Type = "Tet4";
+                }
+                else if (elNodes.Count == 10)
+                {
+                    el.Type = "Tet10";
                 }
 
                 elements.Add(el);
@@ -157,7 +211,7 @@ namespace SolidFEM.Classes
 
                 // first, get the global coordinates
                 LA.Matrix<double> globalElementCoordinates = LA.Matrix<double>.Build.Dense(el.Nodes.Count, 3);
-                LA.Matrix<double> globalElementCoordinate = LA.Matrix<double>.Build.Dense(el.Nodes.Count, 3);
+                //LA.Matrix<double> globalElementCoordinate = LA.Matrix<double>.Build.Dense(el.Nodes.Count, 3);
                 //CSD.DenseMatrix globalElementCoordinate = new CSD.DenseMatrix(el.Nodes.Count, 3); // one column for x,y, and z coordinate
                 for (int j = 0; j < el.Nodes.Count; j++)
                 {
@@ -206,7 +260,7 @@ namespace SolidFEM.Classes
                     {
                         alpha_ijk = 1.0;    // with a 2x2x2 integration scheme the integration constant is 1.0 for all gauss points. 
                     }
-                    else if (el.Type == "Tet4")
+                    else if (el.Type == "Tet4" || el.Type == "Tet10")
                     {
                         alpha_ijk = 0.25;   // with a 4 point integration scheme the integration constant is 0.25 for all gauss points
                     }
@@ -279,7 +333,7 @@ namespace SolidFEM.Classes
                 }
 
             }
-            else if (elType == "Tet4")
+            else if (elType == "Tet4" || elType == "Tet10")
             {   if(order == 2)
                 {
                     double alpha = 0.58541;
@@ -342,6 +396,24 @@ namespace SolidFEM.Classes
                 var shapeFunctions = CSD.DenseMatrix.OfColumnMajor(1, shapeArray.Length, shapeArray);
                 return shapeFunctions;
             }
+            else if (elType == "Tet10")
+            {
+                double c = 1 - r - s - t;
+                double N1 = r*(2*r - 1);
+                double N2 = s*(2*s - 1);
+                double N3 = t * (2 * t - 1);
+                double N4 = c * (2 * c - 1);
+                double N5 = 4 * r * s;
+                double N6 = 4 * r * t;
+                double N7 = 4 * r * c;
+                double N8 = 4 * s * t;
+                double N9 = 4 * t * c;
+                double N10 = 4 * s * c;
+
+                double[] shapeArray = new double[] { N1, N2, N3, N4, N5, N6, N7, N8, N9, N10 };
+                var shapeFunctions = CSD.DenseMatrix.OfColumnMajor(1, shapeArray.Length, shapeArray);
+                return shapeFunctions;
+            }
             else
             {
                 throw new NotImplementedException("The selected element is not yet implemented.");
@@ -386,6 +458,20 @@ namespace SolidFEM.Classes
                 };
                 var derivativeMatrix = LA.Matrix<double>.Build.DenseOfArray(derivateArray);
                 //var derivativeMatrix = CSD.DenseMatrix.OfArray(derivateArray);
+                return derivativeMatrix;
+            }
+            else if (elType == "Tet10")
+            {
+                double[,] derivateArray = new double[,]
+                {
+                    {4*r - 1, 0, 0, 4*r + 4*s + 4*t - 3, 4*s, 4*t, 4 - 8*r - 4*s - 4*t, 0, -4*t, -4*s},
+                    {0, 4*s - 1, 0, 4*r + 4*s + 4*t - 3, 4*r, 0, -4*r, 4*t, -4*t, 4 - 4*r - 8*s - 4*t},
+                    {0, 0, 4*t - 1, 4*r + 4*s + 4*t - 3, 0, 4*r, -4*r, 4*s, 4 - 4*r - 4*s -8*t, -4*s}
+                };
+
+                var derivativeMatrix = LA.Matrix<double>.Build.DenseOfArray(derivateArray);
+                //var derivativeMatrix = CSD.DenseMatrix.OfArray(derivateArray);
+                //derivativeMatrix = derivativeMat
                 return derivativeMatrix;
             }
             else

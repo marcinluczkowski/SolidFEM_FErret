@@ -65,6 +65,8 @@ namespace SolidFEM.FiniteElementMethod
             // clean the mesh and sort nodes
             var newMeshList = new List<Mesh>();
             int c = 0; // delete after testing
+            string elementType = "Tet10";
+
             foreach (Mesh mesh in meshList)
             {
                 if (mesh.Vertices.Count == 8)
@@ -77,6 +79,11 @@ namespace SolidFEM.FiniteElementMethod
                     }
                     else newMeshList.Add(mesh);
                     c++;
+                }
+                else if (elementType == "Tet10")
+                {
+                    Mesh nM = FEM_Utility.AddMidEdgeNodes(mesh);
+                    newMeshList.Add(nM);
                 }
                 else
                 {
