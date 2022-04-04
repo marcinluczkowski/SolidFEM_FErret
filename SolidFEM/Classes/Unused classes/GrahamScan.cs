@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Rhino.Geometry;
 
-namespace SolidFEM.Classes
+namespace SolidFEM
 {
     public static class GrahamScan
     {
@@ -108,6 +108,11 @@ namespace SolidFEM.Classes
 
             List<Point3f> sortedBottom = GrahamScanFace(bottomPts);
             List<Point3f> sortedTop = GrahamScanFace(topPts);
+            if (sortedBottom == null || sortedTop == null)
+            {
+                return oldMesh;
+            }
+
             List<Point3f> sortedPts = new List<Point3f>( sortedBottom);
             sortedPts.AddRange(sortedTop);
             // with the sorted points, create an updated mesh
