@@ -58,6 +58,7 @@ namespace SolidFEM.DeconstructClasses
             DA.SetData(2, e.Type);
             DA.SetData(3, e.Id);
             DA.SetData(4, e.ElementMesh);
+
         }
 
         /// <summary>

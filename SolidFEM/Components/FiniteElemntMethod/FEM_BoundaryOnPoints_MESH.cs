@@ -1,4 +1,5 @@
 ﻿using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
@@ -25,9 +26,15 @@ namespace SolidFEM.FiniteElementMethod
         {
             pManager.AddGenericParameter("Mesh", "mesh", "The mesh to apply boundary conditions on", GH_ParamAccess.list); // 0
             pManager.AddPointParameter("SupportPoints", "pt", "Position to place boundary points", GH_ParamAccess.list); // 1
-            pManager.AddBooleanParameter("Tx", "", "", GH_ParamAccess.item, true); // 2
-            pManager.AddBooleanParameter("Ty", "", "", GH_ParamAccess.item, true); // 3
-            pManager.AddBooleanParameter("Ty", "", "", GH_ParamAccess.item, true); // 4
+            pManager.AddSurfaceParameter("SupportSurface", "Surf", "", GH_ParamAccess.list); //2
+            pManager.AddIntegerParameter("Type of support", "T", "Type of support (1 = points, 2 = surface)", GH_ParamAccess.item, 1); //3
+            pManager.AddBooleanParameter("Tx", "", "", GH_ParamAccess.item, true); // 4
+            pManager.AddBooleanParameter("Ty", "", "", GH_ParamAccess.item, true); // 5
+            pManager.AddBooleanParameter("Ty", "", "", GH_ParamAccess.item, true); // 6
+            
+
+            pManager[1].Optional = true;
+            pManager[2].Optional = true;
         }
 
         /// <summary>
@@ -51,18 +58,25 @@ namespace SolidFEM.FiniteElementMethod
             List<Mesh> meshList = new List<Mesh>(); // 0
             //SmartMesh sMesh = new SmartMesh(); // 0
             List<Point3d> positions = new List<Point3d>(); // 1
+            List<Brep> supSurf = new List<Brep>();
+            int type = 1;
+
 
             // - input --
 
-            if (!DA.GetDataList(0, meshList)) return;
-            if (!DA.GetDataList(1, positions)) return;
-            DA.GetData(2, ref tx);
-            DA.GetData(3, ref ty);
-            DA.GetData(4, ref tz);
+            //if (!DA.GetDataList(0, meshList)) return;
+            DA.GetDataList(0, meshList);
+            DA.GetDataList(1, positions);
+            DA.GetDataList(2, supSurf);
+            DA.GetData(3, ref type);
+            DA.GetData(4, ref tx);
+            DA.GetData(5, ref ty);
+            DA.GetData(6, ref tz);
+            
 
 
             // -- method --
-            // clean the mesh and sort nodes
+            // clean the mesh and sort nodes, if Hex20 add midside nodes
             var newMeshList = new List<Mesh>();
             int c = 0; // delete after testing
             string elementType = "Tet10";
@@ -77,7 +91,10 @@ namespace SolidFEM.FiniteElementMethod
                     {
                         newMeshList.Add(nM);
                     }
-                    else newMeshList.Add(mesh);
+                    else
+                    {
+                        newMeshList.Add(mesh);
+                    }
                     c++;
                 }
                 else if (elementType == "Tet10")
@@ -85,41 +102,64 @@ namespace SolidFEM.FiniteElementMethod
                     Mesh nM = FEM_Utility.AddMidEdgeNodes(mesh);
                     newMeshList.Add(nM);
                 }
+
+                else if(mesh.Vertices.Count == 20)
+                {
+                        newMeshList.Add(mesh);
+                }
                 else
                 {
                     newMeshList.Add(mesh);
                 }
+
+
             }
-
-
-            /* Delete if OK
-            var newMeshList = new List<Mesh>();
-            foreach (Mesh mesh in meshList)
-            {
-                Mesh nM = GrahamScan.DoGrahamScan(mesh);
-
-                if (nM.IsValid)
-                {
-                    newMeshList.Add(nM);
-                }
-                else newMeshList.Add(mesh);
-            }*/
-
 
             List<Point3d> nodePts = FEM_Utility.GetMeshNodes(newMeshList);
             List<Support> supportList = new List<Support>();
-            foreach (var pt in positions)
+
+            if (type == 1)
             {
-                int nodeIndex = GetClosestNodeIndex(nodePts, pt);
-                if (nodeIndex != -1)
+
+                foreach (var pt in positions)
                 {
-                    Support sup = new Support(nodePts[nodeIndex], tx, ty, tz);
-                    supportList.Add(sup);
+                    int nodeIndex = GetClosestNodeIndex(nodePts, pt);
+                    if (nodeIndex != -1)
+                    {
+                        Support sup = new Support(nodePts[nodeIndex], tx, ty, tz);
+                        supportList.Add(sup);
+                    }
+
                 }
                 
             }
-            
+            else if (type == 2)
+            {
+                foreach (Brep surf in supSurf)
+                {
+                    Surface supSurface = surf.Surfaces[0];
+                    for (int i = 0; i < nodePts.Count; i++)
+                    {
+                        Point3d point = nodePts[i];
+                        double u = new double();
+                        double v = new double();
+                        supSurface.ClosestPoint(point, out u, out v);
 
+                        Point3d surfPt = supSurface.PointAt(u, v);
+
+                        double tol = 0.001;
+
+                        if (surfPt.DistanceTo(point) < tol)
+                        {
+                            Support sup = new Support(point, tx, ty, tz);
+                            supportList.Add(sup);
+                        }
+                    }
+                }
+            }
+            
+            
+            
 
             // -- output --
             DA.SetDataList(0, supportList);

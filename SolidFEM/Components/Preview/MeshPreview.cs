@@ -180,9 +180,6 @@ namespace SolidFEM.Preview
                     mesh.MeshList[i].VertexColors.SetColor(j, colourPalette[colInd]); // colour the mesh vertex
                 }
             }
-
-
-
         }
         private void ColorMeshAfterMisesStress2(TempFE_Mesh mesh)
         {
@@ -354,7 +351,7 @@ namespace SolidFEM.Preview
             // create vertices
             mesh.Vertices.AddVertices(points);
 
-            if (points.Count == 8) // HEX8 element
+            if (points.Count == 8 || points.Count == 20) // HEX8 element
             {
                 // create faces for HEX8
                 mesh.Faces.AddFace(new MeshFace(0, 1, 2, 3));
@@ -383,7 +380,7 @@ namespace SolidFEM.Preview
 
             // clean 
             mesh.FaceNormals.ComputeFaceNormals();
-            mesh.Compact();
+            //mesh.Compact();
 
             return mesh;
         }
