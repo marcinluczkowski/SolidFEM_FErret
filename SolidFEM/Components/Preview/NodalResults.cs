@@ -14,7 +14,7 @@ namespace SolidFEM.Deconstructors
         public NodalResults()
           : base("NodalResults", "nodeRes",
               "Preview nodal stresses and displacements. ",
-              "SmartMesh", "Utilities")
+              "SolidFEM", "Utilities")
         {
         }
 

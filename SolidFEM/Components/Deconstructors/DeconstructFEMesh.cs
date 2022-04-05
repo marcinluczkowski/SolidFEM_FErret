@@ -14,7 +14,7 @@ namespace SolidFEM.DeconstructClasses
         public DeconstructFEMesh()
           : base("Deconstruct FEMesh", "decMesh",
               "Deconstructing the FEMesh class.",
-              "SmartMesh", "Deconstruct")
+              "SolidFEM", "Deconstruct")
         {
         }
 

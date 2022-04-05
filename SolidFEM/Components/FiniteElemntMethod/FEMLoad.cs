@@ -19,7 +19,7 @@ namespace SolidFEM.FiniteElementMethod
         public FEMLoad()
           : base("FEM Load", "Load",
               "Create load for the FEM Solver.",
-              "SmartMesh", "FEM-Mesh")
+              "SolidFEM", "FEM-Mesh")
         {
         }
 

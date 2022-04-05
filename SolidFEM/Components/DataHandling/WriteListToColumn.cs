@@ -16,7 +16,7 @@ namespace SolidFEM.Components
         public WriteListToColumn()
           : base("ListToColumn", "lst2col",
               "Write a column to a list in an Excel file.",
-              "SmartMesh", "Data")
+              "SolidFEM", "Data")
         {
         }
 

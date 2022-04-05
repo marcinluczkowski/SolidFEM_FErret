@@ -30,7 +30,7 @@ namespace SolidFEM.FiniteElementMethod
           : base("NEW FEM Solver", "Solver",
               "Solver for FEM problems with Rhino Mesh" +
                 "Uses 3 translation DOFS pr node, linear shape functions, two Gauss Points and full integration.",
-              "SmartMesh", "FEM-Mesh")
+              "SolidFEM", "FEM-Mesh")
         {
             //Logger = new FEMLogger();
         }
@@ -86,9 +86,7 @@ namespace SolidFEM.FiniteElementMethod
  
             List<Mesh> meshList = new List<Mesh>();
             int degree = 1;
-            //SmartMesh smartMesh = new SmartMesh();
             List<double> loads = new List<double>();
-            //List<List<int>> boundaryConditions = new List<List<int>>();
             List<Support> supports = new List<Support>();
             Material material = new Material();
 
@@ -103,9 +101,6 @@ namespace SolidFEM.FiniteElementMethod
 
 
             // 0. Initial step
-
-            //List<Node> nodes = smartMesh.Nodes;
-            //List<Element> elements = smartMesh.Elements;
 
             // clean the mesh and sort nodes
             var newMeshList = new List<Mesh>();
@@ -250,7 +245,6 @@ namespace SolidFEM.FiniteElementMethod
             LA.Vector<double> mises = stress.Item2;
             LA.Vector<double> misesElement = stress.Item3;
             watch.Start();
-            //FEM_Utility.ColorMeshAfterStress(smartMesh, mises, material);
             Logger.AddInfo($"Time used on mesh colouring: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
             // 8. Prepare output
@@ -306,7 +300,6 @@ namespace SolidFEM.FiniteElementMethod
             // temporary information
             DA.SetDataList(5, Logger.LogList);
             DA.SetData(6, outMesh);
-            //DA.SetDataList(7, K_globalC.AsColumnMajorArray());
         }
 
         #region Methods

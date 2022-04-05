@@ -15,7 +15,7 @@ namespace SolidFEM.FiniteElementMethod
         public FEM_BoundaryConditions()
           : base("FEM_BoundaryOnPoints", "Nickname",
               "Description",
-              "SmartMesh", "FEM-Mesh")
+              "SolidFEM", "FEM-Mesh")
         {
         }
 

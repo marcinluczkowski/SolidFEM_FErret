@@ -16,7 +16,7 @@ namespace SolidFEM.Preview
         public MeshPreview()
           : base("MeshPreview", "preview",
               "Preview the results from the analysis.",
-              "SmartMesh", "Utilities")
+              "SolidFEM", "Utilities")
         {
         }
 

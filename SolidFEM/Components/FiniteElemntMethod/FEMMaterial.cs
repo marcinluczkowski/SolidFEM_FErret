@@ -14,7 +14,7 @@ namespace SolidFEM.FiniteElementMethod
         public FEMMaterial()
           : base("FEM Material", "Material",
               "Create material for the FEM Solver.",
-              "SmartMesh", "FEM")
+              "SolidFEM", "FEM")
         {
         }
 

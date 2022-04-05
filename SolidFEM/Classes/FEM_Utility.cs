@@ -120,13 +120,6 @@ namespace SolidFEM.Classes
                 var vertices_array = mEl.Vertices.ToPoint3dArray(); // an array of the vertices of each mesh element
 
                 List<Point3d> vertices = vertices_array.ToList();
-                // sort the vertices by a Graham 
-                //List<Point3d> sortedVertices = SortVerticesByGrahamScan(vertices.ToList());
-
-                // If element type is set to Hex20, add midside nodes
-
-
-               
 
                 for (int i = 0; i < vertices.Count; i++)
                 {
@@ -209,12 +202,6 @@ namespace SolidFEM.Classes
                         //uniquePts.Add(point3D); // if the minimum distance between the current point and all other unique points are greater than a tolerance, it is not already in the list
                         uniquePts.Add(new Point3d(Math.Round(point3D.X, 4), Math.Round(point3D.Y, 4), Math.Round(point3D.Z, 4)));
                     }
-                    /*
-                    int index = uniquePts.IndexOf(point3D); // returns -1 if the point is not already added to the list
-                    if (index == -1)
-                    {
-                        uniquePts.Add(point3D); // add the new point to the list
-                    }*/
                 }
             }
             return uniquePts;
