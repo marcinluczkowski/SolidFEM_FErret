@@ -20,7 +20,7 @@ namespace SolidFEM.Classes
         public List<Node> Nodes { get; set; }
         public List<int> Connectivity { get; set; }
         public string Type { get; set; }
-        public Quality MeshQuality { get; set; }
+        //public Quality MeshQuality { get; set; }
         public int Id { get; set; }
         public Mesh ElementMesh { get; set; }       
         public List<Point3d> TopologyVertices
@@ -51,7 +51,7 @@ namespace SolidFEM.Classes
             Nodes = element.Nodes;
             Connectivity = element.Connectivity;
             Type = element.Type;
-            MeshQuality = element.MeshQuality;
+            //MeshQuality = element.MeshQuality;
             ID = element.ID;
             ElementMesh = element.ElementMesh;
         }

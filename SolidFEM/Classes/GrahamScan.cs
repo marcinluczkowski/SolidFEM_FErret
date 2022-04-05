@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Rhino.Geometry;
 
-namespace SolidFEM
+namespace SolidFEM.Classes
 {
     public static class GrahamScan
     {
@@ -108,12 +108,7 @@ namespace SolidFEM
 
             List<Point3f> sortedBottom = GrahamScanFace(bottomPts);
             List<Point3f> sortedTop = GrahamScanFace(topPts);
-            if (sortedBottom == null || sortedTop == null)
-            {
-                return oldMesh;
-            }
-
-            List<Point3f> sortedPts = new List<Point3f>( sortedBottom);
+            List<Point3f> sortedPts = new List<Point3f>(sortedBottom);
             sortedPts.AddRange(sortedTop);
             // with the sorted points, create an updated mesh
             Mesh mesh = SortedMesh(sortedPts);
@@ -141,8 +136,8 @@ namespace SolidFEM
             // find point with lowest y- and x- coordinate:
             var sortedXY = pts.OrderBy(pt => pt.Y).ThenBy(pt => pt.X).ToList();
             p0 = sortedXY[0]; // the first point
-                                     // remove the first point from the sorted point.
-                                     //sortedXY.RemoveAt(0);
+                              // remove the first point from the sorted point.
+                              //sortedXY.RemoveAt(0);
 
             // sort point by polar angle with P0
             sortedXY.Sort(Compare);
@@ -168,7 +163,7 @@ namespace SolidFEM
             stack.Push(sortedXY[1]);
             stack.Push(sortedXY[2]);
 
-            
+
 
             // process for remaing n-3 points
             for (int i = 3; i < m; i++)

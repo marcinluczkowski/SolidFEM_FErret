@@ -7,12 +7,12 @@ using SolidFEM.Classes;
 
 namespace SolidFEM.FiniteElementMethod
 {
-    public class FEM_BoundaryOnPoints_MESH : GH_Component
+    public class FEM_BoundaryConditions : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the FEM_BoundaryOnPoints class.
         /// </summary>
-        public FEM_BoundaryOnPoints_MESH()
+        public FEM_BoundaryConditions()
           : base("FEM_BoundaryOnPoints", "Nickname",
               "Description",
               "SmartMesh", "FEM-Mesh")

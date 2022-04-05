@@ -45,9 +45,12 @@ namespace SolidFEM.FiniteElementMethod
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Mesh", "m", "Normal mesh as a list of elements.", GH_ParamAccess.list); // 0
-            pManager.AddGenericParameter("Loads", "load", "Load vector from FEM Load.", GH_ParamAccess.list); // 1
-            pManager.AddGenericParameter("Boundary Conditions", "BC", "Boundary conditions from FEM Boundary Condtion.", GH_ParamAccess.list); // 2
-            pManager.AddGenericParameter("Material", "material", "Material from FEM Material.", GH_ParamAccess.item); // 3
+            pManager.AddIntegerParameter("Element order", "elOrder",
+                "The order of the finite element to be used. Currently working for 1st and 2nd order element.",
+                GH_ParamAccess.item, 1); // 1
+            pManager.AddGenericParameter("Loads", "load", "Load vector from FEM Load.", GH_ParamAccess.list); // 2
+            pManager.AddGenericParameter("Boundary Conditions", "BC", "Boundary conditions from FEM Boundary Condtion.", GH_ParamAccess.list); // 3
+            pManager.AddGenericParameter("Material", "material", "Material from FEM Material.", GH_ParamAccess.item); // 4
         }
 
         /// <summary>
@@ -82,16 +85,18 @@ namespace SolidFEM.FiniteElementMethod
             Logger.AddInfo("Component started.");
  
             List<Mesh> meshList = new List<Mesh>();
-            SmartMesh smartMesh = new SmartMesh();
+            int degree = 1;
+            //SmartMesh smartMesh = new SmartMesh();
             List<double> loads = new List<double>();
             //List<List<int>> boundaryConditions = new List<List<int>>();
             List<Support> supports = new List<Support>();
             Material material = new Material();
 
-            DA.GetDataList(0, meshList);
-            DA.GetDataList(1, loads);
-            DA.GetDataList(2, supports);
-            DA.GetData(3, ref material);
+            DA.GetDataList(0, meshList); // 0
+            DA.GetData(1, ref degree); // 1
+            DA.GetDataList(2, loads); // 2
+            DA.GetDataList(3, supports); // 3
+            DA.GetData(4, ref material); // 4
 
 
             List<string> info = new List<string>();
@@ -105,12 +110,12 @@ namespace SolidFEM.FiniteElementMethod
             // clean the mesh and sort nodes
             var newMeshList = new List<Mesh>();
             int c = 0; // delete after testing
-            
+            string elementType = "";
             
 
             foreach (Mesh mesh in meshList)
             {
-                if (mesh.Vertices.Count == 8)
+                if (mesh.Vertices.Count == 8 && degree == 1)
                 {
                     Mesh nM = GrahamScan.DoGrahamScan(mesh);
 
@@ -124,16 +129,31 @@ namespace SolidFEM.FiniteElementMethod
                     }
                     c++;
                 }
+                else if (mesh.Vertices.Count == 8 && degree == 2)
+                {
+                    Mesh nM = GrahamScan.DoGrahamScan(mesh);
+                    if (nM.IsValid)
+                    {
+                        Mesh hex20 = FEM_Utility.AddMidEdgeNodes(nM); // Modify this method to make it apply for HEX elements
+                        newMeshList.Add(hex20);
+                    }
+                    else
+                    {
+                        Mesh hex20 = FEM_Utility.AddMidEdgeNodes(mesh); // Modify this method to make it apply for HEX elements
+                        newMeshList.Add(hex20);
+                    }
+                }
+                /*
                 else if (mesh.Vertices.Count == 20)
                 {
                     newMeshList.Add(mesh);
-                }
-                else if (elementType == "Tet10")
+                }*/
+                else if (mesh.Vertices.Count == 4 && degree == 2)
                 {
                         Mesh nM = FEM_Utility.AddMidEdgeNodes(mesh);
                         newMeshList.Add(nM);
                 }
-                else
+                else // if tet4
                 {
                     newMeshList.Add(mesh);
                 }
@@ -143,7 +163,7 @@ namespace SolidFEM.FiniteElementMethod
             List<Element> elements;
             List<Node> femNodes = new List<Node>();
 
-            List<Point3d> nodePos = FEM_Utility.GetMeshNodes(newMeshList);
+            List<Point3d> nodePos = FEM_Utility.GetMeshNodes(newMeshList); // This needs to be modified? Or can I keep it? Then use the old mesh later? Make sure the element have correct names based on number of vertices.
 
             for (int i = 0; i < nodePos.Count; i++)
             {
@@ -154,7 +174,7 @@ namespace SolidFEM.FiniteElementMethod
 
 
             int numNodes = nodePos.Count;
-            FEM_Utility.ElementsFromMeshList(newMeshList, nodePos , out elements);
+            FEM_Utility.ElementsFromMeshList(newMeshList, nodePos , out elements); // Control if this is working properly. 
 
             DA.SetDataList(7, elements);
 
@@ -230,7 +250,7 @@ namespace SolidFEM.FiniteElementMethod
             LA.Vector<double> mises = stress.Item2;
             LA.Vector<double> misesElement = stress.Item3;
             watch.Start();
-            FEM_Utility.ColorMeshAfterStress(smartMesh, mises, material);
+            //FEM_Utility.ColorMeshAfterStress(smartMesh, mises, material);
             Logger.AddInfo($"Time used on mesh colouring: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
             // 8. Prepare output

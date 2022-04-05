@@ -11,12 +11,12 @@ using System.Linq;
 
 namespace SolidFEM.FiniteElementMethod
 {
-    public class FEMLoad_MESH : GH_Component
+    public class FEMLoad : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the FEMLoad class.
         /// </summary>
-        public FEMLoad_MESH()
+        public FEMLoad()
           : base("FEM Load", "Load",
               "Create load for the FEM Solver.",
               "SmartMesh", "FEM-Mesh")
@@ -80,6 +80,7 @@ namespace SolidFEM.FiniteElementMethod
             // clean the mesh and sort nodes
             var newMeshList = new List<Mesh>();
             int c = 0; // delete after testing
+            string elementType = "";
             foreach (Mesh mesh in meshList)
             {
                 if (mesh.Vertices.Count == 8)
@@ -99,19 +100,10 @@ namespace SolidFEM.FiniteElementMethod
                     Mesh nM = FEM_Utility.AddMidEdgeNodes(mesh);
                     newMeshList.Add(nM);
                 }
-                else
-                {
-                    newMeshList.Add(mesh);
-                }
 
-            }
-                    else
-                    {
-                        newMeshList.Add(mesh);
-                    }
-                    c++;
+                
 
-                }
+                
                 else if (mesh.Vertices.Count == 20)
                 {
                     newMeshList.Add(mesh);
@@ -120,6 +112,7 @@ namespace SolidFEM.FiniteElementMethod
                 {
                     newMeshList.Add(mesh);
                 }
+                c++;
             }
 
 

@@ -35,32 +35,64 @@ namespace SolidFEM.Classes
                 Point3d midPoint = new Point3d((spX + epX)/2, (spY + epY)/2, (spZ + epZ)/2);
                 mesh.Vertices.Add(midPoint);
             }*/
-            var meshPts = mesh.TopologyVertices;
-            int[,] midNodeIndices = new int[,]  //Array for getting the correct ordering of midside nodes
+            if (mesh.Vertices.Count == 4)
             {
-                {0,1},  // node 5 is between node 1 and 2
-                {0,2},  // node 6 is between node 1 and 3
-                {0,3},  // node 7 and so on ...
-                {1,2},  // node 8...
-                {2, 3}, // node 9...
-                {1,3}   // node 10...
-            };
+                var meshPts = mesh.TopologyVertices;
+                int[,] midNodeIndices = new int[,]  //Array for getting the correct ordering of midside nodes
+                {
+                    {0,1},  // node 5 is between node 1 and 2
+                    {0,2},  // node 6 is between node 1 and 3
+                    {0,3},  // node 7 and so on ...
+                    {1,2},  // node 8...
+                    {2, 3}, // node 9...
+                    {1,3}   // node 10...
+                };
 
-            for (int i = 0; i < Matrix.Rows(midNodeIndices); i++)
-            {
-                Point3d pt1 = mesh.TopologyVertices[midNodeIndices[i, 0]];
-                Point3d pt2 = mesh.TopologyVertices[midNodeIndices[i, 1]];
-                double x1 = pt1.X;
-                double x2 = pt2.X;
-                double y1 = pt1.Y;
-                double y2 = pt2.Y;
-                double z1 = pt1.Z;
-                double z2 = pt2.Z;
+                for (int i = 0; i < Matrix.Rows(midNodeIndices); i++)
+                {
+                    Point3d pt1 = mesh.TopologyVertices[midNodeIndices[i, 0]];
+                    Point3d pt2 = mesh.TopologyVertices[midNodeIndices[i, 1]];
+                    double x1 = pt1.X;
+                    double x2 = pt2.X;
+                    double y1 = pt1.Y;
+                    double y2 = pt2.Y;
+                    double z1 = pt1.Z;
+                    double z2 = pt2.Z;
 
-                Point3d midPoint = new Point3d((x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2);
-                mesh.Vertices.Add(midPoint);
+                    Point3d midPoint = new Point3d((x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2);
+                    mesh.Vertices.Add(midPoint);
+                }
+                return mesh;
             }
-            return mesh;
+
+            else if (mesh.Vertices.Count == 8)
+            {
+                var vertices_array = mesh.Vertices.ToPoint3dArray(); // an array of the vertices of each mesh element
+
+                List<Point3d> vertices = vertices_array.ToList();
+
+
+                mesh.Vertices.Add((vertices[0] + vertices[1]) / 2);
+                mesh.Vertices.Add((vertices[1] + vertices[2]) / 2);
+                mesh.Vertices.Add((vertices[2] + vertices[3]) / 2);
+                mesh.Vertices.Add((vertices[3] + vertices[0]) / 2);
+                mesh.Vertices.Add((vertices[4] + vertices[5]) / 2);
+                mesh.Vertices.Add((vertices[5] + vertices[6]) / 2);
+                mesh.Vertices.Add((vertices[6] + vertices[7]) / 2);
+                mesh.Vertices.Add((vertices[7] + vertices[4]) / 2);
+                mesh.Vertices.Add((vertices[0] + vertices[4]) / 2);
+                mesh.Vertices.Add((vertices[1] + vertices[5]) / 2);
+                mesh.Vertices.Add((vertices[2] + vertices[6]) / 2);
+                mesh.Vertices.Add((vertices[3] + vertices[7]) / 2);
+
+                return mesh;
+            }
+
+            else
+            {
+                throw new NotImplementedException("This element is not yet implemented.");
+            }
+            
         }
 
 
@@ -362,6 +394,7 @@ namespace SolidFEM.Classes
                     return naturalCoordinatesGauss;
 
                 }
+                
                 else
                 {
                     throw new NotImplementedException("The integration type is not yet implemented.");
@@ -369,7 +402,8 @@ namespace SolidFEM.Classes
 
             }
             else if (elType == "Tet4" || elType == "Tet10")
-            {   if(order == 2)
+            {   
+                if(order == 2)
                 {
                     double alpha = 0.58541;
                     double beta = 0.13820;
@@ -600,6 +634,7 @@ namespace SolidFEM.Classes
                 return shapeVec;
             }
 
+            /*
             else if(elType == "Hex20")
             {
                 double a = 0.125; double b = 0.25;
@@ -645,7 +680,8 @@ namespace SolidFEM.Classes
                     var natcor_s = naturalCoordinates[i, 1];
                     var natcor_t = naturalCoordinates[i, 2];
 
-                    if (ind1.Contains(i))
+                    if (ind1.Contains(i))*/
+            /*
             else if (elType == "Hex20")
             {
               
@@ -719,9 +755,10 @@ namespace SolidFEM.Classes
 
                     }
 
-                    return derivativeMatrix;
+                    return derivativeMatrix; 
 
-            }
+            }*/
+            /*
             else if (elType == "Tet10")
             {
                 double[,] derivateArray = new double[,]
@@ -754,7 +791,7 @@ namespace SolidFEM.Classes
 
                 }
                 return shapeVec;
-            }
+            }*/
 
             else
             {
@@ -790,6 +827,82 @@ namespace SolidFEM.Classes
                 return derivativeMatrix; 
 
             }
+
+            else if (elType == "Hex20")
+            {
+                double a = 0.125; double b = 0.25; double c = 0.5;
+                var derivativeMatrix = LA.Matrix<double>.Build.Dense(3, 20);
+
+                var ind1 = new List<int>() { 0, 1, 2, 3, 4, 5, 6, 7 };
+                var ind2 = new List<int>() { 8, 10, 12, 14 };
+                var ind3 = new List<int>() { 9, 11, 13, 15 };
+                var ind4 = new List<int>() { 16, 17, 18, 19 };
+
+                int gp = 1;
+
+                double[] gaussArray = new double[]
+                    {
+                        -gp, -gp, -gp,
+                        gp, -gp, -gp,
+                        gp, gp, -gp,
+                        -gp, gp, -gp,
+                        -gp, -gp, gp,
+                        gp, -gp, gp,
+                        gp, gp, gp,
+                        -gp, gp, gp,
+                        0, -gp, -gp,
+                        gp, 0, -gp,
+                        0, gp, -gp,
+                        -gp, 0, -gp,
+                        0, -gp, gp,
+                        gp, 0, gp,
+                        0, gp, gp,
+                        -gp, 0, gp,
+                        -gp, -gp, 0,
+                        gp, -gp, 0,
+                        gp, gp, 0,
+                        -gp, gp, 0
+
+                    };
+
+                var naturalCoordinates = LA.Matrix<double>.Build.DenseOfRowMajor(20, 3, gaussArray);
+
+                for (int i = 0; i < naturalCoordinates.RowCount; i++)
+                {
+                    var natcor_r = naturalCoordinates[i, 0];
+                    var natcor_s = naturalCoordinates[i, 1];
+                    var natcor_t = naturalCoordinates[i, 2];
+
+                    if (ind1.Contains(i))
+                    {
+                        derivativeMatrix[0, i] = a * natcor_r * (1 + natcor_s * s) * (1 + natcor_t * t) * (2 * natcor_r * r + natcor_s * s + natcor_t * t - 1);
+                        derivativeMatrix[1, i] = a * natcor_s * (1 + natcor_r * r) * (1 + natcor_t * t) * (natcor_r * r + 2 * natcor_s * s + natcor_t * t - 1);
+                        derivativeMatrix[2, i] = a * natcor_t * (1 + natcor_r * r) * (1 + natcor_s * s) * (natcor_r * r + natcor_s * s + 2 * natcor_t * t - 1);
+                    }
+                    else if (ind2.Contains(i))
+                    {
+                        derivativeMatrix[0, i] = -c * r * (1 + natcor_s * s) * (1 + natcor_t * t);
+                        derivativeMatrix[1, i] = b * natcor_s * (1 - Math.Pow(r, 2)) * (1 + natcor_t * t);
+                        derivativeMatrix[2, i] = b * natcor_t * (1 - Math.Pow(r, 2)) * (1 + natcor_s * s);
+                    }
+                    else if (ind3.Contains(i))
+                    {
+                        derivativeMatrix[0, i] = b * natcor_r * (1 - Math.Pow(s, 2)) * (1 + natcor_t * t);
+                        derivativeMatrix[1, i] = -c * s * (1 + natcor_r * r) * (1 + natcor_t * t);
+                        derivativeMatrix[2, i] = b * natcor_t * (1 - Math.Pow(s, 2)) * (1 + natcor_r * r);
+                    }
+                    else if (ind4.Contains(i))
+                    {
+                        derivativeMatrix[0, i] = b * natcor_r * (1 - Math.Pow(t, 2)) * (1 + natcor_s * s);
+                        derivativeMatrix[1, i] = b * natcor_s * (1 - Math.Pow(t, 2)) * (1 + natcor_r * r);
+                        derivativeMatrix[2, i] = -c * t * (1 + natcor_r * r) * (1 + natcor_s * s);
+                    }
+
+                }
+
+                return derivativeMatrix;
+            }
+
             else if (elType == "Tet4")
             {
                 double[,] derivateArray = new double[,]
@@ -800,6 +913,20 @@ namespace SolidFEM.Classes
                 };
                 var derivativeMatrix = LA.Matrix<double>.Build.DenseOfArray(derivateArray);
                 //var derivativeMatrix = CSD.DenseMatrix.OfArray(derivateArray);
+                return derivativeMatrix;
+            }
+            else if (elType == "Tet10")
+            {
+                double[,] derivateArray = new double[,]
+                {
+                    {4*r - 1, 0, 0, 4*r + 4*s + 4*t - 3, 4*s, 4*t, 4 - 8*r - 4*s - 4*t, 0, -4*t, -4*s},
+                    {0, 4*s - 1, 0, 4*r + 4*s + 4*t - 3, 4*r, 0, -4*r, 4*t, -4*t, 4 - 4*r - 8*s - 4*t},
+                    {0, 0, 4*t - 1, 4*r + 4*s + 4*t - 3, 0, 4*r, -4*r, 4*s, 4 - 4*r - 4*s -8*t, -4*s}
+                };
+
+                var derivativeMatrix = LA.Matrix<double>.Build.DenseOfArray(derivateArray);
+                //var derivativeMatrix = CSD.DenseMatrix.OfArray(derivateArray);
+                //derivativeMatrix = derivativeMat
                 return derivativeMatrix;
             }
             else
@@ -1224,8 +1351,8 @@ namespace SolidFEM.Classes
         /// Assemble element stress and get global stress and mises stress,
         /// </summary>
         /// <returns> Nodal global stress, node mises stress and element mises stress. </returns>
-        /// 
-                elementMises[i] = elementMises[i] / (double)elements[0].Nodes.Count; // get average of nodal mises
+        ///
+        public static Tuple<LA.Matrix<double>, LA.Vector<double>, LA.Vector<double>> CalculateGlobalStress(List<Element> elements, LA.Matrix<double> u, Material material, ref FEMLogger logger)
         {
             int numNodes = u.RowCount / 3;
             int stressRowDim = 6;
@@ -1257,6 +1384,7 @@ namespace SolidFEM.Classes
                     if (counter[i, j] > 1)
                     {
                         globalStress[i, j] = globalStress[i, j] / (double)counter[i, j];
+                        
                         counter[i, j] = 0;
                     }
                 }
@@ -1291,7 +1419,8 @@ namespace SolidFEM.Classes
                     double Syz = nodeStress[5];
                     elementMises[i] += Math.Sqrt(0.5 * (Math.Pow(Sxx - Syy, 2) + Math.Pow(Syy - Szz, 2) + Math.Pow(Szz - Sxx, 2)) + 3 * (Math.Pow(Sxy, 2) + Math.Pow(Sxz, 2) + Math.Pow(Syz, 2))) / elements[i].Nodes.Count;
                 }
-                elementMises[i] = elementMises[i] / (double)8; // get average of nodal mises
+                elementMises[i] = elementMises[i] / (double)elements[0].Nodes.Count; // get average of nodal mises
+                //elementMises[i] = elementMises[i] / (double)8; // get average of nodal mises
             }
 
 
@@ -1301,6 +1430,8 @@ namespace SolidFEM.Classes
         /// <summary>
         /// Color mesh after nodal stress values.
         /// </summary>
+        /// 
+        /*
         public static void ColorMeshAfterStress(SmartMesh mesh, LA.Vector<double> mises, Material material)
         {
             double maxValue = material.YieldingStress;
@@ -1327,7 +1458,7 @@ namespace SolidFEM.Classes
 
                 mesh.Mesh.VertexColors.Add(color);
             }
-        }
+        }*/
 
         public static List<Point3d> SortedVerticesGraham(Mesh mesh)
         {
