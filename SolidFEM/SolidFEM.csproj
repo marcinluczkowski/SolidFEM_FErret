@@ -120,8 +120,9 @@
     <Compile Include="Components\FiniteElemntMethod\FEMLoad.cs" />
     <Compile Include="Components\FiniteElemntMethod\FEM_BoundaryCondition.cs" />
     <Compile Include="Components\FiniteElemntMethod\NEW_FEMSolver.cs" />
-    <Compile Include="Components\FiniteElemntMethod\FEMMaterial.cs" />
+    <Compile Include="Components\FiniteElemntMethod\FEMMaterial - Isotropic.cs" />
     <Compile Include="Components\Preview\MeshPreview.cs" />
+    <Compile Include="Components\FiniteElemntMethod\FEMMaterial - Orthotropic.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

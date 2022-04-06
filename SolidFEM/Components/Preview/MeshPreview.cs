@@ -442,6 +442,7 @@ namespace SolidFEM.Preview
         {
             List<Color> colours = new List<Color>();
 
+            /*
             // add colour gradient from "https://colordesigner.io/gradient-generator"
             colours.Add(ColorTranslator.FromHtml("#ffffff")); // 0
             colours.Add(ColorTranslator.FromHtml("#ecddff")); // 1
@@ -458,6 +459,35 @@ namespace SolidFEM.Preview
             colours.Add(ColorTranslator.FromHtml("#6037ff")); // 12
             colours.Add(ColorTranslator.FromHtml("#4422ff")); // 13
             colours.Add(ColorTranslator.FromHtml("#0600ff")); // 14
+            */
+            colours.Add(ColorTranslator.FromHtml("#0c00ff")); // 0
+            colours.Add(ColorTranslator.FromHtml("#7500ee")); // 1
+            colours.Add(ColorTranslator.FromHtml("#a100dc")); // 2
+            colours.Add(ColorTranslator.FromHtml("#bf00c8")); // 3
+            colours.Add(ColorTranslator.FromHtml("#d600b3")); // 4
+            colours.Add(ColorTranslator.FromHtml("#cbacff")); // 5
+            colours.Add(ColorTranslator.FromHtml("#e8009f")); // 6
+            colours.Add(ColorTranslator.FromHtml("#f5008a")); // 7
+            colours.Add(ColorTranslator.FromHtml("#ff0077")); // 8
+            colours.Add(ColorTranslator.FromHtml("#ff0064")); // 9
+            colours.Add(ColorTranslator.FromHtml("#ff0052")); // 10
+            colours.Add(ColorTranslator.FromHtml("#ff0040")); // 11
+            colours.Add(ColorTranslator.FromHtml("#ff002f")); // 12
+            colours.Add(ColorTranslator.FromHtml("#ff001d")); // 13
+            colours.Add(ColorTranslator.FromHtml("#ff0000")); // 14
+
+
+
+
+
+
+
+
+
+
+
+
+
 
             return colours;
 
