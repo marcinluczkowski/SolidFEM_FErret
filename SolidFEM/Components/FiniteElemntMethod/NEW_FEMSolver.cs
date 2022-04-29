@@ -63,8 +63,7 @@ namespace SolidFEM.FiniteElementMethod
 
             pManager.AddTextParameter("Diagonstics", "text", "List of information on the components performance", GH_ParamAccess.list);
             pManager.AddGenericParameter("FE_Mesh", "femesh", "The FE_Mesh containing results from the analysis.", GH_ParamAccess.item);
-            pManager.AddGenericParameter("", "", "", GH_ParamAccess.list);
-            pManager.AddTextParameter("Global K", "", "", GH_ParamAccess.list);
+            pManager.AddPointParameter("Point List", "P", "List of point with position as global ID", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -152,7 +151,7 @@ namespace SolidFEM.FiniteElementMethod
             int numNodes = nodePos.Count;
             FEM_Utility.ElementsFromMeshList(newMeshList, nodePos , out elements);
 
-            DA.SetDataList(7, elements);
+            DA.SetDataList(7, nodePos);
 
             // 1. Get global stiffness matrix
             watch.Start();  
@@ -162,8 +161,6 @@ namespace SolidFEM.FiniteElementMethod
             
             LA.Matrix<double> kglobal = LA.Matrix<double>.Build.DenseOfArray(K_globalC);
             info.Add(kglobal.ToString());
-
-            DA.SetDataList(8, info);
 
 
             watch.Stop();
