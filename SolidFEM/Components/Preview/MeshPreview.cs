@@ -2,6 +2,7 @@
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using SolidFEM.Classes;
 using System.Drawing;
 using System.Linq;
@@ -64,11 +65,11 @@ namespace SolidFEM.Preview
             List<Node> newNodes = new List<Node>();
             List<Element> newElements = new List<Element>();
 
-            
+
 
 
             // start by creating vectors of scaling
-            List<Vector3d> scaleVecs = new List<Vector3d>(); // instantiate empty list
+            /*List<Vector3d> scaleVecs = new List<Vector3d>(); // instantiate empty list
             for (int i = 0; i < copyMesh.MeshNodes.Count; i++)
             {
                 double du = copyMesh.dU[i];
@@ -84,25 +85,77 @@ namespace SolidFEM.Preview
                 oPt.Transform(translate);
                 newNodes.Add(new Node(i, oPt)); // transform each mesh node
             }
-            copyMesh.MeshNodes = newNodes;
+            copyMesh.MeshNodes = newNodes;*/
 
             // update the elements positions
+
+            int nodeCounter = 0;
+
             foreach (Element element in feMesh.MeshElements)
             {
                 Element newElement = new Element(element);
-                List<int> con = element.Connectivity;                
-                for (int j = 0; j < con.Count; j++)
+                newElement.Nodes = new List<Node>(); // Clear the nodes
+                List<int> con = element.Connectivity;
+                int elCounter = con.Count; // Counter for for-loop
+                if (element.Nodes.Count == 10)
                 {
-                    int nodeInd = con[j]; // the global index of the coordinate
-                    newElement.Nodes[j] = copyMesh.MeshNodes[nodeInd]; // update the Element nodes
+                    elCounter = 4; // Only want to add corner nodes for Tet10 elements
                 }
+
+                for (int j = 0; j < elCounter; j++)
+                {
+                    double du = copyMesh.dU[con[j]];
+                    double dv = copyMesh.dV[con[j]];
+                    double dw = copyMesh.dW[con[j]];
+
+                    Vector3d vec = Vector3d.Multiply(scaling, (new Vector3d(du, dv, dw))); // the scaled vector
+
+                    Point3d oPt = feMesh.MeshNodes[con[j]].Coordinate;
+                    Transform translate = Transform.Translation(vec);
+                    oPt.Transform(translate);
+
+                    if (nodeCounter == 0)
+                    {
+                        newNodes.Add(new Node(0, oPt));
+                        newElement.Nodes.Add(newNodes[0]); // update the Element nodes
+                        nodeCounter++;
+                    }
+                    else
+                    {
+                        int ind = nodeCounter;
+                        // Check if point is already added to newNodes
+                        for (int i = 0; i < newNodes.Count; i++)
+                        {
+                            if (oPt.DistanceTo(newNodes[i].Coordinate) < 0.00001)
+                            {
+                                ind = i;
+                            }
+                        }
+
+                        if (ind == nodeCounter) // New point
+                        {
+                            newNodes.Add(new Node(ind, oPt));
+                            nodeCounter++;
+                            newElement.Nodes.Add(newNodes[ind]); // update the Element nodes
+                        }
+                        else //Existing point
+                        {
+                            newElement.Nodes.Add(newNodes[ind]); // update the Element nodes
+                        }
+                    }
+                }
+
                 newElements.Add(newElement);
                 newMeshList.Add(MeshFromElement(newElement));
+
             }
+
             copyMesh.MeshElements = newElements;
             copyMesh.MeshList = newMeshList;
+            
 
             // to do: create a new FE-Mesh with the new lists
+            
             List<Point3d> newPts = new List<Point3d>();
             foreach (Node node in newNodes)
             {
@@ -172,8 +225,13 @@ namespace SolidFEM.Preview
             {
                 Element el = mesh.MeshElements[i];
                 List<int> con = el.Connectivity;
+                int conCount = con.Count;
+                if (el.Type == "Tet10")
+                {
+                    conCount = 4;
+                }
 
-                for (int j = 0; j < con.Count; j++)
+                for (int j = 0; j < conCount; j++)
                 {
                     int globalInd = con[j]; // index of the global node to take the displacement from
                     int colInd = (int)Math.Truncate(displacements[globalInd] / stepSize); // the index to use for vertex colours
@@ -253,8 +311,13 @@ namespace SolidFEM.Preview
             {
                 Element el = mesh.MeshElements[i];
                 List<int> con = el.Connectivity;
+                int conCount = con.Count;
+                if (el.Type == "Tet10")
+                {
+                    conCount = 4;
+                }
 
-                for (int j = 0; j < con.Count; j++)
+                for (int j = 0; j < conCount; j++)
                 {
                     int globalInd = con[j];
                     double util = utilisation[globalInd];
@@ -294,8 +357,13 @@ namespace SolidFEM.Preview
             {
                 Element el = mesh.MeshElements[i];
                 List<int> con = el.Connectivity;
+                int conCount = con.Count;
+                if (el.Type == "Tet10")
+                {
+                    conCount = 4;
+                }
 
-                for (int j = 0; j < con.Count; j++)
+                for (int j = 0; j < conCount; j++)
                 {
                     int globalInd = con[j];
                     int colInd = (int)Math.Truncate( nodalMises[globalInd] / stepSize );
@@ -319,8 +387,13 @@ namespace SolidFEM.Preview
             {
                 Element el = mesh.MeshElements[i];
                 List<int> con = el.Connectivity;
+                int conCount = con.Count;
+                if (el.Type == "Tet10")
+                {
+                    conCount = 4;
+                }
 
-                for (int j = 0; j < con.Count; j++)
+                for (int j = 0; j < conCount; j++)
                 {
                     int globalInd = con[j];
                     double stress = stresses[globalInd];
@@ -354,7 +427,7 @@ namespace SolidFEM.Preview
             // create vertices
             mesh.Vertices.AddVertices(points);
 
-            if (points.Count == 8) // HEX8 element
+            if (el.Type == "Hex8") // HEX8 element
             {
                 // create faces for HEX8
                 mesh.Faces.AddFace(new MeshFace(0, 1, 2, 3));
@@ -364,7 +437,7 @@ namespace SolidFEM.Preview
                 mesh.Faces.AddFace(new MeshFace(2, 3, 7, 6));
                 mesh.Faces.AddFace(new MeshFace(3, 0, 4, 7));
             }
-            else if (points.Count == 4)
+            else if (el.Type == "Tet4" || el.Type == "Tet10")
             {
                 // create faces for TET4
                 foreach (MeshFace face in oldM.Faces)
