@@ -73,7 +73,7 @@ namespace SolidFEM.FiniteElementMethod
             // clean the mesh and sort nodes
             var newMeshList = new List<Mesh>();
             int c = 0; // delete after testing
-            string elementType = "Tet10";
+            string elementType = "Tet4";
 
             foreach (Mesh mesh in meshList)
             {

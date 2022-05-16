@@ -103,7 +103,7 @@ namespace SolidFEM.Classes
         public static Tuple<LA.Matrix<double>, List<LA.Matrix<double>>> CalculateElementMatrices(Element element, Material material, ref FEMLogger logger)
         {
             // summary: calculate local K and B matrix
-            int roundrecisionBMatrix = 6;
+            int roundrecisionBMatrix = 7;
             int rpb = roundrecisionBMatrix;
             // material
             LA.Matrix<double> C = material.GetMaterialConstant();
