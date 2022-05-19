@@ -22,6 +22,10 @@ namespace SolidFEM.Classes
     {
         public static Mesh AddMidEdgeNodes(Mesh mesh)
         {
+            // I'm wondering if the Element class should be modified instead of the Rhino Mesh class. This will be invalid anyway. 
+            // What happens if nodes are just added to Element.TopologyVertices
+            // For now, the ELement class is correct, but the mesh is invalid. Have to be corrected later.  
+
             /*for (int i = 0; i < mesh.TopologyEdges.Count; i++)
             {
                 Line meshEdge = mesh.TopologyEdges.EdgeLine(i);
@@ -50,12 +54,9 @@ namespace SolidFEM.Classes
             {
                 Point3d pt1 = mesh.TopologyVertices[midNodeIndices[i, 0]];
                 Point3d pt2 = mesh.TopologyVertices[midNodeIndices[i, 1]];
-                double x1 = pt1.X;
-                double x2 = pt2.X;
-                double y1 = pt1.Y;
-                double y2 = pt2.Y;
-                double z1 = pt1.Z;
-                double z2 = pt2.Z;
+                double x1 = pt1.X; double x2 = pt2.X;
+                double y1 = pt1.Y; double y2 = pt2.Y;
+                double z1 = pt1.Z; double z2 = pt2.Z;
 
                 Point3d midPoint = new Point3d((x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2);
                 mesh.Vertices.Add(midPoint);
@@ -464,9 +465,9 @@ namespace SolidFEM.Classes
             {
                 double[,] derivateArray = new double[,]
                 {
-                    {4*r - 1, 0, 0, 4*r + 4*s + 4*t - 3, 4*s, 4*t, 4 - 8*r - 4*s - 4*t, 0, -4*t, -4*s},
-                    {0, 4*s - 1, 0, 4*r + 4*s + 4*t - 3, 4*r, 0, -4*r, 4*t, -4*t, 4 - 4*r - 8*s - 4*t},
-                    {0, 0, 4*t - 1, 4*r + 4*s + 4*t - 3, 0, 4*r, -4*r, 4*s, 4 - 4*r - 4*s -8*t, -4*s}
+                    {4*r - 1, 0, 0, 4*(r + s + t) - 3, 4*s, 4*t, 4 - 8*r - 4*s - 4*t, 0, -4*t, -4*s}, 
+                    {0, 4*s - 1, 0, 4*(r + s + t) - 3, 4*r, 0, -4*r, 4*t, -4*t, 4 - 4*r - 8*s - 4*t},
+                    {0, 0, 4*t - 1, 4*(r + s + t) - 3, 0, 4*r, -4*r, 4*s, 4 - 4*r - 4*s -8*t, -4*s}
                 };
 
                 var derivativeMatrix = LA.Matrix<double>.Build.DenseOfArray(derivateArray);
