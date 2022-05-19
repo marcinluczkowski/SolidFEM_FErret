@@ -4,6 +4,7 @@ using System.Linq;
 using Rhino.Geometry;
 using LA = MathNet.Numerics.LinearAlgebra;
 using System.Drawing;
+using Accord;
 using CSparse;
 using CSD = CSparse.Double;
 using CSparse.Double.Factorization;
@@ -22,46 +23,54 @@ namespace SolidFEM.Classes
     {
         public static Mesh AddMidEdgeNodes(Mesh mesh)
         {
-            // I'm wondering if the Element class should be modified instead of the Rhino Mesh class. This will be invalid anyway. 
-            // What happens if nodes are just added to Element.TopologyVertices
-            // For now, the ELement class is correct, but the mesh is invalid. Have to be corrected later.  
-
-            /*for (int i = 0; i < mesh.TopologyEdges.Count; i++)
-            {
-                Line meshEdge = mesh.TopologyEdges.EdgeLine(i);
-                double spX = meshEdge.FromX;
-                double spY = meshEdge.FromY;
-                double spZ = meshEdge.FromZ;
-                double epX = meshEdge.ToX;
-                double epY = meshEdge.ToY;
-                double epZ = meshEdge.ToZ;
-
-                Point3d midPoint = new Point3d((spX + epX)/2, (spY + epY)/2, (spZ + epZ)/2);
-                mesh.Vertices.Add(midPoint);
-            }*/
             var meshPts = mesh.TopologyVertices;
+            Mesh newMesh = new Mesh();
+
+            //newMesh.Vertices.AddVertices(meshPts);
+
+            newMesh.Vertices.Add(meshPts[0]);
+            newMesh.Vertices.Add(meshPts[1]);
+            newMesh.Vertices.Add(meshPts[2]);
+            newMesh.Vertices.Add(meshPts[3]);
+
+            newMesh.Faces.AddFace(0, 2, 1);
+            newMesh.Faces.AddFace(0, 1, 3);
+            newMesh.Faces.AddFace(1, 2, 3);
+            newMesh.Faces.AddFace(2, 0, 3);
+
+            newMesh.Compact();
+            newMesh.FaceNormals.ComputeFaceNormals();
+
+            var newMeshPts = newMesh.TopologyVertices;
+
+
             int[,] midNodeIndices = new int[,]  //Array for getting the correct ordering of midside nodes
             {
                 {0,1},  // node 5 is between node 1 and 2
-                {0,2},  // node 6 is between node 1 and 3
-                {0,3},  // node 7 and so on ...
-                {1,2},  // node 8...
-                {2, 3}, // node 9...
-                {1,3}   // node 10...
+                {1,2},  // node 6 is between node 2 and 3
+                {0,2},  // node 7 and so on ...
+                {0,3},  // node 8...
+                {1,3},  // node 9...
+                {2,3}   // node 10... 
             };
 
             for (int i = 0; i < Matrix.Rows(midNodeIndices); i++)
             {
-                Point3d pt1 = mesh.TopologyVertices[midNodeIndices[i, 0]];
-                Point3d pt2 = mesh.TopologyVertices[midNodeIndices[i, 1]];
-                double x1 = pt1.X; double x2 = pt2.X;
-                double y1 = pt1.Y; double y2 = pt2.Y;
-                double z1 = pt1.Z; double z2 = pt2.Z;
+                Point3d pt1 = newMeshPts[midNodeIndices[i, 0]];
+                Point3d pt2 = newMeshPts[midNodeIndices[i, 1]];
+                int rp = 6; // rounding precision
+                double x1 = Math.Round(pt1.X, rp);
+                double x2 = Math.Round(pt2.X, rp);
+                double y1 = Math.Round(pt1.Y, rp);
+                double y2 = Math.Round(pt2.Y, rp);
+                double z1 = Math.Round(pt1.Z, rp);
+                double z2 = Math.Round(pt2.Z, rp);
 
                 Point3d midPoint = new Point3d((x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2);
-                mesh.Vertices.Add(midPoint);
+                newMesh.Vertices.Add(midPoint);
             }
-            return mesh;
+
+            return newMesh;
         }
 
 
@@ -103,7 +112,7 @@ namespace SolidFEM.Classes
                     for (int j = 0; j < globalNodePts.Count; j++)
                     {
                         double dist = globalNodePts[j].DistanceToSquared(mPt);
-                        if (dist < 0.01) // random tolerance
+                        if (dist < 0.0001) // random tolerance
                         {
                             globalInd = j;
                         }
@@ -263,7 +272,7 @@ namespace SolidFEM.Classes
                     }
                     else if (el.Type == "Tet4" || el.Type == "Tet10")
                     {
-                        alpha_ijk = 0.25;   // with a 4 point integration scheme the integration constant is 0.25 for all gauss points
+                        alpha_ijk = 0.25/6;   // with a 4 point integration scheme the integration constant is 0.25 for all gauss points
                     }
 
                     double t_ijk = 1.0; // not sure what this is yet
@@ -337,14 +346,14 @@ namespace SolidFEM.Classes
             else if (elType == "Tet4" || elType == "Tet10")
             {   if(order == 2)
                 {
-                    double alpha = 0.58541;
-                    double beta = 0.13820;
+                    double alpha = 0.5854101966;
+                    double beta = 0.138196601;
                     double[] gaussArray = new double[]
                     {
-                        alpha, beta, beta ,
+                        beta, beta, beta,
+                        alpha, beta, beta,
                         beta, alpha, beta,
-                        beta, beta, alpha,
-                        beta, beta, beta
+                        beta, beta, alpha
                     };
                     var naturalCoordinatesGauss = LA.Matrix<double>.Build.DenseOfRowMajor(4, 3, gaussArray);
                     return naturalCoordinatesGauss;
@@ -399,17 +408,17 @@ namespace SolidFEM.Classes
             }
             else if (elType == "Tet10")
             {
-                double c = 1 - r - s - t;
-                double N1 = r*(2*r - 1);
-                double N2 = s*(2*s - 1);
-                double N3 = t * (2 * t - 1);
-                double N4 = c * (2 * c - 1);
-                double N5 = 4 * r * s;
-                double N6 = 4 * r * t;
-                double N7 = 4 * r * c;
-                double N8 = 4 * s * t;
-                double N9 = 4 * t * c;
-                double N10 = 4 * s * c;
+                //double c = 1 - r - s - t;
+                double N1 = 2*r*r + 4*r*s + 4*r*t - 3*r + 2*s*s + 4*s*t - 3*s + 2*t*t - 3*t + 1;
+                double N2 = 2*r*r - r;
+                double N3 = 2*s*s - s;
+                double N4 = 2*t*t - t;
+                double N5 = -4*r*r - 4*r*s - 4*r*t + 4*r;
+                double N6 = 4*r*s;
+                double N7 = -4*r*s - 4*s*s - 4*s*t + 4*s;
+                double N8 = -4*r*t - 4*s*t - 4*t*t + 4*t;
+                double N9 = 4 * r * t;
+                double N10 = 4 * s * t;
 
                 double[] shapeArray = new double[] { N1, N2, N3, N4, N5, N6, N7, N8, N9, N10 };
                 var shapeFunctions = CSD.DenseMatrix.OfColumnMajor(1, shapeArray.Length, shapeArray);
@@ -463,11 +472,12 @@ namespace SolidFEM.Classes
             }
             else if (elType == "Tet10")
             {
+                //double c = 1 - r - s - t;
                 double[,] derivateArray = new double[,]
                 {
-                    {4*r - 1, 0, 0, 4*(r + s + t) - 3, 4*s, 4*t, 4 - 8*r - 4*s - 4*t, 0, -4*t, -4*s}, 
-                    {0, 4*s - 1, 0, 4*(r + s + t) - 3, 4*r, 0, -4*r, 4*t, -4*t, 4 - 4*r - 8*s - 4*t},
-                    {0, 0, 4*t - 1, 4*(r + s + t) - 3, 0, 4*r, -4*r, 4*s, 4 - 4*r - 4*s -8*t, -4*s}
+                    {4*r + 4*s + 4*t - 3, 4*r - 1, 0, 0, -8*r - 4*s - 4*t + 4, 4*s, -4*s, -4*t, 4*t, 0},
+                    {4*r + 4*s + 4*t - 3, 0, 4*s - 1, 0, -4*r, 4*r, -4*r - 8*s - 4*t + 4, -4*t, 0, 4*t},
+                    {4*r + 4*s + 4*t - 3, 0, 0, 4*t - 1, -4*r, 0, -4*s, -4*r - 4*s - 8*t + 4, 4*r, 4*s}
                 };
 
                 var derivativeMatrix = LA.Matrix<double>.Build.DenseOfArray(derivateArray);
@@ -723,10 +733,106 @@ namespace SolidFEM.Classes
             return u;
         }
 
+
+        /// <summary>
+        /// Calculate coordinates of each node in the "gauss element" coordinate system.
+        /// </summary>
+        /// <returns> A matrix of nodal coordinates in "gauss element" coordinate system. </returns>
+
+        public static LA.Matrix<double> GetExtrapolationMatrix(string elType)
+        {
+            LA.Matrix<double> nodes = LA.Matrix<double>.Build.DenseOfArray(new double[,] { });
+
+
+            if (elType == "Hex8")
+            {
+                double gp = Math.Sqrt(3);
+
+                LA.Matrix<double> natNodes = LA.Matrix<double>.Build.DenseOfArray(new double[,]
+                {
+                    {-gp, -gp, -gp},
+                    {gp, -gp, -gp},
+                    {gp, gp, -gp},
+                    {-gp, gp, -gp},
+                    {-gp, -gp, gp},
+                    {gp, -gp, gp},
+                    {gp, gp, gp},
+                    {-gp, gp, gp},
+                });
+                nodes = natNodes;
+            }
+            else if (elType == "Tet10")
+            {
+                double alpha = 1.928555;    //1 / 0.5854101966;    // Reciprocal/inverse value of gauss point coordinate
+                double beta = -0.311086;    //1 / 0.138196601;      // Reciprocal/inverse value of gauss point coordinate
+                double gamma = (alpha + beta) / 2;  // Average of corner node values
+
+                LA.Matrix<double> natNodes = LA.Matrix<double>.Build.DenseOfArray(new double[,]
+                {
+                    {beta, beta, beta},
+                    {alpha, beta, beta},
+                    {beta, alpha, beta},
+                    {beta, beta, alpha},
+                    {gamma, beta, beta},
+                    {gamma, gamma, beta},
+                    {beta, gamma, beta},
+                    {beta, beta, gamma},
+                    {gamma, beta, gamma},
+                    {beta, gamma, gamma}
+                });
+                nodes = natNodes;
+            }
+
+            return nodes;
+        }
+
+
+
+        /// <summary>
+        /// Get shape function values for extrapolating stresses to nodes from gauss points.
+        /// </summary>
+        /// <returns> Vector with shape function values. </returns>
+
+        public static LA.Vector<double> GetExtrapolationShapeFunctions(double r, double s, double t, string elType)
+        {
+            // Shapefunctions on matrix form
+            LA.Vector<double> shapeFunctionsValues = LA.CreateVector.DenseOfArray(new double[] { });
+            if (elType == "Hex8")
+            {
+                LA.Vector<double> N = LA.CreateVector.DenseOfArray(new double[]
+                {
+                    (1-r)*(1-s)*(1-t),
+                    (1+r)*(1-s)*(1-t),
+                    (1+r)*(1+s)*(1-t),
+                    (1-r)*(1+s)*(1-t),
+                    (1-r)*(1-s)*(1+t),
+                    (1+r)*(1-s)*(1+t),
+                    (1+r)*(1+s)*(1+t),
+                    (1-r)*(1+s)*(1+t)
+                });
+                N = N.Multiply(0.125);
+                shapeFunctionsValues = N;
+            }
+            else if (elType == "Tet10")
+            {
+                double N1 = 1 - r - s - t;
+                double N2 = r;
+                double N3 = s;
+                double N4 = t;
+
+                LA.Vector<double> N = LA.CreateVector.DenseOfArray(new[] { N1, N2, N3, N4 });
+                shapeFunctionsValues = N;
+            }
+
+            return shapeFunctionsValues;
+        }
+
+
         /// <summary>
         /// Calculate a list of strain and stress vectors for each node in a element.
         /// </summary>
         /// <returns> Strain and stress vectors for each node in a element. </returns>
+
         public static Tuple<LA.Matrix<double>, LA.Matrix<double>> CalculateElementStrainStress(Element element, LA.Matrix<double> u, Material material, ref FEMLogger logger)
         {
             LA.Matrix<double> C = material.GetMaterialConstant();
@@ -734,8 +840,8 @@ namespace SolidFEM.Classes
 
             //List<LA.Matrix<double>> B_local = FEM_Matrices.CalculateElementMatrices(element, material, ref logger).Item2; // this can be changed to save time.. No need to establish the stiffness matrix of an element for this
             List<LA.Matrix<double>> B_local = element.LocalB;
-            LA.Matrix<double> elementGaussStrain = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
-            LA.Matrix<double> elementGaussStress = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
+            LA.Matrix<double> elementGaussStrain = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, B_local.Count);
+            LA.Matrix<double> elementGaussStress = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, B_local.Count);
             LA.Matrix<double> elementStrain = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
             LA.Matrix<double> elementStress = LA.Double.DenseMatrix.Build.Dense(B_local[0].RowCount, element.Nodes.Count);
             LA.Matrix<double> localDeformation = LA.Double.DenseMatrix.Build.Dense(3 * element.Nodes.Count, 1); // Could this be attached to the FE_Element class as well?
@@ -747,7 +853,7 @@ namespace SolidFEM.Classes
                 localDeformation[3 * i + 1, 0] = u[3 * element.Connectivity[i] + 1, 0];
                 localDeformation[3 * i + 2, 0] = u[3 * element.Connectivity[i] + 2, 0];
             }
-            if (element.Type == "Hex8")
+            if (element.Type == "Hex8" || element.Type == "Tet10")
             {
                 // get gauss strain and stress
                 for (int n = 0; n < B_local.Count; n++)
@@ -767,18 +873,18 @@ namespace SolidFEM.Classes
                 }
 
                 // get node strain and stress by extrapolation
-                LA.Matrix<double> extrapolationNodes = FEM.GetNaturalCoordinate(Math.Sqrt(3), 3);
+                LA.Matrix<double> extrapolationNodes = GetExtrapolationMatrix(element.Type);
 
-                for (int n = 0; n < B_local.Count; n++)
+                for (int n = 0; n < extrapolationNodes.RowCount; n++)
                 {
                     // get stress and strain in nodes
                     var r = extrapolationNodes.Row(n)[0];
                     var s = extrapolationNodes.Row(n)[1];
                     double t = extrapolationNodes.Row(n)[2];
-
-                    LA.Vector<double> shapefunctionValuesInNode = FEM.GetShapeFunctions(r, s, t, 3);
-                    LA.Vector<double> nodeStrain = elementGaussStrain.Multiply(shapefunctionValuesInNode);
-                    LA.Vector<double> nodeStress = elementGaussStress.Multiply(shapefunctionValuesInNode);
+                    
+                    LA.Vector<double> shapeFunctionValuesInNode = GetExtrapolationShapeFunctions(r, s, t, element.Type);
+                    LA.Vector<double> nodeStrain = elementGaussStrain.Multiply(shapeFunctionValuesInNode);
+                    LA.Vector<double> nodeStress = elementGaussStress.Multiply(shapeFunctionValuesInNode);
                     for (int i = 0; i < B_local[0].RowCount; i++)
                     {
                         elementStrain[i, n] = nodeStrain[i];
@@ -786,6 +892,74 @@ namespace SolidFEM.Classes
                     }
                 }
             }
+            /*else if (element.Type == "Tet100")
+            {
+                int numElementNodes = element.Nodes.Count;
+                LA.Matrix<double> nodesNat = LA.Matrix<double>.Build.DenseOfArray(new double[,]
+                {
+                    {0, 0, 0},
+                    {1, 0, 0},
+                    {0, 1, 0},
+                    {0, 0, 1},
+                    {0.5, 0, 0},
+                    {0.5, 0.5, 0},
+                    {0, 0.5, 0},
+                    {0, 0, 0.5},
+                    {0.5, 0, 0.5},
+                    {0, 0.5, 0.5}
+                });
+                
+                LA.Matrix<double> globalCoordinates = LA.Matrix<double>.Build.Dense(numElementNodes, 3);
+
+                for (int i = 0; i < numElementNodes; i++)
+                {
+                    globalCoordinates[i, 0] = element.Nodes[i].Coordinate.X; // column of x coordinates
+                    globalCoordinates[i, 1] = element.Nodes[i].Coordinate.Y; // column of y coordinates
+                    globalCoordinates[i, 2] = element.Nodes[i].Coordinate.Z; // column of z coordinates
+                }
+
+                for (int i = 0; i < element.Nodes.Count; i++)
+                {
+                    double r = nodesNat[i, 0];
+                    double s = nodesNat[i, 1];
+                    double t = nodesNat[i, 2];
+                    
+                    var partialDerivatives = FEM_Utility.PartialDerivateShapeFunctions(r, s, t, element.Type);
+
+                    var jacobianMatrix = partialDerivatives.Multiply(globalCoordinates);
+
+                    LA.Matrix<double> shapeFuncDerivatedCartesian = (jacobianMatrix.Inverse()).Multiply(partialDerivatives);
+
+
+                    LA.Matrix<double> B_i = LA.Double.DenseMatrix.Build.Dense(6, 3 * numElementNodes);
+
+                    for (int n = 0; n < numElementNodes; n++)
+                    {
+
+                        // with the shape functions derivated with respect to the cartesian coordinates the rotated and unrotated element vectors are not the same... This is the correct one according to the formulas
+                        var B_i_sub = LA.Double.DenseMatrix.Build.DenseOfRowMajor(6, 3, new double[] {
+                            shapeFuncDerivatedCartesian.Row(0)[i], 0, 0,
+                            0, shapeFuncDerivatedCartesian.Row(1)[i], 0,
+                            0, 0, shapeFuncDerivatedCartesian.Row(2)[i],
+                            shapeFuncDerivatedCartesian.Row(1)[i], shapeFuncDerivatedCartesian.Row(0)[i], 0,
+                            shapeFuncDerivatedCartesian.Row(2)[i], 0, shapeFuncDerivatedCartesian.Row(0)[i],
+                            0, shapeFuncDerivatedCartesian.Row(2)[i], shapeFuncDerivatedCartesian.Row(1)[i]
+                        });
+
+                        B_i.SetSubMatrix(0, i * 3, B_i_sub);
+
+                    }
+
+                    var nodeStrains = B_i.Multiply(localDeformation);
+                    var nodeStress = C.Multiply(nodeStrains);
+
+                   for (int j = 0; j < nodeStrains.RowCount; j++)
+                   {
+                       elementStrain[j, i] = nodeStrains[j, 0];
+                       elementStress[j, i] = nodeStress[j, 0];
+                   }
+                }
+            }*/
             else if (element.Type == "Tet4")    // no need for gauss strains because B-matrix is constant
             {
 

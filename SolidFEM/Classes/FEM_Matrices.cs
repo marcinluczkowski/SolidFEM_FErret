@@ -103,7 +103,7 @@ namespace SolidFEM.Classes
         public static Tuple<LA.Matrix<double>, List<LA.Matrix<double>>> CalculateElementMatrices(Element element, Material material, ref FEMLogger logger)
         {
             // summary: calculate local K and B matrix
-            int roundrecisionBMatrix = 6;
+            int roundrecisionBMatrix = 7;
             int rpb = roundrecisionBMatrix;
             // material
             LA.Matrix<double> C = material.GetMaterialConstant();
@@ -199,7 +199,7 @@ namespace SolidFEM.Classes
                     double alpha = 1;   // Default weight for HEX8
                     if (element.Type == "Tet10")
                     {
-                        alpha = 0.25;
+                        alpha = 0.25/6;
                     }
 
                     B_local.Add(B_i);

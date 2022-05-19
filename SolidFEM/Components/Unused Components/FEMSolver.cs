@@ -277,7 +277,7 @@ namespace SolidFEM.FiniteElementMethod
             }
 
             //Numerical integration
-            LA.Matrix<double> gaussNodes = FEM.GetNaturalCoordinate((double)Math.Sqrt((double)1 / (double)3), 3);
+            LA.Matrix<double> gaussNodes = FEM.GetNaturalCoordinate((double)Math.Sqrt((double)1 / (double)3));
 
             for (int n = 0; n < gaussNodes.RowCount; n++)  // loop gauss nodes
             {
@@ -648,7 +648,7 @@ namespace SolidFEM.FiniteElementMethod
             }
 
             // get node strain and stress by extrapolation
-            LA.Matrix<double> extrapolationNodes = FEM.GetNaturalCoordinate(Math.Sqrt(3), 3);
+            LA.Matrix<double> extrapolationNodes = FEM.GetNaturalCoordinate(Math.Sqrt(3));
 
             for (int n = 0; n < B_local.Count; n++)
             {
@@ -657,7 +657,7 @@ namespace SolidFEM.FiniteElementMethod
                 var s = extrapolationNodes.Row(n)[1];
                 double t = extrapolationNodes.Row(n)[2];
 
-                LA.Vector<double> shapefunctionValuesInNode = FEM.GetShapeFunctions(r, s, t, 3);
+                LA.Vector<double> shapefunctionValuesInNode = FEM.GetShapeFunctions(r, s, t, element.Type);
                 LA.Vector<double> nodeStrain = elementGaussStrain.Multiply(shapefunctionValuesInNode);
                 LA.Vector<double> nodeStress = elementGaussStress.Multiply(shapefunctionValuesInNode);
                 for (int i = 0; i < B_local[0].RowCount; i++)
