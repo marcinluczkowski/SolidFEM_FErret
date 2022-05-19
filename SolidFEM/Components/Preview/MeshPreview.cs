@@ -438,26 +438,54 @@ namespace SolidFEM.Preview
             return colours;
         }
 
+        public static List<Color> GetGradientColors(Color start, Color end, int steps, int firstStep, int lastStep)
+        {
+            var colorList = new List<Color>();
+            if (steps <= 0 || firstStep < 0 || lastStep > steps - 1)
+                return colorList;
+
+            double aStep = (end.A - start.A) / steps;
+            double rStep = (end.R - start.R) / steps;
+            double gStep = (end.G - start.G) / steps;
+            double bStep = (end.B - start.B) / steps;
+
+            for (int i = firstStep; i < lastStep; i++)
+            {
+                var a = start.A + (int)(aStep * i);
+                var r = start.R + (int)(rStep * i);
+                var g = start.G + (int)(gStep * i);
+                var b = start.B + (int)(bStep * i);
+                colorList.Add(Color.FromArgb(a, r, g, b));
+            }
+
+            return colorList;
+        }
+
         private List<Color> MisesColors()
         {
             List<Color> colours = new List<Color>();
 
+
             // add colour gradient from "https://colordesigner.io/gradient-generator"
-            colours.Add(ColorTranslator.FromHtml("#ffffff")); // 0
-            colours.Add(ColorTranslator.FromHtml("#ecddff")); // 1
-            colours.Add(ColorTranslator.FromHtml("#e1cdff")); // 2
-            colours.Add(ColorTranslator.FromHtml("#e7c0e5")); // 3
-            colours.Add(ColorTranslator.FromHtml("#d7bcff")); // 4
-            colours.Add(ColorTranslator.FromHtml("#cbacff")); // 5
-            colours.Add(ColorTranslator.FromHtml("#c09cff")); // 6
-            colours.Add(ColorTranslator.FromHtml("#b38bff")); // 7
-            colours.Add(ColorTranslator.FromHtml("#a67bff")); // 8
-            colours.Add(ColorTranslator.FromHtml("#976bff")); // 9
-            colours.Add(ColorTranslator.FromHtml("#875aff")); // 10
-            colours.Add(ColorTranslator.FromHtml("#7549ff")); // 11
-            colours.Add(ColorTranslator.FromHtml("#6037ff")); // 12
-            colours.Add(ColorTranslator.FromHtml("#4422ff")); // 13
-            colours.Add(ColorTranslator.FromHtml("#0600ff")); // 14
+          
+
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#fef1fc")); // 0
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#f7e0f4")); // 1
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#efd0ec")); // 2
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#e7c0e5")); // 3
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#deb0de")); // 4
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#d5a0d7")); // 5
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#cb90d0")); // 6
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#c180ca")); // 7
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#b671c4")); // 8
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#ab61be")); // 9
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#a052b8")); // 10
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#9442b2")); // 11
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#8731ad")); // 12
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#791ea7")); // 13
+            colours.Add(System.Drawing.ColorTranslator.FromHtml("#6b00a2")); // 14
+
+
 
             return colours;
 
