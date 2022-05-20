@@ -16,7 +16,6 @@ using CSparse.Storage;
 using Grasshopper;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
-using Point = Rhino.Geometry.Point;
 
 
 namespace SolidFEM.FiniteElementMethod

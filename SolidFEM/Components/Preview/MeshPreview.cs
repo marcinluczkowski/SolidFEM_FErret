@@ -389,6 +389,8 @@ namespace SolidFEM.Preview
         {
             List<Color> colours = new List<Color>(); //
 
+
+
             // add colour gradient from "https://colordesigner.io/gradient-generator"
             colours.Add(System.Drawing.ColorTranslator.FromHtml("#fef1fc")); // 0
             colours.Add(System.Drawing.ColorTranslator.FromHtml("#f7e0f4")); // 1
@@ -426,7 +428,10 @@ namespace SolidFEM.Preview
         private List<Color> NegativeStressColors()
         {
             List<Color> colours = new List<Color>();
-
+            /*
+            string palette = "#2a4858,#215d6e,#08737f,#00898a,#089f8f,#39b48e,#64c987,#92dc7e,#c4ec74,#fafa6e";
+            var colNames = palette.Split(',');
+            */
             List<string> colNames = new List<string>() { "#ffffff", "#ffe4da", "#ffc8b6", "#ffac93", "#ff8f71", "#ff704f", "#ff4b2d", "#fd0202" };
 
             foreach (string colName in colNames)
