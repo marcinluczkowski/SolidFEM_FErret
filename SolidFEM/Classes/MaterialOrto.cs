@@ -73,7 +73,6 @@ namespace SolidFEM.Classes
                 {0, 0, 0, 0, G13, 0},
                 {0, 0, 0, 0, 0, G12},
             });
-            //C = C.Multiply((double)youngModulus / (double)((1 + possionRatio) * (1 - 2 * possionRatio)));
             return C;
         }
 
