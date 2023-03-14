@@ -124,6 +124,7 @@
     <Compile Include="Components\DataHandling\WriteListToColumn.cs" />
     <Compile Include="Components\Deconstructors\DeconstructFEMesh.cs" />
     <Compile Include="Components\FiniteElemntMethod\FEMAddMidEdgeNodes.cs" />
+    <Compile Include="Components\FiniteElemntMethod\FEMMaterialOrto.cs" />
     <Compile Include="Components\Preview\NodalResults.cs" />
     <Compile Include="Components\Unused Components\CreateElement.cs" />
     <Compile Include="Components\Unused Components\PreviewElement.cs" />
