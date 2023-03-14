@@ -63,6 +63,7 @@ namespace SolidFEM.FiniteElementMethod
 
             pManager.AddTextParameter("Diagonstics", "text", "List of information on the components performance", GH_ParamAccess.list);
             pManager.AddGenericParameter("FE_Mesh", "femesh", "The FE_Mesh containing results from the analysis.", GH_ParamAccess.item) ;
+            pManager.AddPointParameter("points","pts","The nodal points", GH_ParamAccess.list);
             //pManager.AddGenericParameter("Global K", "", "", GH_ParamAccess.list);
         }
 
@@ -93,15 +94,15 @@ namespace SolidFEM.FiniteElementMethod
             DA.GetDataList(2, supports);
             DA.GetData(3, ref material);
 
+          
 
+                // 0. Initial step
 
-            // 0. Initial step
+                //List<Node> nodes = smartMesh.Nodes;
+                //List<Element> elements = smartMesh.Elements;
 
-            //List<Node> nodes = smartMesh.Nodes;
-            //List<Element> elements = smartMesh.Elements;
-
-            // clean the mesh and sort nodes
-            var newMeshList = new List<Mesh>();
+                // clean the mesh and sort nodes
+                var newMeshList = new List<Mesh>();
             int c = 0; // delete after testing
             string elementType = "Tet4";
 
@@ -265,6 +266,7 @@ namespace SolidFEM.FiniteElementMethod
             // temporary information
             DA.SetDataList(5, Logger.LogList);
             DA.SetData(6, outMesh);
+            DA.SetDataList(7, nodePos);
             //DA.SetDataList(7, K_globalC.AsColumnMajorArray());
         }
 
