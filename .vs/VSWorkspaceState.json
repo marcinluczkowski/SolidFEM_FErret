@@ -3,9 +3,7 @@
     "",
     "\\SolidFEM",
     "\\SolidFEM\\Classes",
-    "\\SolidFEM\\Components",
-    "\\SolidFEM\\FiniteElemntMethod"
+    "\\SolidFEM\\Components"
   ],
-  "SelectedNode": "\\SolidFEM.sln",
   "PreviewInSolutionExplorer": false
 }
