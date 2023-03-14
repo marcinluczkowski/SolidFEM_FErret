@@ -2,14 +2,9 @@
   "ExpandedNodes": [
     "",
     "\\SolidFEM",
-    "\\SolidFEM\\Classes",
-    "\\SolidFEM\\Components",
     "\\SolidFEM\\Components\\FiniteElemntMethod",
-    "\\SolidFEM\\obj",
     "\\SolidFEM\\obj\\Debug",
-    "\\SolidFEM\\obj\\Release",
-    "\\SolidFEM\\Properties"
+    "\\SolidFEM\\obj\\Release"
   ],
-  "SelectedNode": "\\SolidFEM\\Classes\\Node.cs",
   "PreviewInSolutionExplorer": false
 }
