@@ -41,3 +41,14 @@ C:\Users\Markus\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CoreCom
 C:\Users\Markus\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CopyComplete
 C:\Users\Markus\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.dll
 C:\Users\Markus\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.pdb
+C:\Users\Program Files\Rhino 7\Plug-ins\SolidFEM\Accord.dll.config
+C:\Users\Program Files\Rhino 7\Plug-ins\SolidFEM\SolidFEM.dll.config
+C:\Users\Program Files\Rhino 7\Plug-ins\SolidFEM\SolidFEM.dll
+C:\Users\Program Files\Rhino 7\Plug-ins\SolidFEM\SolidFEM.pdb
+C:\Users\larso\source\repos\marcinluczkowski\SolidFEM_FErret\SolidFEM\obj\Debug\SolidFEM.csproj.AssemblyReference.cache
+C:\Users\larso\source\repos\marcinluczkowski\SolidFEM_FErret\SolidFEM\obj\Debug\SolidFEM.Properties.Resources.resources
+C:\Users\larso\source\repos\marcinluczkowski\SolidFEM_FErret\SolidFEM\obj\Debug\SolidFEM.csproj.GenerateResource.cache
+C:\Users\larso\source\repos\marcinluczkowski\SolidFEM_FErret\SolidFEM\obj\Debug\SolidFEM.csproj.CoreCompileInputs.cache
+C:\Users\larso\source\repos\marcinluczkowski\SolidFEM_FErret\SolidFEM\obj\Debug\SolidFEM.csproj.CopyComplete
+C:\Users\larso\source\repos\marcinluczkowski\SolidFEM_FErret\SolidFEM\obj\Debug\SolidFEM.dll
+C:\Users\larso\source\repos\marcinluczkowski\SolidFEM_FErret\SolidFEM\obj\Debug\SolidFEM.pdb
