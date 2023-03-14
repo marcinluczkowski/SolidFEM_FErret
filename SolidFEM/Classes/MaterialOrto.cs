@@ -58,11 +58,11 @@ namespace SolidFEM.Classes
             double G13 = this.G13;
             double G23 = this.G23;
 
-            double v21 = v12 * E2 / E1
-            double v31 = v13 * E3 / E1
-            double v32 = v23 * E3 / E2
+            double v21 = v12 * E2 / E1;
+            double v31 = v13 * E3 / E1;
+            double v32 = v23 * E3 / E2;
 
-            double D = (1/(E1*E2*E3))*(1-2*v21*v13*v32-v23*v32-v12*v21-v13*v31)
+            double D = (1 / (E1 * E2 * E3)) * (1 - 2 * v21 * v13 * v32 - v23 * v32 - v12 * v21 - v13 * v31);
 
             Matrix<double> C = CreateMatrix.DenseOfArray(new double[,]
             {
