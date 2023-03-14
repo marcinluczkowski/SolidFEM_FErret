@@ -4,8 +4,12 @@
     "\\SolidFEM",
     "\\SolidFEM\\Classes",
     "\\SolidFEM\\Components",
-    "\\SolidFEM\\FiniteElemntMethod"
+    "\\SolidFEM\\Components\\FiniteElemntMethod",
+    "\\SolidFEM\\obj",
+    "\\SolidFEM\\obj\\Debug",
+    "\\SolidFEM\\obj\\Release",
+    "\\SolidFEM\\Properties"
   ],
-  "SelectedNode": "\\SolidFEM.sln",
+  "SelectedNode": "\\SolidFEM\\Classes\\Node.cs",
   "PreviewInSolutionExplorer": false
 }

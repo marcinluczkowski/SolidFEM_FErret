@@ -41,3 +41,9 @@ C:\Users\Markus\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CoreCom
 C:\Users\Markus\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.csproj.CopyComplete
 C:\Users\Markus\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.dll
 C:\Users\Markus\Source\Repos\SolidFEM\SolidFEM\obj\Debug\SolidFEM.pdb
+C:\Users\vegar\Source\Repos\marcinluczkowski\SolidFEM_FErret\SolidFEM\obj\Debug\SolidFEM.csproj.AssemblyReference.cache
+C:\Users\vegar\Source\Repos\marcinluczkowski\SolidFEM_FErret\SolidFEM\obj\Debug\SolidFEM.Properties.Resources.resources
+C:\Users\vegar\Source\Repos\marcinluczkowski\SolidFEM_FErret\SolidFEM\obj\Debug\SolidFEM.csproj.GenerateResource.cache
+C:\Users\vegar\Source\Repos\marcinluczkowski\SolidFEM_FErret\SolidFEM\obj\Debug\SolidFEM.csproj.CoreCompileInputs.cache
+C:\Users\vegar\Source\Repos\marcinluczkowski\SolidFEM_FErret\SolidFEM\obj\Debug\SolidFEM.dll
+C:\Users\vegar\Source\Repos\marcinluczkowski\SolidFEM_FErret\SolidFEM\obj\Debug\SolidFEM.pdb
