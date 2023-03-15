@@ -52,3 +52,14 @@ C:\Users\larso\AppData\Roaming\Grasshopper\Libraries\SolidFEM.dll.config
 C:\Users\larso\AppData\Roaming\Grasshopper\Libraries\SolidFEM.dll
 C:\Users\larso\AppData\Roaming\Grasshopper\Libraries\SolidFEM.pdb
 C:\Users\larso\source\repos\marcinluczkowski\SolidFEM_FErret\SolidFEM\obj\Debug\SolidFEM.csproj.CopyComplete
+C:\Users\AppData\Roaming\Grasshopper\Libraries\Accord.dll.config
+C:\Users\AppData\Roaming\Grasshopper\Libraries\SolidFEM.dll.config
+C:\Users\AppData\Roaming\Grasshopper\Libraries\SolidFEM.dll
+C:\Users\AppData\Roaming\Grasshopper\Libraries\SolidFEM.pdb
+C:\Users\vegar\source\repos\SolidFEM_FErret2\SolidFEM\obj\Debug\SolidFEM.csproj.AssemblyReference.cache
+C:\Users\vegar\source\repos\SolidFEM_FErret2\SolidFEM\obj\Debug\SolidFEM.Properties.Resources.resources
+C:\Users\vegar\source\repos\SolidFEM_FErret2\SolidFEM\obj\Debug\SolidFEM.csproj.GenerateResource.cache
+C:\Users\vegar\source\repos\SolidFEM_FErret2\SolidFEM\obj\Debug\SolidFEM.csproj.CoreCompileInputs.cache
+C:\Users\vegar\source\repos\SolidFEM_FErret2\SolidFEM\obj\Debug\SolidFEM.csproj.CopyComplete
+C:\Users\vegar\source\repos\SolidFEM_FErret2\SolidFEM\obj\Debug\SolidFEM.dll
+C:\Users\vegar\source\repos\SolidFEM_FErret2\SolidFEM\obj\Debug\SolidFEM.pdb
