@@ -1,18 +1,19 @@
-﻿using Grasshopper.Kernel;
-using Rhino.Geometry;
-using System;
+﻿using System;
 using System.Collections.Generic;
+
+using Grasshopper.Kernel;
+using Rhino.Geometry;
 using SolidFEM.Classes;
 
-namespace SolidFEM.FiniteElementMethod
+namespace SolidFEM.Components.FiniteElemntMethod
 {
     public class FEMMaterialOrto : GH_Component
     {
         /// <summary>
-        /// Initializes a new instance of the FEMMaterial class.
+        /// Initializes a new instance of the Orto class.
         /// </summary>
         public FEMMaterialOrto()
-          : base("FEM Material", "Material",
+          : base("FEM Material Orto", "Material_Orto",
               "Create material for the FEM Solver.",
               "SmartMesh", "FEM")
         {
@@ -35,8 +36,8 @@ namespace SolidFEM.FiniteElementMethod
             pManager.AddNumberParameter("Shear modulus direction 2", "G2", "Shear modulus [MPa]. Default value: 600 MPa.", GH_ParamAccess.item, 600);
             pManager.AddNumberParameter("Shear modulus direction 3", "G3", "Shear modulus [MPa]. Default value: 30 MPa.", GH_ParamAccess.item, 30);
 
-            //pManager.AddNumberParameter("Yielding stress", "fy", "Yield stress [MPa]. Default value: 355 MPa.", GH_ParamAccess.item, 355);
-            //pManager.AddNumberParameter("Material weight", "rho", "The weight of the material [kg/m^3]", GH_ParamAccess.item, 7850);
+            pManager.AddNumberParameter("Yielding stress", "fy", "Yield stress [MPa]. Default value: 355 MPa.", GH_ParamAccess.item, 355);
+            pManager.AddNumberParameter("Material weight", "rho", "The weight of the material [kg/m^3]", GH_ParamAccess.item, 7850);
 
         }
 
@@ -99,7 +100,7 @@ namespace SolidFEM.FiniteElementMethod
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return Properties.Resources.FEMaterial;// return Properties.Resources.Icon_Material;
+                return null;
             }
         }
 
@@ -108,7 +109,7 @@ namespace SolidFEM.FiniteElementMethod
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("6198afae-8cd5-4b28-a841-5b1a48de93ec"); }
+            get { return new Guid("2A326D03-AB08-4F1A-AA82-BC3290193F75"); }
         }
     }
 }
