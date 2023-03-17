@@ -52,3 +52,10 @@ C:\Program Files\Rhino 7\Plug-ins\SolidFEM\Accord.dll.config
 C:\Program Files\Rhino 7\Plug-ins\SolidFEM\SolidFEM.dll.config
 C:\Program Files\Rhino 7\Plug-ins\SolidFEM\SolidFEM.dll
 C:\Program Files\Rhino 7\Plug-ins\SolidFEM\SolidFEM.pdb
+C:\Users\vegar\source\repos\SolidFEM_FErret2\SolidFEM\obj\Debug\SolidFEM.csproj.AssemblyReference.cache
+C:\Users\vegar\source\repos\SolidFEM_FErret2\SolidFEM\obj\Debug\SolidFEM.Properties.Resources.resources
+C:\Users\vegar\source\repos\SolidFEM_FErret2\SolidFEM\obj\Debug\SolidFEM.csproj.GenerateResource.cache
+C:\Users\vegar\source\repos\SolidFEM_FErret2\SolidFEM\obj\Debug\SolidFEM.csproj.CoreCompileInputs.cache
+C:\Users\vegar\source\repos\SolidFEM_FErret2\SolidFEM\obj\Debug\SolidFEM.csproj.CopyComplete
+C:\Users\vegar\source\repos\SolidFEM_FErret2\SolidFEM\obj\Debug\SolidFEM.dll
+C:\Users\vegar\source\repos\SolidFEM_FErret2\SolidFEM\obj\Debug\SolidFEM.pdb
