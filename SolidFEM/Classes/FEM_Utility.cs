@@ -224,7 +224,7 @@ namespace SolidFEM.Classes
             return localCoord;
         }
 
-        public static LA.Vector<double> GetBodyForceVector(Material material, List<Element> elements, int numGlobalNodes, FEMLogger logger)
+        public static LA.Vector<double> GetBodyForceVector(MaterialOrto material, List<Element> elements, int numGlobalNodes, FEMLogger logger)
         {
             // Initiate the empty body force vector: 
             var F_body1 = new CSD.DenseMatrix(numGlobalNodes * 3, 1);
@@ -1169,7 +1169,7 @@ namespace SolidFEM.Classes
         /// Calculate a list of strain and stress vectors for each node in a element.
         /// </summary>
         /// <returns> Strain and stress vectors for each node in a element. </returns>
-        public static Tuple<LA.Matrix<double>, LA.Matrix<double>> CalculateElementStrainStress(Element element, LA.Matrix<double> u, Material material, ref FEMLogger logger)
+        public static Tuple<LA.Matrix<double>, LA.Matrix<double>> CalculateElementStrainStress(Element element, LA.Matrix<double> u, MaterialOrto material, ref FEMLogger logger)
         {
             LA.Matrix<double> C = material.GetMaterialConstant();
 
@@ -1339,7 +1339,7 @@ namespace SolidFEM.Classes
         /// </summary>
         /// <returns> Nodal global stress, node mises stress and element mises stress. </returns>
         ///
-        public static Tuple<LA.Matrix<double>, LA.Vector<double>, LA.Vector<double>> CalculateGlobalStress(List<Element> elements, LA.Matrix<double> u, Material material, ref FEMLogger logger)
+        public static Tuple<LA.Matrix<double>, LA.Vector<double>, LA.Vector<double>> CalculateGlobalStress(List<Element> elements, LA.Matrix<double> u, MaterialOrto material, ref FEMLogger logger)
         {
             int numNodes = u.RowCount / 3;
             int stressRowDim = 6;

@@ -24,7 +24,7 @@ namespace SolidFEM.Classes
         /// Construct global stiffness matrix by assembling element stiffness matrices.
         /// </summary>
         /// <returns> Global stiffness matrix. </returns>
-        public static double[,] GlobalStiffnessCSparse(ref List<Element> elements, int numNode, Material material, ref FEMLogger logger)
+        public static double[,] GlobalStiffnessCSparse(ref List<Element> elements, int numNode, MaterialOrto material, ref FEMLogger logger)
         {
             Stopwatch timer = new Stopwatch();
 
@@ -120,7 +120,7 @@ namespace SolidFEM.Classes
         /// Calculate element stifness matrix and element strain matrix.
         /// </summary>
         /// <returns> Element stiffness and strain matrix.</returns>
-        public static Tuple<LA.Matrix<double>, List<LA.Matrix<double>>> CalculateElementMatrices(Element element, Material material, ref FEMLogger logger, String intType)
+        public static Tuple<LA.Matrix<double>, List<LA.Matrix<double>>> CalculateElementMatrices(Element element, MaterialOrto material, ref FEMLogger logger, String intType)
         {
             // summary: calculate local K and B matrix
             int roundrecisionBMatrix = 6;
@@ -435,7 +435,7 @@ namespace SolidFEM.Classes
             return Tuple.Create(K_local, B_local);
         }
 
-        public static LA.Matrix<double> CalculateGlobalStiffnessMatrix(List<Element> elements, int numNode, Material material, ref FEMLogger logger)
+        public static LA.Matrix<double> CalculateGlobalStiffnessMatrix(List<Element> elements, int numNode, MaterialOrto material, ref FEMLogger logger)
         {
 
             // create stiffness matrix

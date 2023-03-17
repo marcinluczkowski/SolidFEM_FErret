@@ -26,7 +26,7 @@ namespace SolidFEM.Classes
         public List<double> dV { get; private set; }
         public List<double> dW { get; private set; }
 
-        public Material Material { get; set; }
+        public MaterialOrto Material { get; set; }
 
         // -- constructor --
         public TempFE_Mesh()
@@ -43,7 +43,7 @@ namespace SolidFEM.Classes
             MeshList = meshList;
         }
 
-        public TempFE_Mesh(List<Mesh> meshLst, List<Node> nodes, List<Element> meshEls, List<double> mises, List<double> nodalMises, List<double> du, List<double> dv, List<double> dw, Material material,
+        public TempFE_Mesh(List<Mesh> meshLst, List<Node> nodes, List<Element> meshEls, List<double> mises, List<double> nodalMises, List<double> du, List<double> dv, List<double> dw, MaterialOrto material,
             List<double> s_xx, List<double> s_yy, List<double> s_zz, List<double> s_xy, List<double> s_xz, List<double> s_yz)
         {
             MeshList = meshLst;

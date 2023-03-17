@@ -87,7 +87,7 @@ namespace SolidFEM.FiniteElementMethod
             int degree = 1;
             List<double> loads = new List<double>();
             List<Support> supports = new List<Support>();
-            Material material = new Material();
+            MaterialOrto material = new MaterialOrto();
 
             DA.GetDataList(0, meshList); // 0
             DA.GetData(1, ref degree); // 1
