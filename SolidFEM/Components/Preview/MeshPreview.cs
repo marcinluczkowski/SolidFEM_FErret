@@ -233,7 +233,7 @@ namespace SolidFEM.Preview
         private void MeshColorUtilisation(TempFE_Mesh mesh)
         {
             List<double> nodalMises = mesh.NodelMisesStresses;
-            double yieldStress = mesh.Material.YieldingStress;
+            double yieldStress = mesh.Material.YieldingStress; // Need to make this consistent. 
             List<double> utilisation = new List<double>();
             // divide all stresses with yield stress
             for (int i = 0; i < nodalMises.Count; i++)

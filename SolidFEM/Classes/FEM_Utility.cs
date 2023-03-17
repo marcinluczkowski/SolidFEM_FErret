@@ -97,8 +97,6 @@ namespace SolidFEM.Classes
 
 
 
-
-
         public static void ElementsFromMeshList(List<Mesh> mList, List<Point3d> globalNodePts,out List<Element> femElements)
         {
             List<Element> elements = new List<Element>(); // all the elements of the mesh

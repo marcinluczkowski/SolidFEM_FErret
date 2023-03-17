@@ -111,7 +111,6 @@
     <Compile Include="Classes\FEM_Utility.cs" />
     <Compile Include="Classes\GrahamScan.cs" />
     <Compile Include="Classes\Material.cs" />
-    <Compile Include="Classes\MaterialOrto.cs" />
     <Compile Include="Classes\Node.cs" />
     <Compile Include="Classes\Support.cs" />
     <Compile Include="Classes\TempFE_Mesh.cs" />

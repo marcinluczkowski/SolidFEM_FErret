@@ -56,7 +56,7 @@ namespace SolidFEM.FiniteElementMethod
 
 
             // Code
-            Material material = new Material(Emodul, nu, fy);
+            MaterialIso material = new MaterialIso(Emodul, nu, fy);
             material.Weight = weight;
 
             // Output
