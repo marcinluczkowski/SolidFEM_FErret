@@ -12,6 +12,8 @@ namespace SolidFEM.Classes
         public string Name { get; set; }
         public double Weight { get; set; }
 
+        public double YieldingStress { get; set; }
+
         public Material()
         {
             // empty constructor
@@ -54,7 +56,7 @@ namespace SolidFEM.Classes
             {
                 {1-possionRatio, possionRatio, possionRatio, 0, 0, 0},
                 {possionRatio, 1-possionRatio, possionRatio, 0, 0, 0},
-                {possionRatio, possionRatio, 1- possionRatio, 0, 0, 0},
+                {possionRatio, possionRatio, 1-possionRatio, 0, 0, 0},
                 {0, 0, 0, (1-2*possionRatio)/(double)2, 0, 0},
                 {0, 0, 0, 0, (1-2*possionRatio)/(double)2, 0},
                 {0, 0, 0, 0, 0, (1-2*possionRatio)/(double)2},
@@ -114,6 +116,7 @@ namespace SolidFEM.Classes
             double G12 = this.G12;
             double G13 = this.G13;
             double G23 = this.G23;
+
 
             double v21 = v12 * E2 / E1;
             double v31 = v13 * E3 / E1;
