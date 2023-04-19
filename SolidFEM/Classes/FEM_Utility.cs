@@ -228,7 +228,9 @@ namespace SolidFEM.Classes
             var F_body1 = new CSD.DenseMatrix(numGlobalNodes * 3, 1);
             //CSD.DenseMatrix F_body = new CSD.DenseMatrix(numGlobalNodes * 3, 1);
             LA.Vector<double> F_body = LA.Vector<double>.Build.Dense(numGlobalNodes * 3); // create the empty load vector
-            LA.Vector<double> bodyLoadVector = LA.Vector<double>.Build.DenseOfArray(new double[] {0, 0, -  (material.Weight * 9.81 * Math.Pow(10, -9) ) });
+            LA.Vector<double> bodyLoadVector = LA.Vector<double>.Build.DenseOfArray(new double[] {0, 0,  (material.Weight * 9.81 * Math.Pow(10, -9) ) });
+            //LA.Vector<double> bodyLoadVector = LA.Vector<double>.Build.DenseOfArray(new double[] { 0, 0, - (material.Weight * 9.81 * Math.Pow(10, -9)) }); //Original
+            //LA.Vector<double> bodyLoadVector = LA.Vector<double>.Build.DenseOfArray(new double[] { 0, 0, 0 }); //without own weight
             double elementJacobianTest = 0;
             for (int i = 0; i < elements.Count; i++)
             {
