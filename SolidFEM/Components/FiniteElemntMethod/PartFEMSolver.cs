@@ -43,12 +43,13 @@ namespace SolidFEM.FiniteElementMethod
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Part", "p", "Parts of the model", GH_ParamAccess.list); // 0
+            pManager.AddGenericParameter("Mesh", "m", "Mesh List", GH_ParamAccess.list); // 0
             pManager.AddIntegerParameter("Element order", "elOrder",
                 "The order of the finite element to be used. Currently working for 1st and 2nd order element.",
                 GH_ParamAccess.item, 1); // 1
             pManager.AddGenericParameter("Loads", "load", "Load vector from FEM Load.", GH_ParamAccess.list); // 2
             pManager.AddGenericParameter("Boundary Conditions", "BC", "Boundary conditions from FEM Boundary Condtion.", GH_ParamAccess.list); // 3
+            pManager.AddGenericParameter("Material", "Mat", "Material for each element.", GH_ParamAccess.list); // 4
         }
 
         /// <summary>
@@ -86,13 +87,13 @@ namespace SolidFEM.FiniteElementMethod
             int degree = 1;
             List<double> loads = new List<double>();
             List<Support> supports = new List<Support>();
-            Material material = new Material();
+            List<Material> material = new List<Material>();
 
             DA.GetDataList(0, meshList); // 0
             DA.GetData(1, ref degree); // 1
             DA.GetDataList(2, loads); // 2
             DA.GetDataList(3, supports); // 3
-            DA.GetData(4, ref material); // 4
+            DA.GetDataList(4, material); // 4
 
 
             List<string> info = new List<string>();
@@ -172,7 +173,7 @@ namespace SolidFEM.FiniteElementMethod
 
             // 1. Get global stiffness matrix
             watch.Start();
-            var K_globalC = FEM_Matrices.GlobalStiffnessCSparse(ref elements, numNodes, material, ref Logger);
+            var K_globalC = FEM_Matrices_Part.GlobalStiffnessCSparse(ref elements, numNodes, material, ref Logger);
 
             //Delete after testing, output K matrix in gh
 
@@ -190,7 +191,7 @@ namespace SolidFEM.FiniteElementMethod
 
 
             // self weight
-            var selfWeight = FEM_Utility.GetBodyForceVector(material, elements, numNodes, Logger);
+            var selfWeight = FEM_Utility_Part.GetBodyForceVector(material, elements, numNodes, Logger); //Find method to find body force with different materials
 
             double weight = 0;
 
@@ -235,7 +236,7 @@ namespace SolidFEM.FiniteElementMethod
             var uCS2MN = new LA.Double.DenseMatrix(u_val.Length, 1, u_val);
 
             watch.Start();
-            var stress = FEM_Utility.CalculateGlobalStress(elements, uCS2MN, material, ref Logger); // make this compatible with the CSparse matrix as well.
+            var stress = FEM_Utility_Part.CalculateGlobalStress(elements, uCS2MN, material, ref Logger); // make this compatible with the CSparse matrix as well.
             Logger.AddInfo($"Time used on stress calculations: {watch.ElapsedMilliseconds} ms"); watch.Reset();
 
             LA.Matrix<double> globalStress = stress.Item1;
@@ -283,8 +284,8 @@ namespace SolidFEM.FiniteElementMethod
 
 
 
-            // TEMPORARY WHILE WAITING FOR MARCIN's MESH CLASS
-            TempFE_Mesh outMesh = new TempFE_Mesh(meshList, femNodes, elements, elementMises, nodalMises, u1, u2, u3, material,
+            // TEMPORARY WHILE WAITING FOR MARCIN's MESH CLASS  ////MATERIAL IS SET TO MATERIAL[0]!!
+            TempFE_Mesh outMesh = new TempFE_Mesh(meshList, femNodes, elements, elementMises, nodalMises, u1, u2, u3, material[0],
                 globalStress.Row(0).ToList(), globalStress.Row(1).ToList(), globalStress.Row(2).ToList(),
                 globalStress.Row(3).ToList(), globalStress.Row(4).ToList(), globalStress.Row(5).ToList());
             List<double> test = globalStress.Row(5).ToList();

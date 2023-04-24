@@ -107,7 +107,9 @@
     <Compile Include="Classes\Element.cs" />
     <Compile Include="Classes\FEM.cs" />
     <Compile Include="Classes\FEMLogger.cs" />
+    <Compile Include="Classes\FEM_Matrices_Part.cs" />
     <Compile Include="Classes\FEM_Matrices.cs" />
+    <Compile Include="Classes\FEM_Utility_Part.cs" />
     <Compile Include="Classes\FEM_Utility.cs" />
     <Compile Include="Classes\GrahamScan.cs" />
     <Compile Include="Classes\Material.cs" />

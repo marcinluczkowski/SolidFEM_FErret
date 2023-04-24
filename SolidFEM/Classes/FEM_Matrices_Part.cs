@@ -18,13 +18,13 @@ namespace SolidFEM.Classes
     /// <summary>
     /// A class for all the matrix methods needed in the finite element analysis. 
     /// </summary>
-    public static class FEM_Matrices
+    public static class FEM_Matrices_Part
     {
         /// <summary>
         /// Construct global stiffness matrix by assembling element stiffness matrices.
         /// </summary>
         /// <returns> Global stiffness matrix. </returns>
-        public static double[,] GlobalStiffnessCSparse(ref List<Element> elements, int numNode, Material material, ref FEMLogger logger)
+        public static double[,] GlobalStiffnessCSparse(ref List<Element> elements, int numNode, List<Material> material, ref FEMLogger logger)
         {
             Stopwatch timer = new Stopwatch();
 
@@ -51,14 +51,16 @@ namespace SolidFEM.Classes
             // delete the above after finished test
 
 
+            int counter = 0;
             foreach (Element element in elements)
             {
                 List<int> con = element.Connectivity; // get the connectivity of each element
 
                 // iterate over the connectivity indices
-                var kAndB = CalculateElementMatrices(element, material, ref logger, "Full");
+                var kAndB = CalculateElementMatrices(element, material[counter], ref logger, "Full");
                 LA.Matrix<double> K_local = kAndB.Item1;
                 element.LocalB = kAndB.Item2;
+                counter++;
                 //elementSums.Add(K_local.AsColumnMajorArray().Sum(x => Math.Abs(x))); // the sum of each element
 
                 /*
@@ -86,7 +88,7 @@ namespace SolidFEM.Classes
                                 int gID2 = 3 * con[j] + dofCol;
 
                                 kArray[gID1, gID2] += K_local[lID1, lID2];
-                                
+
                                 //mC[3 * con[i] + dofRow, 3 * con[j] + dofCol] += K_local[3 * i + dofRow, 3 * j + dofCol];
                             }
                         }
@@ -109,7 +111,7 @@ namespace SolidFEM.Classes
 
 
 
-            
+
 
             return kArray;
         }
@@ -146,7 +148,7 @@ namespace SolidFEM.Classes
             }
 
             // Different methods for Hex8 and Tet4. Tet4 doesn't need gauss integration because B and Jacobian are constant!
-            
+
             if (element.Type == "Hex8" || element.Type == "Tet10")
             {
                 //Numerical integration
@@ -215,14 +217,14 @@ namespace SolidFEM.Classes
                     double alpha = 1;   // Default weight for HEX8
                     if (element.Type == "Tet10")
                     {
-                        alpha = 0.25/6;
+                        alpha = 0.25 / 6;
                     }
 
                     B_local.Add(B_i);
                     //K_local += ((B_i.Transpose()).Multiply(C).Multiply(B_i)).Multiply(jacobianDeterminant);
                     var k_i = alpha * (B_i.Transpose()).Multiply(C.Multiply(B_i)).Multiply(jacobianDeterminant);
-                    
-                    
+
+
 
                     K_local.Add(k_i, K_local);
                 }
@@ -365,7 +367,7 @@ namespace SolidFEM.Classes
 
                         K_local.Add(k_i, K_local);
                     }
-                    
+
                 }
                 else if (intType == "Reduced")
                 {
@@ -519,7 +521,7 @@ namespace SolidFEM.Classes
                 return 0.0;
             }
 
-            List<int> inds = new List<int>() {0, 1, 2}; // initial list
+            List<int> inds = new List<int>() { 0, 1, 2 }; // initial list
 
             for (int i = 0; i < inds.Count; i++)
             {

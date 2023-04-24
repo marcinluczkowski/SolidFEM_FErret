@@ -18,7 +18,7 @@ using Point = Rhino.Geometry.Point;
 
 namespace SolidFEM.Classes
 {
-    static class FEM_Utility
+    static class FEM_Utility_Part
     {
         public static Mesh AddMidEdgeNodes(Mesh mesh)
         {
@@ -222,13 +222,13 @@ namespace SolidFEM.Classes
             return localCoord;
         }
 
-        public static LA.Vector<double> GetBodyForceVector(Material material, List<Element> elements, int numGlobalNodes, FEMLogger logger)
+        public static LA.Vector<double> GetBodyForceVector(List<Material> material, List<Element> elements, int numGlobalNodes, FEMLogger logger)
         {
             // Initiate the empty body force vector: 
             var F_body1 = new CSD.DenseMatrix(numGlobalNodes * 3, 1);
             //CSD.DenseMatrix F_body = new CSD.DenseMatrix(numGlobalNodes * 3, 1);
             LA.Vector<double> F_body = LA.Vector<double>.Build.Dense(numGlobalNodes * 3); // create the empty load vector
-            LA.Vector<double> bodyLoadVector = LA.Vector<double>.Build.DenseOfArray(new double[] {0, 0,  (material.Weight * 9.81 * Math.Pow(10, -9) ) });
+            //LA.Vector<double> bodyLoadVector = LA.Vector<double>.Build.DenseOfArray(new double[] {0, 0,  (material.Weight * 9.81 * Math.Pow(10, -9) ) });
             //LA.Vector<double> bodyLoadVector = LA.Vector<double>.Build.DenseOfArray(new double[] { 0, 0, - (material.Weight * 9.81 * Math.Pow(10, -9)) }); //Original
             //LA.Vector<double> bodyLoadVector = LA.Vector<double>.Build.DenseOfArray(new double[] { 0, 0, 0 }); //without own weight
             double elementJacobianTest = 0;
@@ -237,6 +237,9 @@ namespace SolidFEM.Classes
             {
                 // get the current element
                 Element el = elements[i];
+
+                //Get the body weight for current element
+                LA.Vector<double> bodyLoadVector = LA.Vector<double>.Build.DenseOfArray(new double[] { 0, 0, (material[i].Weight * 9.81 * Math.Pow(10, -9)) });
 
                 // first, get the global coordinates
                 LA.Matrix<double> globalElementCoordinates = LA.Matrix<double>.Build.Dense(el.Nodes.Count, 3);
@@ -1340,16 +1343,18 @@ namespace SolidFEM.Classes
         /// </summary>
         /// <returns> Nodal global stress, node mises stress and element mises stress. </returns>
         ///
-        public static Tuple<LA.Matrix<double>, LA.Vector<double>, LA.Vector<double>> CalculateGlobalStress(List<Element> elements, LA.Matrix<double> u, Material material, ref FEMLogger logger)
+        public static Tuple<LA.Matrix<double>, LA.Vector<double>, LA.Vector<double>> CalculateGlobalStress(List<Element> elements, LA.Matrix<double> u, List<Material> material, ref FEMLogger logger)
         {
             int numNodes = u.RowCount / 3;
             int stressRowDim = 6;
             LA.Matrix<double> globalStress = LA.Double.DenseMatrix.Build.Dense(stressRowDim, numNodes);
             LA.Matrix<double> counter = LA.Double.DenseMatrix.Build.Dense(stressRowDim, numNodes);
             List<LA.Matrix<double>> elementStressList = new List<LA.Matrix<double>>();
+            int count = 0; //for material
             foreach (Element element in elements)
             {
-                LA.Matrix<double> elementStress = CalculateElementStrainStress(element, u, material, ref logger).Item2;
+                LA.Matrix<double> elementStress = CalculateElementStrainStress(element, u, material[count], ref logger).Item2;
+                count++;
 
                 List<int> connectivity = element.Connectivity;
 
