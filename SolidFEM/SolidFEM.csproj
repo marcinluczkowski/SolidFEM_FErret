@@ -112,11 +112,15 @@
     <Compile Include="Classes\GrahamScan.cs" />
     <Compile Include="Classes\Material.cs" />
     <Compile Include="Classes\Node.cs" />
+    <Compile Include="Classes\PartClass.cs" />
     <Compile Include="Classes\Support.cs" />
     <Compile Include="Classes\TempFE_Mesh.cs" />
     <Compile Include="Components\DataHandling\WriteListToColumn.cs" />
     <Compile Include="Components\Deconstructors\DeconstructFEMesh.cs" />
+    <Compile Include="Components\Deconstructors\DeconstructPart.cs" />
     <Compile Include="Components\FiniteElemntMethod\FEMMaterialOrto.cs" />
+    <Compile Include="Components\FiniteElemntMethod\FEMPart.cs" />
+    <Compile Include="Components\FiniteElemntMethod\PartFEMSolver.cs" />
     <Compile Include="Components\Preview\NodalResults.cs" />
     <Compile Include="Components\FiniteElemntMethod\FEMLoad.cs" />
     <Compile Include="Components\FiniteElemntMethod\FEM_BoundaryCondition.cs" />
