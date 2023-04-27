@@ -35,7 +35,8 @@ namespace SolidFEM.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Parts", "Parts", "List of parts with given material", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Meshes", "Meshes", "List of meshes representing the elements", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Materials", "Materials", "List of the material for each element", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -44,22 +45,23 @@ namespace SolidFEM.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            
-            List<PartClass> parts = new List<PartClass>();
             List<Mesh> meshList = new List<Mesh>();
             List<Material> material = new List<Material>();
             DA.GetDataList(0, meshList);
             DA.GetDataList(1, material);
 
+            List<Material> materialList = new List<Material>();
+
             for (int i = 0; i < material.Count;i++)
             {
-                List<Material> materialList = new List<Material>();
                 for (int j = 0; j < meshList.Count; j++)
-                { materialList.Add(material[i]); }
-                parts.Add(new PartClass(meshList, materialList));
+                { 
+                    materialList.Add(material[i]); 
+                }
             }
 
-            DA.SetDataList(0, parts);
+            DA.SetDataList(0, meshList);
+            DA.SetDataList(1, materialList);
         }
 
         /// <summary>
