@@ -31,7 +31,6 @@ namespace SolidFEM.Classes
     {
         public double YoungModulus { get; set; }
         public double PossionRatio { get; set; }
-        public double YieldingStress { get; set; }
         
 
 
@@ -78,7 +77,6 @@ namespace SolidFEM.Classes
         public double G13 { get; set; }
         public double G23 { get; set; }
 
-        public double YieldingStress { get; set; }
         
         // Constructor
         public MaterialOrto()
