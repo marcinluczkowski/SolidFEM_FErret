@@ -7,13 +7,13 @@ using SolidFEM.Classes;
 
 namespace SolidFEM.Components.FiniteElemntMethod
 {
-    public class FEMMaterialOrto : GH_Component
+    public class FEMMaterialOrtho : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the FEMMaterialOrto class.
         /// </summary>
-        public FEMMaterialOrto()
-          : base("FEM Material Orto", "MaterialOrto",
+        public FEMMaterialOrtho()
+          : base("FEM Material Ortho", "MaterialOrtho",
               "Create orthotropic material for the FEM Solver.",
               "SolidFEM", "FEM")
         {
